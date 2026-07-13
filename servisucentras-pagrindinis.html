@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<title>ServisuCentras.lt — Lietuvos autoservisų platforma</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0F10; --bg2:#161819; --bg3:#1E2022;
+  --line:rgba(255,255,255,0.07); --line2:rgba(255,255,255,0.13);
+  --text:#F0EDE5; --muted:#7A8088; --dim:#3A3F45;
+  --y:#F5C400; --ydim:rgba(245,196,0,0.1);
+  --g:#3D6B4A; --gdim:rgba(61,107,74,0.14);
+  --r:#8B1A1A; --rdim:rgba(139,26,26,0.13);
+  --radius:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+
+/* ══════════════════════════════════
+   NAV
+══════════════════════════════════ */
+nav{
+  position:sticky;top:0;z-index:100;
+  height:56px;padding:0 28px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(14,15,16,0.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;align-items:center;gap:12px;cursor:pointer;text-decoration:none;}
+.logo-icon{
+  width:36px;height:36px;border-radius:4px;overflow:hidden;
+  display:flex;flex-direction:column;position:relative;
+  border:1px solid rgba(255,255,255,0.1);flex-shrink:0;
+}
+.logo-icon .ly{flex:1;background:var(--y);}
+.logo-icon .lg{flex:1;background:var(--g);}
+.logo-icon .lr{flex:1;background:var(--r);}
+.logo-icon .lw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.logo-text{display:flex;flex-direction:column;gap:1px;}
+.logo-name{font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--text);line-height:1;}
+.logo-name em{font-style:normal;color:var(--y);}
+.logo-bar{display:flex;height:2px;border-radius:1px;overflow:hidden;}
+.logo-bar span{flex:1;}
+.nav-links{display:flex;gap:4px;}
+.nav-link{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--radius);transition:all .15s;cursor:pointer;background:none;border:none;font-family:'IBM Plex Sans';}
+.nav-link:hover{color:var(--text);background:rgba(255,255,255,0.04);}
+.nav-right{display:flex;gap:8px;align-items:center;}
+.nav-btn{font-family:'IBM Plex Sans';font-weight:600;font-size:13px;padding:7px 16px;border-radius:var(--radius);cursor:pointer;transition:all .15s;}
+.nav-btn-out{background:transparent;border:1px solid var(--line2);color:var(--text);}
+.nav-btn-out:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.nav-btn-pri{background:var(--y);color:var(--bg);border:none;}
+.nav-btn-pri:hover{background:#FFD740;}
+
+/* ══════════════════════════════════
+   HERO
+══════════════════════════════════ */
+.hero{
+  padding:60px 28px 50px;position:relative;overflow:hidden;
+  border-bottom:1px solid var(--line);
+}
+.hero::before{
+  content:"";position:absolute;inset:0;
+  background:radial-gradient(ellipse 60% 60% at 70% 50%,rgba(245,196,0,0.04) 0%,transparent 70%),
+    repeating-linear-gradient(135deg,rgba(255,255,255,0.012) 0,rgba(255,255,255,0.012) 1px,transparent 1px,transparent 18px);
+  pointer-events:none;
+}
+/* LT vėliava fone */
+.hero-flag-bg{
+  position:absolute;right:-40px;top:50%;transform:translateY(-50%);
+  width:440px;height:294px;border-radius:4px;overflow:hidden;
+  display:flex;flex-direction:column;opacity:0.1;pointer-events:none;
+}
+.hero-flag-bg .fy{flex:1;background:var(--y);}
+.hero-flag-bg .fg{flex:1;background:var(--g);}
+.hero-flag-bg .fr{flex:1;background:var(--r);}
+
+.hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:2;}
+.hero-eyebrow{font-family:'IBM Plex Mono';font-size:11px;color:var(--y);letter-spacing:0.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.hero-eyebrow::before{content:"";width:18px;height:1px;background:var(--y);}
+.hero-triline{display:flex;gap:5px;margin-bottom:12px;}
+.hero-triline span{width:32px;height:3px;border-radius:1px;}
+h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;}
+h1 em{font-style:normal;color:var(--y);}
+.hero-sub{font-size:16px;color:var(--muted);max-width:520px;line-height:1.65;margin-bottom:32px;}
+
+/* CTA mygtukas */
+@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6;}80%,100%{transform:scale(1.15);opacity:0;}}
+@keyframes bounce-x{0%,100%{transform:translateX(0);}50%{transform:translateX(5px);}}
+@keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.cta-wrap{margin-bottom:32px;}
+.cta-ring-wrap{position:relative;display:inline-flex;}
+.cta-ring{position:absolute;inset:-4px;border-radius:8px;border:2px solid rgba(245,196,0,0.45);animation:pulse-ring 2.2s ease-out infinite;pointer-events:none;}
+.cta-ring2{position:absolute;inset:-4px;border-radius:8px;border:2px solid rgba(245,196,0,0.25);animation:pulse-ring 2.2s ease-out 0.4s infinite;pointer-events:none;}
+.cta-btn{
+  display:flex;align-items:center;gap:13px;
+  background:var(--y);color:var(--bg);border:none;
+  font-family:'IBM Plex Sans';font-weight:700;font-size:16px;
+  padding:16px 28px;border-radius:var(--radius);cursor:pointer;
+  transition:transform .15s,background .15s;
+  position:relative;z-index:1;
+}
+.cta-btn:hover{transform:translateY(-2px);background:#FFD740;}
+.cta-ico{font-size:22px;}
+.cta-arr{animation:bounce-x 1.2s ease-in-out infinite;display:inline-block;opacity:0.7;font-size:18px;}
+.cta-meta{display:flex;align-items:center;gap:7px;margin-top:11px;font-family:'IBM Plex Mono';font-size:11px;color:#555;}
+.cta-dot{width:7px;height:7px;border-radius:50%;background:#6fbf8a;animation:blink 1.4s infinite;display:inline-block;}
+.cta-meta b{color:var(--text);}
+.cta-meta span{color:var(--y);}
+
+/* Diagnostika mygtuk */
+.diag-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:transparent;border:1px solid var(--line2);
+  color:var(--text);font-family:'IBM Plex Sans';font-weight:600;font-size:13.5px;
+  padding:10px 18px;border-radius:var(--radius);cursor:pointer;
+  transition:all .15s;margin-top:12px;text-decoration:none;
+}
+.diag-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+
+/* ══════════════════════════════════
+   MIESTO PAIEŠKA + KATEGORIJOS
+══════════════════════════════════ */
+.search-section{padding:36px 28px 0;max-width:1100px;margin:0 auto;}
+
+.city-row{display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);padding:6px 8px 6px 16px;margin-bottom:10px;transition:border-color .15s;}
+.city-row:focus-within{border-color:rgba(245,196,0,0.4);}
+.city-ico{font-size:16px;flex-shrink:0;}
+.city-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;}
+.city-input::placeholder{color:var(--dim);}
+.city-search-btn{background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:13px;padding:8px 16px;border-radius:3px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.city-search-btn:hover{background:#FFD740;}
+
+.city-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
+.city-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--muted);}
+.city-chip:hover{border-color:rgba(245,196,0,0.3);color:var(--text);}
+.city-chip.on{background:var(--ydim);border-color:var(--y);color:var(--y);}
+
+.board-label{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);margin-bottom:10px;}
+.board-label b{color:var(--text);}
+
+.board{
+  display:grid;grid-template-columns:repeat(6,1fr);
+  gap:2px;background:var(--line);border:1px solid var(--line);
+  border-radius:var(--radius);overflow:hidden;margin-bottom:0;
+}
+@media(max-width:860px){.board{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:500px){.board{grid-template-columns:repeat(3,1fr);}}
+.peg{
+  background:var(--bg2);padding:18px 10px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;transition:background .15s;text-align:center;
+}
+.peg:hover{background:var(--bg3);}
+.peg.on{background:var(--y);}
+.peg-icon svg{width:26px;height:26px;}
+.peg-icon{transition:filter .15s;}
+.peg.on .peg-icon{filter:invert(1);}
+.peg-name{font-size:11.5px;font-weight:600;color:var(--text);}
+.peg.on .peg-name{color:var(--bg);}
+.peg-count{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);}
+.peg.on .peg-count{color:rgba(0,0,0,0.55);}
+
+/* ══════════════════════════════════
+   SERVISŲ SĄRAŠAS
+══════════════════════════════════ */
+.results-section{padding:28px 28px 60px;max-width:1100px;margin:0 auto;}
+.results-head{
+  display:flex;align-items:baseline;justify-content:space-between;
+  margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap;gap:10px;
+}
+.results-title{font-family:'Oswald';font-size:20px;font-weight:600;}
+.results-title .n{color:var(--y);}
+.sort-tabs{display:flex;gap:6px;font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.sort-tab{padding:4px 10px;border:1px solid var(--line);border-radius:2px;cursor:pointer;transition:all .15s;}
+.sort-tab.on{color:var(--y);border-color:rgba(245,196,0,0.35);}
+
+.cards{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+.empty-state{
+  background:var(--bg2);border:1px dashed var(--line2);border-radius:var(--radius);
+  padding:48px 24px;text-align:center;
+}
+.empty-icon{font-size:32px;margin-bottom:14px;opacity:0.7;}
+.empty-title{font-family:'Oswald';font-size:16px;font-weight:600;margin-bottom:8px;}
+.empty-sub{font-size:13px;color:var(--muted);margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto;}
+.empty-cta{
+  font-family:'IBM Plex Sans';font-weight:600;font-size:13px;
+  padding:10px 20px;border-radius:var(--radius);cursor:pointer;
+  background:var(--y);color:var(--bg);border:1px solid var(--y);
+}
+.empty-cta:hover{background:#FFD740;}
+.card{
+  background:var(--bg2);padding:18px 22px;
+  display:grid;grid-template-columns:56px 1fr auto;
+  gap:18px;align-items:center;cursor:pointer;transition:background .15s;
+}
+.card:hover{background:var(--bg3);}
+@media(max-width:680px){.card{grid-template-columns:1fr;gap:12px;}}
+.dist-num{font-family:'Oswald';font-size:22px;color:var(--y);line-height:1;text-align:center;}
+.dist-unit{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);text-transform:uppercase;text-align:center;}
+.card-name{font-size:15px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px;}
+.sdot{width:6px;height:6px;border-radius:50%;display:inline-block;}
+.sdot.open{background:#6fbf8a;} .sdot.closed{background:var(--r);}
+.sst{font-family:'IBM Plex Mono';font-size:10px;}
+.sst.open{color:#6fbf8a;} .sst.closed{color:#e07070;}
+.card-meta{font-size:12.5px;color:var(--muted);margin-bottom:7px;}
+.tags{display:flex;gap:5px;flex-wrap:wrap;}
+.tag{font-family:'IBM Plex Mono';font-size:9.5px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--line);}
+.tag.hi{color:var(--y);background:var(--ydim);border-color:rgba(245,196,0,0.2);}
+.card-right{text-align:right;}
+.rating{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);margin-bottom:6px;}
+.rating b{color:var(--text);}
+.book-btn{background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:var(--radius);cursor:pointer;transition:background .15s;white-space:nowrap;}
+.book-btn:hover{background:#FFD740;}
+
+/* ══════════════════════════════════
+   KAIP VEIKIA
+══════════════════════════════════ */
+.how{padding:60px 28px;border-top:1px solid var(--line);background:var(--bg2);}
+.how-inner{max-width:1100px;margin:0 auto;}
+.sec-title{font-family:'Oswald';font-size:26px;font-weight:600;margin-bottom:28px;text-transform:uppercase;}
+.how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
+@media(max-width:720px){.how-grid{grid-template-columns:1fr;}}
+.how-step{background:var(--bg);padding:28px 24px;}
+.how-num{font-family:'IBM Plex Mono';font-size:11px;margin-bottom:12px;}
+.how-step:nth-child(1) .how-num{color:var(--y);}
+.how-step:nth-child(2) .how-num{color:#6fbf8a;}
+.how-step:nth-child(3) .how-num{color:#7ab0f0;}
+.how-step h3{font-family:'Oswald';font-size:18px;font-weight:600;margin-bottom:9px;}
+.how-step p{font-size:13.5px;color:var(--muted);line-height:1.65;}
+
+/* ══════════════════════════════════
+   DIAGNOSTIKA SEKCIJA
+══════════════════════════════════ */
+.diag-section{padding:60px 28px;border-top:1px solid var(--line);}
+.diag-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+@media(max-width:760px){.diag-inner{grid-template-columns:1fr;}}
+.diag-left h2{font-family:'Oswald';font-size:28px;font-weight:700;text-transform:uppercase;margin-bottom:12px;}
+.diag-left h2 em{font-style:normal;color:var(--y);}
+.diag-left p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
+.diag-steps-preview{display:flex;flex-direction:column;gap:8px;}
+.dsp{display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--muted);}
+.dsp-num{width:24px;height:24px;border-radius:50%;background:var(--ydim);border:1px solid rgba(245,196,0,0.3);color:var(--y);font-family:'IBM Plex Mono';font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* ══════════════════════════════════
+   SERVISAMS CTA
+══════════════════════════════════ */
+.svc-cta{padding:60px 28px;border-top:1px solid var(--line);}
+.svc-cta-inner{max-width:1100px;margin:0 auto;}
+.cta-box{
+  background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);
+  padding:40px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;
+  position:relative;overflow:hidden;
+}
+.cta-box::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--y) 33%,var(--g) 33%,var(--g) 66%,var(--r) 66%);}
+.cta-box h2{font-family:'Oswald';font-size:24px;font-weight:600;margin-bottom:8px;}
+.cta-box p{font-size:14px;color:var(--muted);max-width:440px;}
+.cta-box-btn{background:transparent;border:1px solid var(--y);color:var(--y);font-family:'IBM Plex Sans';font-weight:600;font-size:13.5px;padding:12px 24px;border-radius:var(--radius);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.cta-box-btn:hover{background:var(--y);color:var(--bg);}
+
+/* ══════════════════════════════════
+   FOOTER
+══════════════════════════════════ */
+footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.footer-dots{display:flex;gap:5px;}
+.footer-dot{width:8px;height:8px;border-radius:50%;}
+
+/* ══════════════════════════════════
+   CHAT FAB
+══════════════════════════════════ */
+.chat-fab{
+  position:fixed;right:24px;bottom:28px;width:58px;height:58px;border-radius:50%;
+  background:var(--y);color:var(--bg);border:none;cursor:pointer;z-index:900;
+  display:flex;align-items:center;justify-content:center;font-size:26px;
+  box-shadow:0 4px 20px rgba(245,196,0,0.4);transition:all .2s;
+}
+.chat-fab:hover{transform:scale(1.08);}
+.chat-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--r);color:#fff;font-size:10px;font-family:'IBM Plex Mono';font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
+
+/* ══════════════════════════════════
+   CHAT PANEL
+══════════════════════════════════ */
+.chat-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:950;opacity:0;pointer-events:none;transition:opacity .2s;}
+.chat-overlay.show{opacity:1;pointer-events:all;}
+.chat-panel{
+  position:fixed;right:0;top:0;bottom:0;width:400px;max-width:100vw;
+  background:var(--bg2);border-left:1px solid var(--line);z-index:960;
+  transform:translateX(100%);transition:transform .3s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;
+}
+.chat-panel.show{transform:translateX(0);}
+.chat-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;background:var(--bg3);flex-shrink:0;}
+.chat-head-icon{width:40px;height:40px;border-radius:50%;background:var(--y);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.chat-head-info{flex:1;}
+.chat-head-title{font-size:14px;font-weight:600;margin-bottom:2px;}
+.chat-head-sub{font-family:'IBM Plex Mono';font-size:9.5px;color:#6fbf8a;letter-spacing:0.04em;}
+.chat-head-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.chat-head-close:hover{color:var(--text);}
+.chat-online{padding:10px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;overflow-x:auto;flex-shrink:0;}
+.chat-online::-webkit-scrollbar{display:none;}
+.svc-av-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
+.svc-av{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:2px solid #6fbf8a;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'Oswald';font-weight:700;color:var(--y);position:relative;}
+.svc-av::after{content:"";position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:#6fbf8a;border:2px solid var(--bg2);}
+.svc-av.busy::after{background:var(--y);}
+.svc-av.off::after{background:#555;}
+.svc-av-name{font-family:'IBM Plex Mono';font-size:8px;color:#555;max-width:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;}
+.chat-msgs::-webkit-scrollbar{width:3px;}
+.chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.07);}
+.sys-msg{text-align:center;font-family:'IBM Plex Mono';font-size:10px;color:#555;padding:5px 12px;background:rgba(255,255,255,0.03);border-radius:20px;align-self:center;}
+.msg-c{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.msg-c .bubble{background:var(--y);color:var(--bg);padding:10px 14px;border-radius:14px 3px 14px 14px;max-width:82%;font-size:13.5px;line-height:1.5;}
+.msg-c .mt{font-family:'IBM Plex Mono';font-size:9px;color:#555;}
+.msg-s{display:flex;gap:8px;align-items:flex-end;}
+.msg-s-av{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1.5px solid rgba(245,196,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'Oswald';font-weight:700;color:var(--y);flex-shrink:0;}
+.msg-s-wrap{display:flex;flex-direction:column;gap:2px;max-width:82%;}
+.msg-s-name{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);}
+.msg-s .bubble{background:var(--bg3);color:var(--text);padding:10px 14px;border-radius:3px 14px 14px 14px;font-size:13.5px;line-height:1.5;border:1px solid var(--line);}
+.msg-s .mt{font-family:'IBM Plex Mono';font-size:9px;color:#555;}
+.offer-card{background:var(--bg2);border:1px solid rgba(245,196,0,0.25);border-radius:8px;padding:12px;margin-top:6px;cursor:pointer;transition:all .15s;}
+.offer-card:hover{background:rgba(245,196,0,0.06);}
+.offer-card.acc{border-color:#6fbf8a;background:rgba(74,124,89,0.07);}
+.offer-top{display:flex;justify-content:space-between;margin-bottom:4px;}
+.offer-svc-name{font-size:12px;font-weight:600;}
+.offer-price{font-family:'Oswald';font-size:20px;font-weight:700;color:var(--y);}
+.offer-det{font-size:11.5px;color:var(--muted);margin-bottom:8px;}
+.offer-acc-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:12px;padding:7px;border-radius:4px;cursor:pointer;}
+.offer-acc-btn:hover{background:#FFD740;}
+.chat-input-area{padding:12px 14px;border-top:1px solid var(--line);flex-shrink:0;}
+.chat-input-row{display:flex;gap:8px;align-items:flex-end;}
+.chat-textarea{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;padding:10px 16px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;resize:none;max-height:100px;line-height:1.4;transition:border-color .15s;}
+.chat-textarea:focus{border-color:rgba(245,196,0,0.35);}
+.chat-textarea::placeholder{color:var(--dim);}
+.chat-send{width:40px;height:40px;border-radius:50%;background:var(--y);color:var(--bg);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.chat-send:hover{background:#FFD740;}
+.chat-hint-txt{font-family:'IBM Plex Mono';font-size:9.5px;color:#444;text-align:center;margin-top:7px;}
+
+/* ══════════════════════════════════
+   SVEČIO REGISTRACIJA
+══════════════════════════════════ */
+.guest-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:980;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;}
+.guest-overlay.show{opacity:1;pointer-events:all;}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+.guest-modal{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:30px 26px;width:360px;max-width:94vw;position:relative;animation:fadeInUp .25s ease both;}
+.gm-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.gm-close:hover{color:var(--text);}
+.gm-icon{font-size:36px;margin-bottom:14px;}
+.gm-title{font-family:'Oswald';font-size:20px;font-weight:600;margin-bottom:5px;}
+.gm-sub{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:20px;}
+.gm-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
+.gm-field{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:11px 13px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;margin-bottom:12px;transition:border-color .15s;}
+.gm-field:focus{border-color:rgba(245,196,0,0.4);}
+.gm-field::placeholder{color:var(--dim);}
+.gm-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:700;font-size:15px;padding:13px;border-radius:var(--radius);cursor:pointer;transition:background .15s;}
+.gm-btn:hover{background:#FFD740;}
+.gm-note{font-size:11.5px;color:#555;text-align:center;margin-top:12px;}
+.gm-note a{color:var(--y);cursor:pointer;}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a class="logo" href="#">
+    <div class="logo-icon">
+      <div class="ly"></div><div class="lg"></div><div class="lr"></div>
+      <div class="lw">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,0,0,0.3)"/>
+        </svg>
+      </div>
+    </div>
+    <div class="logo-text">
+      <div class="logo-name">SERVISU<em>CENTRAS</em></div>
+      <div class="logo-bar"><span style="background:var(--y)"></span><span style="background:var(--g)"></span><span style="background:var(--r)"></span></div>
+    </div>
+  </a>
+  <div class="nav-links">
+    <button class="nav-link" onclick="document.getElementById('kaip').scrollIntoView({behavior:'smooth'})">Kaip veikia</button>
+    <button class="nav-link" onclick="document.getElementById('servisai').scrollIntoView({behavior:'smooth'})">Servisai</button>
+    <a class="nav-link" href="servisucentras-diagnostika.html">🔍 Diagnostika</a>
+    <a class="nav-link" href="servisucentras-admin.html" style="color:var(--y);">⚙️ Admin</a>
+  </div>
+  <div class="nav-right">
+    <button class="nav-btn nav-btn-out" onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</button>
+    <button class="nav-btn nav-btn-pri" onclick="location.href='automeistrai-login.html?type=client&tab=reg-c'">Registruotis</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-flag-bg"><div class="fy"></div><div class="fg"></div><div class="fr"></div></div>
+  <div class="hero-inner">
+    <div class="hero-eyebrow">Lietuva · 340+ servisų tinkle</div>
+    <div class="hero-triline">
+      <span style="background:var(--y)"></span>
+      <span style="background:var(--g)"></span>
+      <span style="background:var(--r)"></span>
+    </div>
+    <h1>Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
+    <p class="hero-sub">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
+
+    <div class="cta-wrap">
+      <div class="cta-ring-wrap">
+        <div class="cta-ring"></div>
+        <div class="cta-ring2"></div>
+        <button class="cta-btn" onclick="openChat()">
+          <span class="cta-ico">💬</span>
+          <span>Parašyk bėdą — gauk kainas</span>
+          <span class="cta-arr">→</span>
+        </button>
+      </div>
+      <div class="cta-meta">
+        <span class="cta-dot"></span>
+        <b>12 servisų</b> dabar online &nbsp;·&nbsp; atsakas per <span>~15 min</span>
+        &nbsp;·&nbsp; ✓ Nemokama
+      </div>
+    </div>
+
+    <a class="diag-btn" href="servisucentras-diagnostika.html">
+      🔍 Nežinai kas sugedo? Pabandyk nemokamą diagnostiką
+    </a>
+  </div>
+</section>
+
+<!-- MIESTO PAIEŠKA + KATEGORIJOS -->
+<div class="search-section" id="servisai">
+  <div class="city-row">
+    <span class="city-ico">📍</span>
+    <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
+    <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
+  </div>
+  <div class="city-chips">
+    <div class="city-chip on" onclick="selCity(this,'Ukmergė')">📍 Ukmergė</div>
+    <div class="city-chip" onclick="selCity(this,'Vilnius')">📍 Vilnius</div>
+    <div class="city-chip" onclick="selCity(this,'Kaunas')">📍 Kaunas</div>
+    <div class="city-chip" onclick="selCity(this,'Klaipėda')">📍 Klaipėda</div>
+    <div class="city-chip" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
+    <div class="city-chip" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
+    <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
+    <div class="city-chip" onclick="selCity(this,'Kitas')">🗺️ Kitas</div>
+  </div>
+  <div class="board-label">Pasirink gedimo kategoriją <b id="board-active"></b></div>
+  <div class="board" id="board"></div>
+</div>
+
+<!-- SERVISŲ SĄRAŠAS -->
+<div class="results-section">
+  <div class="results-head">
+    <div class="results-title">
+      Rasta <span class="n" id="res-count">3</span> servisai · <span id="city-label" style="color:var(--muted);font-size:16px;">Kaunas</span>
+    </div>
+    <div class="sort-tabs">
+      <div class="sort-tab on">Pagal atstumą</div>
+      <div class="sort-tab">Pagal įvertinimą</div>
+      <div class="sort-tab">Dirba dabar</div>
+    </div>
+  </div>
+  <div class="cards" id="cards"></div>
+</div>
+
+<!-- KAIP VEIKIA -->
+<section class="how" id="kaip">
+  <div class="how-inner">
+    <div class="sec-title">Kaip veikia</div>
+    <div class="how-grid">
+      <div class="how-step">
+        <div class="how-num">01 — PARAŠYK</div>
+        <h3>Aprašyk bėdą</h3>
+        <p>Paspausk "Parašyk bėdą", įvesk vardą ir telefoną — servisai iš karto mato tavo žinutę ir atsakys su kainomis.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">02 — RINKIS</div>
+        <h3>Palygink kainas</h3>
+        <p>Per 15–30 min gausi kelis pasiūlymus iš skirtingų servisų. Palygink kainas, atsiliepimus ir atstumus.</p>
+      </div>
+      <div class="how-step">
+        <div class="how-num">03 — REZERVUOK</div>
+        <h3>Patvirtink laiką</h3>
+        <p>Patinka kaina? Patvirtink — servisas gauna pranešimą ir susisiekia. Viskas be skambinėjimo.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- DIAGNOSTIKA SEKCIJA -->
+<section class="diag-section">
+  <div class="diag-inner">
+    <div class="diag-left">
+      <h2>Nežinai kas<br><em>sugedo?</em></h2>
+      <p>Mūsų nemokama diagnostika padės nustatyti galimą gedimą, preliminarią kainą ir skubumą — prieš kreipiantis į servisą.</p>
+      <div class="diag-steps-preview">
+        <div class="dsp"><div class="dsp-num">1</div>Pasirink automobilio zoną (variklis, stabdžiai...)</div>
+        <div class="dsp"><div class="dsp-num">2</div>Pažymėk simptomus</div>
+        <div class="dsp"><div class="dsp-num">3</div>Gauk tikėtiną diagnozę ir kainą</div>
+        <div class="dsp"><div class="dsp-num">4</div>Siųsk servisams iš karto</div>
+      </div>
+      <a class="diag-btn" href="servisucentras-diagnostika.html" style="margin-top:20px;display:inline-flex;">
+        🔍 Pradėti nemokamą diagnostiką →
+      </a>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px;">
+      <div style="font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Populiariausi gedimai</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🔴 Stabdžių kaladėlės <span style="font-family:'Oswald';font-size:16px;color:var(--y);">80–200€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚡ Akumuliatorius <span style="font-family:'Oswald';font-size:16px;color:var(--y);">80–200€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🛢️ Alyvos keitimas <span style="font-family:'Oswald';font-size:16px;color:var(--y);">30–60€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚙️ Amortizatoriai <span style="font-family:'Oswald';font-size:16px;color:var(--y);">120–400€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13.5px;">🔘 Padangų keitimas <span style="font-family:'Oswald';font-size:16px;color:var(--y);">20–40€</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVISAMS CTA -->
+<section class="svc-cta" id="cta-servisams">
+  <div class="svc-cta-inner">
+    <div class="cta-box">
+      <div>
+        <h2>Turi servisą ar garažiuką?</h2>
+        <p>Pridėk specializacijas, darbo laiką ir gauk užklausas iš klientų visoje Lietuvoje — be tarpininkų, be skambučių centro.</p>
+      </div>
+      <button class="cta-box-btn" onclick="location.href='automeistrai-login.html?type=service'">Registruoti nemokamai →</button>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div>SERVISUCENTRAS.LT · LIETUVOS AUTOSERVISŲ PLATFORMA · © 2026</div>
+  <div class="footer-dots">
+    <div class="footer-dot" style="background:var(--y)"></div>
+    <div class="footer-dot" style="background:var(--g)"></div>
+    <div class="footer-dot" style="background:var(--r)"></div>
+  </div>
+</footer>
+
+<!-- CHAT FAB -->
+<button class="chat-fab" onclick="openChat()">
+  💬<div class="chat-badge">12</div>
+</button>
+
+<!-- CHAT OVERLAY -->
+<div class="chat-overlay" id="chat-overlay" onclick="closeChat()"></div>
+
+<!-- CHAT PANEL -->
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-head">
+    <div class="chat-head-icon">⚡</div>
+    <div class="chat-head-info">
+      <div class="chat-head-title">Greita užklausa servisams</div>
+      <div class="chat-head-sub" id="chat-sub">● 12 servisų dabar aktyvūs</div>
+    </div>
+    <button class="chat-head-close" onclick="closeChat()">✕</button>
+  </div>
+  <div class="chat-online">
+    <div class="svc-av-wrap"><div class="svc-av">T</div><div class="svc-av-name">Tomas</div></div>
+    <div class="svc-av-wrap"><div class="svc-av">A</div><div class="svc-av-name">AutoEl.</div></div>
+    <div class="svc-av-wrap"><div class="svc-av busy">V</div><div class="svc-av-name">Voltas</div></div>
+    <div class="svc-av-wrap"><div class="svc-av">P</div><div class="svc-av-name">Petras</div></div>
+    <div class="svc-av-wrap"><div class="svc-av">M</div><div class="svc-av-name">Mantas</div></div>
+    <div class="svc-av-wrap"><div class="svc-av off">R</div><div class="svc-av-name">Rimas</div></div>
+  </div>
+  <div class="chat-msgs" id="chat-msgs">
+    <div class="sys-msg">Šiandien</div>
+    <div class="sys-msg">Jūsų žinutę matys visi aktyvūs servisai</div>
+  </div>
+  <div class="chat-input-area">
+    <div class="chat-input-row">
+      <textarea class="chat-textarea" id="chat-input" rows="1" placeholder="Aprašyk bėdą — automobilis, gedimas, miestas..." onkeydown="chatKey(event)" oninput="autoH(this)"></textarea>
+      <button class="chat-send" onclick="sendMsg()">➤</button>
+    </div>
+    <div class="chat-hint-txt">Pvz: "VW Golf 2018, Kaunas — neveikia žibintas, kiek kainuotų?"</div>
+  </div>
+</div>
+
+<!-- SVEČIO REGISTRACIJA -->
+<div class="guest-overlay" id="guest-overlay">
+  <div class="guest-modal">
+    <button class="gm-close" onclick="closeGuest()">✕</button>
+    <div class="gm-icon">👤</div>
+    <div class="gm-title">Prieš rašant servisams</div>
+    <div class="gm-sub">Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b></div>
+    <label class="gm-label">Vardas</label>
+    <input class="gm-field" id="gm-name" type="text" placeholder="Jūsų vardas">
+    <label class="gm-label">Telefono numeris</label>
+    <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000">
+    <label class="gm-label">Automobilio modelis ir metai</label>
+    <input class="gm-field" id="gm-car" type="text" placeholder="pvz. VW Golf, 2018">
+    <button class="gm-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
+    <div class="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
+  </div>
+</div>
+
+<script>
+/* ══ LOGO ICONS ══ */
+const ICONS = {
+  diagnostika:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="18" height="14" rx="2" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.08)"/><rect x="7" y="11" width="12" height="5" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.12)"/><circle cx="8.5" cy="19" r="1" fill="#F5C400"/><circle cx="12" cy="19" r="1" fill="#F5C400"/><circle cx="15.5" cy="19" r="1" fill="#F5C400"/><path d="M22 14h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="22" x2="13" y2="26" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="26" x2="16" y2="26" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  elektronika:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M18 4L8 18h8l-2 10 14-16h-8L18 4z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.1)"/><circle cx="24" cy="8" r="1.2" fill="#F5C400" opacity="0.5"/><circle cx="6" cy="22" r="0.8" fill="#F5C400" opacity="0.3"/></svg>`,
+  apsvietimas:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M6 12 Q6 8 10 8 L20 8 Q26 8 26 14 L26 18 Q26 24 20 24 L10 24 Q6 24 6 20 Z" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><line x1="26" y1="11" x2="31" y2="9" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="26" y1="16" x2="31" y2="16" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="26" y1="21" x2="31" y2="23" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><circle cx="14" cy="16" r="3.5" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><circle cx="14" cy="16" r="1.5" fill="#F5C400" opacity="0.6"/></svg>`,
+  variklis:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="5" y="11" width="16" height="12" rx="1.5" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><rect x="8" y="7" width="4" height="6" rx="1" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><rect x="14" y="7" width="4" height="6" rx="1" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><path d="M21 14h4l2 2v3h-2" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="15" x2="18" y2="15" stroke="rgba(245,196,0,0.4)" stroke-width="1"/><line x1="8" y1="18" x2="18" y2="18" stroke="rgba(245,196,0,0.4)" stroke-width="1"/></svg>`,
+  vaziuokle:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="18" r="10" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.04)"/><circle cx="16" cy="18" r="6" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)"/><circle cx="16" cy="18" r="2.5" fill="#F5C400" opacity="0.7"/><line x1="16" y1="12" x2="16" y2="15.5" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="20.5" x2="16" y2="24" stroke="#F5C400" stroke-width="1.2"/><line x1="10" y1="18" x2="13.5" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="18.5" y1="18" x2="22" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="4" x2="16" y2="8" stroke="#F5C400" stroke-width="2" stroke-linecap="round"/><rect x="13" y="6" width="6" height="4" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.1)"/></svg>`,
+  stabdziai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.04)"/><circle cx="16" cy="16" r="7" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)" stroke-dasharray="3 2"/><circle cx="16" cy="16" r="2.5" fill="#F5C400" opacity="0.6"/><path d="M22 8 L26 10 L26 22 L22 24 Q18 22 18 16 Q18 10 22 8Z" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.12)"/></svg>`,
+  kebulas:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M2 20 L2 22 L4 22 L4 24 L6 24 L6 22 L22 22 L22 24 L24 24 L24 22 L28 22 L28 18 L24 18 L22 14 L18 10 L10 10 L6 14 L2 14 Z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.07)"/><path d="M10 14 L12 10.5 L18 10.5 L21 14Z" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><circle cx="8" cy="22" r="3" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><circle cx="22" cy="22" r="3" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><circle cx="8" cy="22" r="1.2" fill="#F5C400" opacity="0.5"/><circle cx="22" cy="22" r="1.2" fill="#F5C400" opacity="0.5"/></svg>`,
+  padangos:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#F5C400" stroke-width="2.5" fill="rgba(245,196,0,0.04)" stroke-dasharray="4 2"/><circle cx="16" cy="16" r="8" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)"/><circle cx="16" cy="16" r="5" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.12)"/><circle cx="16" cy="16" r="2" fill="#F5C400" opacity="0.7"/><line x1="16" y1="11" x2="16" y2="14" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="18" x2="16" y2="21" stroke="#F5C400" stroke-width="1.2"/><line x1="11" y1="16" x2="14" y2="16" stroke="#F5C400" stroke-width="1.2"/><line x1="18" y1="16" x2="21" y2="16" stroke="#F5C400" stroke-width="1.2"/></svg>`,
+  kondicionierius:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="20" height="14" rx="2" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><line x1="8" y1="12" x2="20" y2="12" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.7"/><line x1="8" y1="15" x2="20" y2="15" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.5"/><line x1="8" y1="18" x2="20" y2="18" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.3"/><path d="M26 10 L26 14 M24 11 L28 13 M24 13 L28 11" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg>`,
+  stiklai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M4 20 L8 10 L24 10 L28 20 Z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.08)"/><path d="M14 12 L18 16 L15 20" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="18" y1="16" x2="22" y2="14" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.6"/><path d="M6 22 Q16 18 26 22" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/></svg>`,
+  plovykla:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="14" width="16" height="10" rx="3" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><path d="M20 17 L28 14 L29 17 L21 20" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 14 L8 10 Q8 8 10 8 L14 8 Q16 8 16 10 L16 14" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.08)"/><circle cx="6" cy="9" r="1" fill="#F5C400" opacity="0.4"/><circle cx="18" cy="7" r="1" fill="#F5C400" opacity="0.4"/></svg>`,
+  raktai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="3" y="8" width="16" height="12" rx="3" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.08)"/><rect x="6" y="11" width="4" height="3" rx="1" fill="#F5C400" opacity="0.6"/><rect x="12" y="11" width="4" height="3" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><path d="M19 14 L28 14 L28 16 L22 16 L22 18 L20 18 L20 16 L19 16Z" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><line x1="23" y1="16" x2="23" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="25.5" y1="16" x2="25.5" y2="18" stroke="#F5C400" stroke-width="1.2"/><path d="M5 6 Q8 3 11 6" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" opacity="0.5" fill="none"/></svg>`,
+};
+
+const API_BASE = '/api';
+
+// ═══════════════════════════════════════════════════════════
+// SERVISŲ DUOMENYS — realūs, gaunami iš backend API
+// ═══════════════════════════════════════════════════════════
+let categories = [];       // [{id,label}] iš GET /api/categories
+let cityServices = [];     // aktyvaus miesto servisai iš GET /api/services?city=
+let activeCat = 'diagnostika', activeCity = 'Ukmergė';
+
+function categoryName(label){ return (label || '').replace(/^\S+\s*/, '').trim(); }
+
+function isOpenNow(svc){
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+
+  if(Array.isArray(svc.work_hours) && svc.work_hours.length === 7){
+    const dayIdx = (now.getDay()+6)%7; // Pir=0 .. Sek=6
+    const today = svc.work_hours[dayIdx];
+    if(!today || !today.open || !today.start || !today.end) return false;
+    const [sh,sm] = today.start.split(':').map(Number);
+    const [eh,em] = today.end.split(':').map(Number);
+    return mins >= sh*60+sm && mins <= eh*60+em;
+  }
+
+  if(!svc.work_start || !svc.work_end) return true;
+  const [sh,sm] = svc.work_start.split(':').map(Number);
+  const [eh,em] = svc.work_end.split(':').map(Number);
+  return mins >= sh*60+sm && mins <= eh*60+em;
+}
+
+async function loadCategories(){
+  const res = await fetch(`${API_BASE}/categories`);
+  categories = res.ok ? await res.json() : [];
+}
+
+async function loadCityServices(city){
+  const res = await fetch(`${API_BASE}/services?city=${encodeURIComponent(city)}`);
+  cityServices = res.ok ? await res.json() : [];
+}
+
+// Bendras aktyvių servisų skaičius visoje platformoje (chat ženkliukui ir pan.)
+async function loadNetworkStats(){
+  const res = await fetch(`${API_BASE}/services`);
+  const all = res.ok ? await res.json() : [];
+  document.querySelectorAll('.chat-badge').forEach(b=>b.textContent=all.length);
+  const metaB = document.querySelector('.cta-meta b'); if(metaB) metaB.textContent = all.length+' servisų';
+  const chatSub = document.getElementById('chat-sub'); if(chatSub && !guestName) chatSub.textContent = '● '+all.length+' servisų dabar aktyvūs';
+}
+
+function renderBoard(){
+  document.getElementById('board').innerHTML = categories.map(c=>{
+    const count = cityServices.filter(s=>s.categories.some(cc=>cc.id===c.id)).length;
+    return `<div class="peg ${c.id===activeCat?'on':''}" onclick="selCat('${c.id}')">
+      <div class="peg-icon">${ICONS[c.id]||''}</div>
+      <div class="peg-name">${categoryName(c.label)}</div>
+      <div class="peg-count">${count}</div>
+    </div>`;
+  }).join('');
+}
+
+function selCat(id){
+  activeCat=id;
+  const cat=categories.find(c=>c.id===id);
+  document.getElementById('board-active').textContent = cat ? '— '+categoryName(cat.label) : '';
+  renderBoard();
+  renderCards();
+  document.getElementById('servisai').scrollIntoView({behavior:'smooth'});
+}
+
+function renderCards(){
+  const list = cityServices.filter(s=>s.categories.some(c=>c.id===activeCat));
+  document.getElementById('res-count').textContent=list.length;
+  document.getElementById('city-label').textContent=activeCity;
+  if(list.length === 0){
+    document.getElementById('cards').innerHTML = `
+      <div class="empty-state">
+        <div class="empty-icon">🔧</div>
+        <div class="empty-title">${activeCity} — dar nėra prisijungusių servisų šiai kategorijai</div>
+        <div class="empty-sub">Turi servisą ${activeCity}? Prisijunk pirmas — pirmus 6 mėnesius nemokamai.</div>
+        <button class="empty-cta" onclick="document.getElementById('cta-servisams')?.scrollIntoView({behavior:'smooth'})">Registruoti servisą →</button>
+      </div>`;
+    return;
+  }
+  document.getElementById('cards').innerHTML=list.map(s=>{
+    const open = isOpenNow(s);
+    const tags = s.categories.map(c=>categoryName(c.label));
+    return `
+    <div class="card">
+      <div><div class="dist-num">${s.rating!=null ? s.rating.toFixed(1) : '—'}</div><div class="dist-unit">reitingas</div></div>
+      <div>
+        <div class="card-name">${s.name} <span class="sdot ${open?'open':'closed'}"></span><span class="sst ${open?'open':'closed'}">${open?'DIRBA':'UŽDARYTA'}</span></div>
+        <div class="card-meta">${s.service_type||'Servisas'} · ${s.address || s.city}</div>
+        <div class="tags">${tags.map((t,i)=>`<span class="tag ${i===0?'hi':''}">${t}</span>`).join('')}</div>
+      </div>
+      <div class="card-right">
+        <button class="book-btn" onclick="openChat()">Užklausti →</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selCity(el, city){
+  document.querySelectorAll('.city-chip').forEach(c=>c.classList.remove('on'));
+  el.classList.add('on');
+  activeCity=city;
+  await loadCityServices(city);
+  renderBoard();
+  renderCards();
+}
+async function searchCity(){
+  const v=document.getElementById('city-input').value.trim();
+  if(!v) return;
+  activeCity=v;
+  document.querySelectorAll('.city-chip').forEach(c=>c.classList.remove('on'));
+  await loadCityServices(v);
+  renderBoard();
+  renderCards();
+}
+
+// SORT TABS
+document.querySelectorAll('.sort-tab').forEach(t=>{
+  t.addEventListener('click',()=>{document.querySelectorAll('.sort-tab').forEach(x=>x.classList.remove('on'));t.classList.add('on');});
+});
+
+(async function init(){
+  await loadCategories();
+  await loadCityServices(activeCity);
+  renderBoard();
+  renderCards();
+  loadNetworkStats();
+})();
+
+/* ══ CHAT ══ */
+let clientToken = localStorage.getItem('sc_client_token') || null;
+let guestName = localStorage.getItem('sc_client_name') || '';
+let guestCarInfo = localStorage.getItem('sc_client_car') || '';
+let currentOrderId = null;
+
+function openChat(){
+  if(guestName && clientToken){ showChat(); }
+  else { document.getElementById('guest-overlay').classList.add('show'); setTimeout(()=>document.getElementById('gm-name').focus(),200); }
+}
+function closeChat(){ document.getElementById('chat-panel').classList.remove('show'); document.getElementById('chat-overlay').classList.remove('show'); }
+function showChat(){ document.getElementById('chat-panel').classList.add('show'); document.getElementById('chat-overlay').classList.add('show'); setTimeout(()=>document.getElementById('chat-input').focus(),300); }
+function closeGuest(){ document.getElementById('guest-overlay').classList.remove('show'); }
+
+async function guestOk(){
+  const name=document.getElementById('gm-name').value.trim();
+  const phone=document.getElementById('gm-phone').value.trim();
+  const carInfo=document.getElementById('gm-car').value.trim();
+  if(!name){ document.getElementById('gm-name').style.borderColor='rgba(192,57,43,0.6)'; document.getElementById('gm-name').focus(); return; }
+  if(!phone){ document.getElementById('gm-phone').style.borderColor='rgba(192,57,43,0.6)'; document.getElementById('gm-phone').focus(); return; }
+
+  const btn = document.querySelector('.gm-btn');
+  const origLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Jungiama...';
+  try{
+    const res = await fetch(`${API_BASE}/auth/guest`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ firstName:name, phone })
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
+
+    clientToken = data.token;
+    guestName = name;
+    guestCarInfo = carInfo;
+    localStorage.setItem('sc_client_token', clientToken);
+    localStorage.setItem('sc_client_name', guestName);
+    localStorage.setItem('sc_client_car', guestCarInfo);
+
+    closeGuest();
+    document.getElementById('chat-sub').textContent='● Sveiki, '+name+'!';
+    showChat();
+    setTimeout(()=>{ addSysMsg('👋 Sveiki, '+name+'! Servisai matys jūsų žinutę ir susisieks.'); },400);
+  } catch(err){
+    alert(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = origLabel;
+  }
+}
+
+function addSysMsg(txt){
+  const msgs=document.getElementById('chat-msgs');
+  const d=document.createElement('div');
+  d.className='sys-msg';
+  d.style.color='#6fbf8a';
+  d.innerHTML=txt;
+  msgs.appendChild(d);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+function autoH(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,100)+'px'; }
+function chatKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
+
+async function sendMsg(){
+  const inp=document.getElementById('chat-input');
+  const txt=inp.value.trim();
+  if(!txt) return;
+  const msgs=document.getElementById('chat-msgs');
+  const now=new Date();
+  const t=now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+  const cd=document.createElement('div');
+  cd.className='msg-c';
+  cd.innerHTML=`<div class="bubble">${txt}</div><div class="mt">${t} ✓✓</div>`;
+  msgs.appendChild(cd);
+  inp.value=''; inp.style.height='auto';
+  msgs.scrollTop=msgs.scrollHeight;
+
+  try{
+    if(!currentOrderId){
+      const res = await fetch(`${API_BASE}/orders`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+        body: JSON.stringify({ categoryId: activeCat, city: activeCity, description: txt, carInfo: guestCarInfo || null })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko sukurti užklausos');
+      currentOrderId = data.id;
+      addSysMsg('✓ Užklausa #'+currentOrderId+' sukurta ir išsiųsta servisams');
+      simulateReplies();
+    } else {
+      const res = await fetch(`${API_BASE}/orders/${currentOrderId}/messages`, {
+        method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+        body: JSON.stringify({ message: txt })
+      });
+      if(!res.ok){ const data = await res.json(); throw new Error(data.error || 'Nepavyko išsiųsti žinutės'); }
+      addSysMsg('✓ Žinutė išsiųsta');
+    }
+  } catch(err){
+    const ed=document.createElement('div'); ed.className='sys-msg'; ed.style.color='#e07070'; ed.textContent='⚠ '+err.message; msgs.appendChild(ed);
+  }
+  msgs.scrollTop=msgs.scrollHeight;
+}
+
+// Realūs servisai (iš cityServices), scenarijaus tekstas/laikai — vis dar
+// suvaidinti demonstracijai, nes nėra atskiro serviso-pusės atsakiklio realiu laiku.
+// Priėmus pasiūlymą, tikras POST /orders/:id/accept vis tiek įrašomas į DB.
+function simulateReplies(){
+  const msgs=document.getElementById('chat-msgs');
+  const candidates = cityServices.filter(s=>s.categories.some(c=>c.id===activeCat)).slice(0,3);
+  if(candidates.length===0) return;
+  const scripts=[
+    {msg:'Sveiki! Galiu apžiūrėti ir pasakyti tikslesnę kainą. Koks automobilis?', price:Math.floor(20+Math.random()*30), time:'Rytoj 10:00', delay:2000},
+    {msg:'Labas! Diagnostika pas mus nemokama jei remontuosite. Kokia problema konkrečiai?', price:Math.floor(25+Math.random()*40), time:'Šiandien 16:00', delay:4500},
+    {msg:'Sveiki, galiu šiandien po 17:00 arba rytoj. Atvažiuokite — apžiūrėsim nemokamai 👍', price:Math.floor(15+Math.random()*35), time:'Šiandien 17:00', delay:7500},
+  ];
+  candidates.forEach((svc,i)=>{
+    const script = scripts[i] || scripts[0];
+    const av = svc.name.charAt(0).toUpperCase();
+    setTimeout(()=>{
+      const td=document.createElement('div');
+      td.className='msg-s'; td.id='typing-'+svc.id;
+      td.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble" style="color:var(--muted);font-size:12px;">rašo...</div></div>`;
+      msgs.appendChild(td); msgs.scrollTop=msgs.scrollHeight;
+      setTimeout(()=>{
+        const te=document.getElementById('typing-'+svc.id);
+        if(te) te.remove();
+        const rd=document.createElement('div');
+        rd.className='msg-s';
+        const safeName = svc.name.replace(/'/g,"\\'");
+        rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${script.msg}<div class="offer-card" id="oc-${svc.id}" onclick="acceptOffer(this,${svc.id},'${safeName}',${script.price},'${script.time}')"><div class="offer-top"><div class="offer-svc-name">💰 Pasiūlymas</div><div class="offer-price">${script.price}€</div></div><div class="offer-det">📍 ${svc.name} · 🕐 ${script.time}</div><button class="offer-acc-btn">✓ Priimti</button></div></div><div class="mt">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div></div>`;
+        msgs.appendChild(rd); msgs.scrollTop=msgs.scrollHeight;
+      },1500);
+    }, script.delay);
+  });
+}
+
+async function acceptOffer(el, serviceId, svcName, price, time){
+  el.classList.add('acc');
+  el.querySelector('.offer-acc-btn').style.display='none';
+  el.innerHTML+='<div style="text-align:center;font-size:12px;color:#6fbf8a;padding:4px;">✅ Priimta! Servisas susisieks.</div>';
+  try{
+    const res = await fetch(`${API_BASE}/orders/${currentOrderId}/accept`, {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+      body: JSON.stringify({ serviceId })
+    });
+    if(!res.ok){ const data = await res.json(); throw new Error(data.error || 'Nepavyko patvirtinti'); }
+    addSysMsg(`✅ Rezervuota: <b>${svcName}</b> · ${price}€ · ${time}`);
+  } catch(err){
+    addSysMsg('⚠ '+err.message);
+  }
+}
+</script>
+</body>
+</html>

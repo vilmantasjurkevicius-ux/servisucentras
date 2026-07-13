@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<title>ServisuCentras — Prisijungimas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#191B1D;
+  --bg2:#23262A;
+  --bg3:#2C2F34;
+  --line:rgba(255,255,255,0.08);
+  --line2:rgba(255,255,255,0.14);
+  --text:#F2EFE7;
+  --muted:#8C9197;
+  --dim:#4A4F55;
+  --yellow:#F5C400;
+  --yellow-dim:rgba(245,196,0,0.1);
+  --green:#4A7C59;
+  --green-dim:rgba(74,124,89,0.12);
+  --red:#C0392B;
+  --r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;}
+
+.tribar{display:flex;height:3px;flex-shrink:0;}
+.tribar span{flex:1;}
+
+/* NAV */
+nav{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:52px;border-bottom:1px solid var(--line);flex-shrink:0;
+}
+.logo{font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.04em;text-decoration:none;color:var(--text);}
+.logo em{font-style:normal;color:var(--yellow);}
+.nav-back{font-size:13px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'IBM Plex Sans';display:flex;align-items:center;gap:6px;}
+.nav-back:hover{color:var(--text);}
+
+/* LAYOUT */
+.page{display:flex;flex:1;overflow:hidden;}
+
+/* LEFT — info */
+.left{
+  width:420px;flex-shrink:0;
+  border-right:1px solid var(--line);
+  padding:48px 40px;
+  display:flex;flex-direction:column;
+  position:relative;overflow:hidden;
+}
+.lt-bg{
+  position:absolute;right:-60px;bottom:-40px;
+  width:340px;height:280px;opacity:0.04;pointer-events:none;
+}
+.left-eyebrow{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--yellow);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.left-eyebrow::before{content:"";width:16px;height:1px;background:var(--yellow);}
+.left h2{font-family:'Oswald';font-size:30px;font-weight:700;text-transform:uppercase;line-height:1.05;margin-bottom:16px;}
+.left h2 em{font-style:normal;color:var(--yellow);}
+.left-sub{font-size:14px;color:var(--muted);line-height:1.65;margin-bottom:36px;}
+
+/* TYPE SWITCHER */
+.type-switch{display:flex;flex-direction:column;gap:8px;margin-bottom:auto;}
+.type-card{
+  padding:16px 18px;border-radius:var(--r);border:1px solid var(--line);
+  background:var(--bg2);cursor:pointer;transition:all .18s;
+  display:flex;align-items:center;gap:14px;
+}
+.type-card:hover{border-color:var(--line2);}
+.type-card.active{border-color:rgba(245,196,0,0.4);background:var(--yellow-dim);}
+.type-icon{font-size:24px;width:36px;text-align:center;flex-shrink:0;}
+.type-text{}
+.type-name{font-size:14px;font-weight:600;margin-bottom:2px;}
+.type-desc{font-size:12px;color:var(--muted);}
+.type-card.active .type-desc{color:rgba(245,196,0,0.7);}
+.type-check{margin-left:auto;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;}
+.type-card.active .type-check{background:var(--yellow);border-color:var(--yellow);color:var(--bg);}
+
+.left-note{margin-top:28px;padding:14px 16px;border-radius:var(--r);background:var(--green-dim);border:1px solid rgba(74,124,89,0.2);font-size:12.5px;color:#6fbf8a;line-height:1.55;}
+
+/* RIGHT — formos */
+.right{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 28px;overflow-y:auto;}
+
+.form-box{width:100%;max-width:440px;}
+
+/* TABS */
+.form-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:28px;}
+.ftab{
+  flex:1;padding:12px;text-align:center;font-size:13.5px;font-weight:600;
+  color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;
+  transition:all .15s;background:none;border-top:none;border-left:none;border-right:none;
+  font-family:'IBM Plex Sans';
+}
+.ftab:hover{color:var(--text);}
+.ftab.active{color:var(--yellow);border-bottom-color:var(--yellow);}
+
+/* FORM */
+.form-title{font-family:'Oswald';font-size:22px;font-weight:600;margin-bottom:6px;}
+.form-sub{font-size:13px;color:var(--muted);margin-bottom:24px;line-height:1.5;}
+
+.field-group{margin-bottom:14px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.field-label{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;display:block;}
+.field{
+  width:100%;background:var(--bg2);border:1px solid var(--line2);
+  border-radius:var(--r);padding:11px 14px;
+  color:var(--text);font-family:'IBM Plex Sans';font-size:14px;
+  outline:none;transition:border-color .15s;
+}
+.field:focus{border-color:rgba(245,196,0,0.5);}
+.field::placeholder{color:var(--dim);}
+select.field{cursor:pointer;}
+
+/* divider */
+.divider{display:flex;align-items:center;gap:12px;margin:18px 0;}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line);}
+.divider span{font-family:'IBM Plex Mono';font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.08em;}
+
+/* guest section */
+.guest-box{padding:16px;border-radius:var(--r);border:1px dashed var(--line2);background:rgba(255,255,255,0.015);}
+.guest-title{font-size:13px;font-weight:600;margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.guest-sub{font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5;}
+
+/* submit */
+.submit-btn{
+  width:100%;background:var(--yellow);color:var(--bg);border:none;
+  font-family:'IBM Plex Sans';font-weight:600;font-size:14.5px;
+  padding:13px;border-radius:var(--r);cursor:pointer;transition:background .15s;
+  margin-top:6px;
+}
+.submit-btn:hover{background:#FFD740;}
+.submit-btn.outline{background:transparent;border:1px solid var(--line2);color:var(--text);}
+.submit-btn.outline:hover{border-color:var(--line2);background:var(--bg2);color:var(--text);}
+
+.form-footer{text-align:center;margin-top:18px;font-size:12.5px;color:var(--muted);}
+.form-footer a{color:var(--yellow);text-decoration:none;cursor:pointer;}
+
+/* password strength */
+.pw-strength{display:flex;gap:3px;margin-top:6px;}
+.pw-bar{flex:1;height:3px;border-radius:2px;background:var(--bg3);transition:background .2s;}
+.pw-bar.weak{background:var(--red);}
+.pw-bar.ok{background:var(--yellow);}
+.pw-bar.strong{background:var(--green);}
+.pw-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);margin-top:4px;}
+
+/* step indicator */
+.steps{display:flex;align-items:center;gap:0;margin-bottom:24px;}
+.step{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim);}
+.step.active{color:var(--text);}
+.step.done{color:var(--yellow);}
+.step-num{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--dim);display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono';font-size:10px;flex-shrink:0;}
+.step.active .step-num{border-color:var(--yellow);color:var(--yellow);}
+.step.done .step-num{background:var(--yellow);border-color:var(--yellow);color:var(--bg);}
+.step-line{flex:1;height:1px;background:var(--line);margin:0 6px;}
+
+/* check item */
+.check-item{display:flex;align-items:flex-start;gap:10px;font-size:12.5px;color:var(--muted);margin-bottom:8px;line-height:1.5;}
+.check-item::before{content:"✓";color:var(--green);font-weight:600;flex-shrink:0;margin-top:1px;}
+
+/* panels */
+.panel{display:none;}
+.panel.show{display:block;}
+
+/* success */
+.success-box{text-align:center;padding:20px 0;}
+.success-icon{font-size:52px;margin-bottom:16px;}
+.success-box h3{font-family:'Oswald';font-size:24px;margin-bottom:10px;}
+.success-box p{font-size:13.5px;color:var(--muted);line-height:1.6;margin-bottom:24px;}
+.success-detail{background:var(--bg2);border:1px solid var(--line);border-radius:var(--r);padding:14px;text-align:left;margin-bottom:20px;}
+.sd-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px;}
+.sd-row:last-child{border:none;}
+.sd-row span:first-child{color:var(--muted);}
+</style>
+</head>
+<body>
+
+<div class="tribar">
+  <span style="background:#F5C400"></span>
+  <span style="background:#4A7C59"></span>
+  <span style="background:#A4262C"></span>
+</div>
+
+<nav>
+  <button class="nav-back" onclick="window.history.back()">← Grįžti</button>
+  <a class="logo" href="#">AUTO<em>MEISTRAI</em></a>
+  <div style="width:80px"></div>
+</nav>
+
+<div class="page">
+
+  <!-- LEFT -->
+  <div class="left">
+    <svg class="lt-bg" viewBox="0 0 500 400" fill="var(--paper)">
+      <path d="M 148,22 L 162,18 L 178,16 L 196,14 L 214,15 L 232,12 L 250,10 L 268,13 L 284,11 L 300,14 L 316,18 L 328,24 L 338,32 L 344,42 L 348,54 L 346,66 L 340,76 L 348,84 L 358,90 L 368,98 L 374,110 L 376,122 L 372,134 L 364,142 L 370,152 L 378,162 L 382,174 L 380,186 L 374,196 L 366,204 L 360,216 L 358,230 L 362,244 L 366,258 L 364,272 L 356,284 L 344,294 L 330,302 L 316,308 L 302,316 L 292,328 L 284,342 L 278,356 L 270,368 L 260,378 L 248,386 L 236,390 L 222,388 L 210,380 L 200,368 L 190,356 L 178,346 L 164,340 L 150,336 L 136,330 L 122,320 L 110,308 L 100,294 L 92,280 L 88,264 L 86,248 L 84,232 L 80,218 L 72,206 L 62,196 L 54,184 L 50,170 L 48,156 L 50,142 L 54,128 L 58,114 L 60,100 L 58,86 L 62,74 L 70,64 L 80,56 L 92,48 L 106,40 L 120,32 L 134,26 L 148,22 Z"/>
+    </svg>
+
+    <div class="left-eyebrow">Prieiga prie sistemos</div>
+    <h2>Prisijunk<br>prie <em>ServisuCentras</em></h2>
+    <p class="left-sub">Pasirink kas esi — servisas ar klientas. Klientams registracija neprivaloma, servisams — būtina.</p>
+
+    <div class="type-switch">
+      <div class="type-card active" data-type="service" onclick="switchType('service')">
+        <div class="type-icon">🔧</div>
+        <div class="type-text">
+          <div class="type-name">Servisas / Garažiukas</div>
+          <div class="type-desc">Priimu užklausas, valdau kalendorių</div>
+        </div>
+        <div class="type-check">✓</div>
+      </div>
+      <div class="type-card" data-type="client" onclick="switchType('client')">
+        <div class="type-icon">🚗</div>
+        <div class="type-text">
+          <div class="type-name">Klientas</div>
+          <div class="type-desc">Ieškau serviso, rezervuoju laiką</div>
+        </div>
+        <div class="type-check"></div>
+      </div>
+    </div>
+
+    <div class="left-note" id="left-note">
+      ✓ Servisų registracija nemokama.<br>
+      Pirmieji 6 mėnesiai be jokių mokesčių.<br>
+      Vėliau — tik nedidelis % nuo patvirtintų darbų.
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <div class="form-box">
+      <div id="form-err" style="display:none;background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);color:#e07070;padding:10px 14px;border-radius:4px;font-size:12.5px;margin-bottom:14px;"></div>
+
+      <!-- SERVICE FORMS -->
+      <div id="panel-service" class="panel show">
+        <div class="form-tabs">
+          <button class="ftab active" onclick="switchTab('login-s', this)">Prisijungti</button>
+          <button class="ftab" onclick="switchTab('reg-s', this)">Registruotis</button>
+        </div>
+
+        <!-- SERVICE LOGIN -->
+        <div id="login-s" class="panel show">
+          <div class="form-title">Serviso prisijungimas</div>
+          <div class="form-sub">Valdyk užklausas, kalendorių ir profilį.</div>
+
+          <div class="field-group">
+            <label class="field-label">El. paštas</label>
+            <input class="field" type="email" id="svc-login-email" placeholder="servisas@gmail.com">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Slaptažodis</label>
+            <input class="field" type="password" id="svc-login-pass" placeholder="••••••••">
+          </div>
+
+          <button class="submit-btn" id="svc-login-btn" onclick="serviceLogin()">Prisijungti →</button>
+          <div class="form-footer">
+            Pamiršai slaptažodį? <a>Atstatyti</a>
+          </div>
+        </div>
+
+        <!-- SERVICE REGISTER -->
+        <div id="reg-s" class="panel">
+          <div class="steps">
+            <div class="step done" id="step1"><div class="step-num">1</div> Paskyra</div>
+            <div class="step-line"></div>
+            <div class="step active" id="step2"><div class="step-num">2</div> Servisas</div>
+            <div class="step-line"></div>
+            <div class="step" id="step3"><div class="step-num">3</div> Paslaugos</div>
+          </div>
+
+          <div id="reg-step1" class="panel show">
+            <div class="form-title">Kurti paskyrą</div>
+            <div class="form-sub">Servisų registracija — nemokama.</div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Vardas</label>
+                <input class="field" type="text" id="reg-s-fname" placeholder="Tomas">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Pavardė</label>
+                <input class="field" type="text" id="reg-s-lname" placeholder="Kazlauskas">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">El. paštas</label>
+              <input class="field" type="email" id="reg-s-email" placeholder="tomas@servisas.lt">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Telefono numeris</label>
+              <input class="field" type="tel" id="reg-s-phone" placeholder="+370 600 00000">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Slaptažodis</label>
+              <input class="field" type="password" id="reg-s-pass" placeholder="min. 8 simboliai" oninput="checkPw(this)">
+              <div class="pw-strength"><div class="pw-bar" id="pw1"></div><div class="pw-bar" id="pw2"></div><div class="pw-bar" id="pw3"></div></div>
+              <div class="pw-label" id="pw-label">Įveskite slaptažodį</div>
+            </div>
+            <button class="submit-btn" onclick="goStep(2)">Toliau →</button>
+          </div>
+
+          <div id="reg-step2" class="panel">
+            <div class="form-title">Serviso informacija</div>
+            <div class="form-sub">Ką klientai matys jūsų profilyje.</div>
+            <div class="field-group">
+              <label class="field-label">Serviso / garažo pavadinimas</label>
+              <input class="field" type="text" id="reg-s-name" placeholder="Garažas pas Tomą">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Miestas</label>
+              <select class="field" id="reg-s-city">
+                <option value="">Pasirinkite miestą</option>
+                <option>Ukmergė</option>
+                <option>Vilnius</option><option>Kaunas</option><option>Klaipėda</option>
+                <option>Šiauliai</option><option>Panevėžys</option><option>Alytus</option>
+                <option>Marijampolė</option><option>Kitas</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Tikslus adresas</label>
+              <input class="field" type="text" id="reg-s-address" placeholder="Gedimino pr. 1, Vilnius">
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Serviso tipas</label>
+                <select class="field" id="reg-s-type">
+                  <option>Garažiukas</option>
+                  <option>Vidutinis</option>
+                  <option>Didelis</option>
+                </select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Mechanikų sk.</label>
+                <select class="field" id="reg-s-mech">
+                  <option>1</option><option>2</option><option>3-5</option>
+                  <option>5-10</option><option>10+</option>
+                </select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Trumpas aprašymas</label>
+              <textarea class="field" rows="3" id="reg-s-desc" style="resize:none;" placeholder="Specializuojamės VW, Audi, Skoda markėse. Dirbame 15 metų..."></textarea>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="submit-btn outline" onclick="goStep(1)">← Atgal</button>
+              <button class="submit-btn" onclick="goStep(3)">Toliau →</button>
+            </div>
+          </div>
+
+          <div id="reg-step3" class="panel">
+            <div class="form-title">Paslaugos</div>
+            <div class="form-sub">Pažymėkite kuriomis kategorijomis specializuojatės.</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;" id="cat-checkboxes"></div>
+            <div class="field-group">
+              <label class="field-label">Darbo valandos</label>
+              <div class="field-row">
+                <input class="field" type="time" id="reg-s-work-start" value="08:00">
+                <input class="field" type="time" id="reg-s-work-end" value="18:00">
+              </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button class="submit-btn outline" onclick="goStep(2)">← Atgal</button>
+              <button class="submit-btn" id="reg-s-submit-btn" onclick="serviceRegister()">Registruotis ✓</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CLIENT FORMS -->
+      <div id="panel-client" class="panel">
+        <div class="form-tabs">
+          <button class="ftab active" onclick="switchTab('guest-c', this)">Svečias</button>
+          <button class="ftab" onclick="switchTab('login-c', this)">Prisijungti</button>
+          <button class="ftab" onclick="switchTab('reg-c', this)">Registruotis</button>
+        </div>
+
+        <!-- GUEST -->
+        <div id="guest-c" class="panel show">
+          <div class="form-title">Tęsti kaip svečias</div>
+          <div class="form-sub">Nereikia paskyros — tiesiog įveskite kontaktus ir rezervuokite laiką.</div>
+
+          <div class="check-item">Greita rezervacija — be slaptažodžio</div>
+          <div class="check-item">Patvirtinimas el. paštu ir SMS</div>
+          <div class="check-item">Galite susikurti paskyrą vėliau</div>
+
+          <div style="margin-top:20px;">
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Vardas</label>
+                <input class="field" type="text" id="guest-fname" placeholder="Vardas">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Pavardė</label>
+                <input class="field" type="text" id="guest-lname" placeholder="Pavardė">
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Tel. numeris</label>
+              <input class="field" type="tel" id="guest-phone" placeholder="+370 600 00000">
+            </div>
+            <div class="field-group">
+              <label class="field-label">El. paštas (patvirtinimui)</label>
+              <input class="field" type="email" id="guest-email" placeholder="vardas@gmail.com">
+            </div>
+          </div>
+
+          <button class="submit-btn" id="guest-submit-btn" onclick="guestContinue()">Tęsti kaip svečias →</button>
+          <div class="form-footer">Rezervacijos istorija išsaugoma tik su paskyra</div>
+        </div>
+
+        <!-- CLIENT LOGIN -->
+        <div id="login-c" class="panel">
+          <div class="form-title">Kliento prisijungimas</div>
+          <div class="form-sub">Peržiūrėk rezervacijų istoriją ir valdyk užsakymus.</div>
+          <div class="field-group">
+            <label class="field-label">El. paštas</label>
+            <input class="field" type="email" id="client-login-email" placeholder="vardas@gmail.com">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Slaptažodis</label>
+            <input class="field" type="password" id="client-login-pass" placeholder="••••••••">
+          </div>
+          <button class="submit-btn" id="client-login-btn" onclick="clientLogin()">Prisijungti →</button>
+          <div class="form-footer">Pamiršai slaptažodį? <a>Atstatyti</a></div>
+        </div>
+
+        <!-- CLIENT REGISTER -->
+        <div id="reg-c" class="panel">
+          <div class="form-title">Kurti kliento paskyrą</div>
+          <div class="form-sub">Saugok rezervacijų istoriją ir valdyk užsakymus.</div>
+          <div class="field-row">
+            <div class="field-group">
+              <label class="field-label">Vardas</label>
+              <input class="field" type="text" id="client-reg-fname" placeholder="Vardas">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Pavardė</label>
+              <input class="field" type="text" id="client-reg-lname" placeholder="Pavardė">
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">El. paštas</label>
+            <input class="field" type="email" id="client-reg-email" placeholder="vardas@gmail.com">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Tel. numeris</label>
+            <input class="field" type="tel" id="client-reg-phone" placeholder="+370 600 00000">
+          </div>
+          <div class="field-group">
+            <label class="field-label">Slaptažodis</label>
+            <input class="field" type="password" id="client-reg-pass" placeholder="min. 8 simboliai">
+          </div>
+          <button class="submit-btn" id="client-reg-btn" onclick="clientRegister()">Registruotis →</button>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div id="panel-success" class="panel">
+        <div class="success-box">
+          <div class="success-icon" id="s-icon"></div>
+          <h3 id="s-title"></h3>
+          <p id="s-text"></p>
+          <div class="success-detail" id="s-detail"></div>
+          <button class="submit-btn" id="s-action-btn"></button>
+          <div class="form-footer"><a onclick="location.reload()">← Grįžti į pradžią</a></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+
+function showError(msg){
+  const el = document.getElementById('form-err');
+  el.textContent = msg;
+  el.style.display = 'block';
+  el.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+function clearError(){
+  document.getElementById('form-err').style.display = 'none';
+}
+
+// TYPE SWITCH
+let currentType = 'service';
+function switchType(type){
+  currentType = type;
+  document.querySelectorAll('.type-card').forEach(c=>{
+    const isActive = c.dataset.type === type;
+    c.classList.toggle('active', isActive);
+    c.querySelector('.type-check').textContent = isActive ? '✓' : '';
+  });
+  document.getElementById('panel-service').classList.toggle('show', type==='service');
+  document.getElementById('panel-client').classList.toggle('show', type==='client');
+  document.getElementById('left-note').innerHTML = type === 'service'
+    ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis % nuo patvirtintų darbų.'
+    : '✓ Klientams registracija neprivaloma.<br>Galite rezervuoti kaip svečias<br>be jokios paskyros.';
+}
+
+// TAB SWITCH — btn gali būti null (kviečiant programiškai, pvz. iš URL parametro)
+function switchTab(id, btn){
+  const tabs = (id.endsWith('-s') ? document.getElementById('panel-service') : document.getElementById('panel-client')).querySelectorAll('.ftab');
+  const panels = ['login-s','reg-s','guest-c','login-c','reg-c'];
+  panels.forEach(p => { const el = document.getElementById(p); if(el) el.classList.remove('show'); });
+  document.getElementById(id).classList.add('show');
+  tabs.forEach(t => t.classList.remove('active'));
+  if(btn){ btn.classList.add('active'); return; }
+  const idxById = {'login-s':0,'reg-s':1,'guest-c':0,'login-c':1,'reg-c':2};
+  const idx = idxById[id];
+  if(idx != null && tabs[idx]) tabs[idx].classList.add('active');
+}
+
+// REG STEPS
+let currentStep = 1;
+function goStep(n){
+  document.getElementById('reg-step'+currentStep).classList.remove('show');
+  currentStep = n;
+  document.getElementById('reg-step'+n).classList.add('show');
+  ['step1','step2','step3'].forEach((id,i)=>{
+    const el = document.getElementById(id);
+    el.classList.remove('active','done');
+    if(i+1 < n) el.classList.add('done');
+    else if(i+1 === n) el.classList.add('active');
+  });
+}
+
+// CATEGORIJOS — realios, iš GET /api/categories
+async function loadCategories(){
+  const res = await fetch(`${API_BASE}/categories`);
+  const cats = res.ok ? await res.json() : [];
+  document.getElementById('cat-checkboxes').innerHTML = cats.map(c=>`
+    <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-size:12.5px;background:var(--bg2);transition:all .15s;" onmouseenter="this.style.borderColor='rgba(245,196,0,0.3)'" onmouseleave="this.style.borderColor='var(--line)'">
+      <input type="checkbox" class="cat-cb" value="${c.id}" style="accent-color:var(--yellow);width:14px;height:14px;">
+      ${c.label}
+    </label>
+  `).join('');
+}
+
+// PW STRENGTH
+function checkPw(input){
+  const v = input.value;
+  const bars = [document.getElementById('pw1'),document.getElementById('pw2'),document.getElementById('pw3')];
+  const label = document.getElementById('pw-label');
+  bars.forEach(b=>b.className='pw-bar');
+  if(v.length === 0){label.textContent='Įveskite slaptažodį';return;}
+  if(v.length < 6){bars[0].classList.add('weak');label.textContent='Per silpnas';return;}
+  if(v.length < 10){bars[0].classList.add('ok');bars[1].classList.add('ok');label.textContent='Vidutinis';return;}
+  bars.forEach(b=>b.classList.add('strong'));label.textContent='Stiprus ✓';
+}
+
+// ── AUTH VEIKSMAI (realūs fetch() į backend) ──
+
+async function withBusyButton(btn, busyLabel, fn){
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = busyLabel;
+  try { await fn(); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+async function serviceLogin(){
+  clearError();
+  const email = document.getElementById('svc-login-email').value.trim();
+  const password = document.getElementById('svc-login-pass').value;
+  if(!email || !password){ showError('Įveskite el. paštą ir slaptažodį'); return; }
+
+  await withBusyButton(document.getElementById('svc-login-btn'), 'Jungiama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/service/login`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko prisijungti');
+      localStorage.setItem('sc_service_token', data.token);
+      localStorage.setItem('sc_service', JSON.stringify(data.service));
+      await showSuccess('service-login', data);
+    } catch(err){ showError(err.message); }
+  });
+}
+
+async function serviceRegister(){
+  clearError();
+  const payload = {
+    ownerFirstName: document.getElementById('reg-s-fname').value.trim(),
+    ownerLastName: document.getElementById('reg-s-lname').value.trim(),
+    email: document.getElementById('reg-s-email').value.trim(),
+    phone: document.getElementById('reg-s-phone').value.trim(),
+    password: document.getElementById('reg-s-pass').value,
+    name: document.getElementById('reg-s-name').value.trim(),
+    city: document.getElementById('reg-s-city').value,
+    address: document.getElementById('reg-s-address').value.trim(),
+    serviceType: document.getElementById('reg-s-type').value,
+    mechanicCount: document.getElementById('reg-s-mech').value,
+    description: document.getElementById('reg-s-desc').value.trim(),
+    workStart: document.getElementById('reg-s-work-start').value,
+    workEnd: document.getElementById('reg-s-work-end').value,
+    categoryIds: Array.from(document.querySelectorAll('.cat-cb:checked')).map(cb=>cb.value),
+  };
+  if(!payload.email || !payload.password || !payload.name || !payload.city){
+    showError('Užpildykite bent el. paštą, slaptažodį, serviso pavadinimą ir miestą');
+    return;
+  }
+
+  await withBusyButton(document.getElementById('reg-s-submit-btn'), 'Registruojama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/service/register`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
+      localStorage.setItem('sc_service_token', data.token);
+      localStorage.setItem('sc_service', JSON.stringify(data.service));
+      await showSuccess('service-register', data);
+    } catch(err){ showError(err.message); }
+  });
+}
+
+async function guestContinue(){
+  clearError();
+  const firstName = document.getElementById('guest-fname').value.trim();
+  const lastName = document.getElementById('guest-lname').value.trim();
+  const phone = document.getElementById('guest-phone').value.trim();
+  const email = document.getElementById('guest-email').value.trim();
+  if(!firstName || !phone){ showError('Įveskite vardą ir telefono numerį'); return; }
+
+  await withBusyButton(document.getElementById('guest-submit-btn'), 'Jungiama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/guest`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ firstName, lastName, phone, email })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko tęsti kaip svečias');
+      localStorage.setItem('sc_client_token', data.token);
+      localStorage.setItem('sc_client_name', firstName);
+      await showSuccess('guest', data);
+    } catch(err){ showError(err.message); }
+  });
+}
+
+async function clientLogin(){
+  clearError();
+  const email = document.getElementById('client-login-email').value.trim();
+  const password = document.getElementById('client-login-pass').value;
+  if(!email || !password){ showError('Įveskite el. paštą ir slaptažodį'); return; }
+
+  await withBusyButton(document.getElementById('client-login-btn'), 'Jungiama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/client/login`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko prisijungti');
+      localStorage.setItem('sc_client_token', data.token);
+      localStorage.setItem('sc_client_name', data.client.first_name || '');
+      await showSuccess('client-login', data);
+    } catch(err){ showError(err.message); }
+  });
+}
+
+async function clientRegister(){
+  clearError();
+  const payload = {
+    firstName: document.getElementById('client-reg-fname').value.trim(),
+    lastName: document.getElementById('client-reg-lname').value.trim(),
+    email: document.getElementById('client-reg-email').value.trim(),
+    phone: document.getElementById('client-reg-phone').value.trim(),
+    password: document.getElementById('client-reg-pass').value,
+  };
+  if(!payload.email || !payload.password){ showError('Įveskite el. paštą ir slaptažodį'); return; }
+
+  await withBusyButton(document.getElementById('client-reg-btn'), 'Registruojama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/client/register`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
+      localStorage.setItem('sc_client_token', data.token);
+      localStorage.setItem('sc_client_name', payload.firstName);
+      await showSuccess('client-register', data);
+    } catch(err){ showError(err.message); }
+  });
+}
+
+// SUCCESS
+async function showSuccess(type, data){
+  document.getElementById('panel-service').classList.remove('show');
+  document.getElementById('panel-client').classList.remove('show');
+  document.getElementById('panel-success').classList.add('show');
+
+  const actionBtn = document.getElementById('s-action-btn');
+
+  if(type==='service-register'){
+    const pending = data.service.status !== 'active';
+    document.getElementById('s-icon').textContent='🔧';
+    document.getElementById('s-title').textContent='Servisas užregistruotas!';
+    document.getElementById('s-text').textContent='Jūsų servisas sėkmingai užregistruotas. Peržiūrėsime informaciją ir aktyvuosime paskyrą per 24 valandas.';
+    document.getElementById('s-detail').innerHTML=`
+      <div class="sd-row"><span>Statusas</span><span style="color:${pending?'var(--yellow)':'#6fbf8a'}">${pending?'⏳ Laukia patvirtinimo':'✓ Aktyvus'}</span></div>
+      <div class="sd-row"><span>Aktyvavimas</span><span>Per 24 val.</span></div>
+      <div class="sd-row"><span>El. paštas</span><span>${data.service.email}</span></div>
+      <div class="sd-row"><span>Planas</span><span style="color:#6fbf8a">Nemokamas (6 mėn. nuo šiandien)</span></div>`;
+    actionBtn.textContent = 'Į serviso valdymą →';
+    actionBtn.onclick = () => location.href = 'automeistrai-dashboard.html';
+  } else if(type==='service-login'){
+    document.getElementById('s-icon').textContent='👋';
+    document.getElementById('s-title').textContent='Sveiki sugrįžę!';
+    document.getElementById('s-text').textContent='Prisijungėte prie savo serviso paskyros. Toliau — jūsų užklausos ir tvarkaraštis.';
+    let newCount = '—';
+    try{
+      const res = await fetch(`${API_BASE}/orders`, { headers:{'Authorization':'Bearer '+data.token} });
+      if(res.ok){ const orders = await res.json(); newCount = orders.filter(o=>o.status==='new').length; }
+    } catch(e){ /* rodyti "—" jei nepavyko gauti */ }
+    document.getElementById('s-detail').innerHTML=`
+      <div class="sd-row"><span>Statusas</span><span style="color:#6fbf8a">✓ Prisijungta</span></div>
+      <div class="sd-row"><span>Naujos užklausos</span><span>${newCount}</span></div>`;
+    actionBtn.textContent = 'Į serviso valdymą →';
+    actionBtn.onclick = () => location.href = 'automeistrai-dashboard.html';
+  } else if(type==='guest'){
+    document.getElementById('s-icon').textContent='🚗';
+    document.getElementById('s-title').textContent='Galite rezervuoti!';
+    document.getElementById('s-text').textContent='Jūsų kontaktai išsaugoti. Dabar grįžkite ir pasirinkite servisą bei laiką.';
+    document.getElementById('s-detail').innerHTML=`
+      <div class="sd-row"><span>Režimas</span><span>Svečias</span></div>
+      <div class="sd-row"><span>Tel. numeris</span><span>${data.client.phone || '—'}</span></div>
+      <div class="sd-row"><span>Istorija</span><span style="color:var(--muted)">Nesaugoma</span></div>`;
+    actionBtn.textContent = 'Į ServisuCentras.lt →';
+    actionBtn.onclick = () => location.href = 'servisucentras-pagrindinis.html';
+  } else if(type==='client-login'){
+    document.getElementById('s-icon').textContent='👋';
+    document.getElementById('s-title').textContent='Sveiki sugrįžę!';
+    document.getElementById('s-text').textContent='Prisijungėte prie savo ServisuCentras paskyros — čia rasite rezervacijų istoriją.';
+    document.getElementById('s-detail').innerHTML=`
+      <div class="sd-row"><span>Statusas</span><span style="color:#6fbf8a">✓ Prisijungta</span></div>`;
+    actionBtn.textContent = 'Į ServisuCentras.lt →';
+    actionBtn.onclick = () => location.href = 'servisucentras-pagrindinis.html';
+  } else {
+    document.getElementById('s-icon').textContent='✅';
+    document.getElementById('s-title').textContent='Paskyra sukurta!';
+    document.getElementById('s-text').textContent='Sveiki prisijungę prie ServisuCentras.lt — dabar galite rezervuoti servisus ir sekti savo rezervacijų istoriją.';
+    document.getElementById('s-detail').innerHTML=`
+      <div class="sd-row"><span>Paskyra</span><span style="color:#6fbf8a">✓ Aktyvuota</span></div>
+      <div class="sd-row"><span>Rezervacijos</span><span>Visos išsaugomos</span></div>`;
+    actionBtn.textContent = 'Į ServisuCentras.lt →';
+    actionBtn.onclick = () => location.href = 'servisucentras-pagrindinis.html';
+  }
+}
+
+// Palaiko nuorodas iš kitų puslapių, pvz. automeistrai-login.html?type=client&tab=login
+function initFromQuery(){
+  const params = new URLSearchParams(location.search);
+  const type = params.get('type');
+  const tab = params.get('tab');
+  if(type === 'client' || type === 'service') switchType(type);
+  if(tab) switchTab(tab);
+}
+
+loadCategories();
+initFromQuery();
+</script>
+</body>
+</html>

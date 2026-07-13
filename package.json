@@ -1,0 +1,14 @@
+{
+  "name": "servisucentras",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ServisuCentras.lt — deploy shim. Tikras kodas yra backend/ (Express serveris pats atiduoda ir statinius HTML puslapius iš šio aplanko).",
+  "scripts": {
+    "postinstall": "npm install --prefix backend",
+    "start": "npm start --prefix backend",
+    "test": "npm test --prefix backend"
+  },
+  "engines": {
+    "node": ">=22.5.0"
+  }
+}

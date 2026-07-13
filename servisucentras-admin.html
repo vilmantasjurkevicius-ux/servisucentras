@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<title>ServisuCentras — Admin</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0A0B0C;--bg2:#131516;--bg3:#1A1C1E;--bg4:#202325;
+  --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.1);
+  --text:#F0EDE5;--muted:#7A8088;--dim:#3A3F45;
+  --y:#F5C400;--ydim:rgba(245,196,0,0.1);
+  --g:#4A7C59;--gdim:rgba(74,124,89,0.12);
+  --r:#C0392B;--rdim:rgba(192,57,43,0.12);
+  --b:#2F7EC7;--bdim:rgba(47,126,199,0.12);
+  --p:#7C4D9E;--pdim:rgba(124,77,158,0.12);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;}
+
+/* LOGIN */
+.login-screen{
+  position:fixed;inset:0;background:var(--bg);
+  display:flex;align-items:center;justify-content:center;
+  z-index:1000;flex-direction:column;gap:0;
+}
+.login-box{background:var(--bg2);border:1px solid var(--line2);border-radius:6px;padding:36px 32px;width:340px;}
+.login-logo{font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.04em;margin-bottom:24px;display:flex;align-items:center;gap:10px;}
+.login-logo em{font-style:normal;color:var(--y);}
+.login-title{font-family:'Oswald';font-size:20px;margin-bottom:4px;}
+.login-sub{font-size:12.5px;color:var(--muted);margin-bottom:22px;}
+.lf{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:11px 13px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;margin-bottom:10px;transition:border-color .15s;}
+.lf:focus{border-color:rgba(245,196,0,0.4);}
+.lf::placeholder{color:var(--dim);}
+.lb{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:700;font-size:14.5px;padding:12px;border-radius:3px;cursor:pointer;margin-top:4px;transition:background .15s;}
+.lb:hover{background:#FFD740;}
+.login-err{color:#e07070;font-size:12px;text-align:center;margin-top:8px;display:none;}
+
+/* TOP BAR */
+.topbar{
+  display:flex;align-items:center;height:50px;border-bottom:1px solid var(--line);flex-shrink:0;
+  background:var(--bg2);padding:0 20px;gap:16px;
+}
+.tb-logo{font-family:'Oswald';font-size:16px;font-weight:700;letter-spacing:0.04em;}
+.tb-logo em{font-style:normal;color:var(--y);}
+.tb-badge{font-family:'IBM Plex Mono';font-size:9px;background:var(--r);color:#fff;padding:2px 7px;border-radius:3px;letter-spacing:0.06em;}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.tb-time{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.tb-notif{position:relative;cursor:pointer;font-size:16px;}
+.tb-notif-dot{position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:50%;background:var(--r);border:1.5px solid var(--bg2);}
+.tb-admin{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;cursor:pointer;}
+.tb-av{width:28px;height:28px;border-radius:50%;background:var(--y);color:var(--bg);font-family:'Oswald';font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+/* SHELL */
+.shell{display:flex;flex:1;overflow:hidden;}
+
+/* SIDEBAR */
+.sidebar{width:200px;border-right:1px solid var(--line);flex-shrink:0;display:flex;flex-direction:column;background:var(--bg2);overflow-y:auto;}
+.sb-section{padding:12px 14px 4px;font-family:'IBM Plex Mono';font-size:9px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;}
+.sb-item{
+  display:flex;align-items:center;gap:9px;padding:9px 16px;
+  font-size:13px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-left:2px solid transparent;
+  background:none;border-top:none;border-bottom:none;border-right:none;
+  width:100%;text-align:left;font-family:'IBM Plex Sans';
+  transition:all .12s;
+}
+.sb-item:hover{color:var(--text);background:rgba(255,255,255,0.02);}
+.sb-item.on{color:var(--y);border-left-color:var(--y);background:var(--ydim);}
+.sb-item .ic{font-size:14px;width:18px;text-align:center;}
+.sb-item .badge{margin-left:auto;font-family:'IBM Plex Mono';font-size:9.5px;background:var(--r);color:#fff;padding:1px 5px;border-radius:10px;}
+.sb-item .badge.green{background:var(--g);}
+
+/* MAIN */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column;}
+
+/* PAGE HEADER */
+.page-head{
+  padding:18px 24px 14px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.page-title{font-family:'Oswald';font-size:20px;font-weight:600;}
+.page-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.head-actions{display:flex;gap:8px;}
+.btn{font-family:'IBM Plex Sans';font-weight:600;font-size:12px;padding:7px 14px;border-radius:3px;cursor:pointer;border:1px solid var(--line2);background:var(--bg3);color:var(--text);transition:all .15s;}
+.btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.btn-y{background:var(--y);color:var(--bg);border-color:var(--y);}
+.btn-y:hover{background:#FFD740;color:var(--bg);}
+
+/* CONTENT */
+.content{padding:20px 24px;display:flex;flex-direction:column;gap:20px;}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(5,1fr);gap:1px;background:var(--line);}
+.stat{background:var(--bg2);padding:16px 18px;}
+.stat-lbl{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;}
+.stat-val{font-family:'Oswald';font-size:24px;font-weight:600;line-height:1;margin-bottom:3px;}
+.stat-ch{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);}
+.stat-ch .up{color:#6fbf8a;} .stat-ch .dn{color:#e07070;}
+
+/* MINI CHART */
+.mini-chart{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:6px;}
+.mc-bar{border-radius:1px 1px 0 0;min-width:4px;transition:height .3s;}
+
+/* TABLE */
+.table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);gap:12px;}
+.table-title{font-family:'Oswald';font-size:14px;font-weight:600;}
+.search-input{background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:6px 10px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;outline:none;width:180px;}
+.search-input::placeholder{color:var(--dim);}
+.search-input:focus{border-color:rgba(245,196,0,0.3);}
+table{width:100%;border-collapse:collapse;}
+th{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);background:var(--bg3);cursor:pointer;}
+th:hover{color:var(--y);}
+td{padding:11px 14px;font-size:12.5px;border-bottom:1px solid var(--line);}
+tr:last-child td{border:none;}
+tr:hover td{background:rgba(255,255,255,0.015);}
+.badge{font-family:'IBM Plex Mono';font-size:9.5px;padding:2px 8px;border-radius:2px;font-weight:500;}
+.badge-active{background:var(--gdim);color:#6fbf8a;}
+.badge-pending{background:var(--ydim);color:var(--y);}
+.badge-banned{background:var(--rdim);color:#e07070;}
+.badge-new{background:var(--bdim);color:#7ab0f0;}
+.badge-done{background:rgba(255,255,255,0.05);color:var(--muted);}
+.action-btns{display:flex;gap:4px;}
+.ab{font-family:'IBM Plex Mono';font-size:9px;padding:3px 7px;border-radius:2px;cursor:pointer;border:1px solid var(--line2);background:transparent;color:var(--muted);transition:all .15s;}
+.ab:hover{color:var(--text);border-color:var(--line2);}
+.ab.red:hover{color:#e07070;border-color:rgba(192,57,43,0.3);}
+.ab.green:hover{color:#6fbf8a;border-color:rgba(74,124,89,0.3);}
+.ab.yellow:hover{color:var(--y);border-color:rgba(245,196,0,0.3);}
+
+/* TOGGLE SWITCH */
+.sw{position:relative;display:inline-block;width:38px;height:21px;cursor:pointer;flex-shrink:0;}
+.sw input{opacity:0;width:0;height:0;}
+.sw-track{position:absolute;inset:0;background:var(--bg4);border:1px solid var(--line2);border-radius:20px;transition:all .15s;}
+.sw-track:before{content:"";position:absolute;height:15px;width:15px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:all .15s;}
+.sw input:checked + .sw-track{background:var(--gdim);border-color:rgba(74,124,89,0.4);}
+.sw input:checked + .sw-track:before{transform:translateX(17px);background:#6fbf8a;}
+.badge-off{background:rgba(255,255,255,0.05);color:var(--muted);}
+
+/* GRID 2 COL */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* INCOME SECTION */
+.income-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line);font-size:12.5px;}
+.income-row:last-child{border:none;}
+.income-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;}
+.income-amount{font-family:'Oswald';font-size:15px;font-weight:600;}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--line);padding:0 16px;}
+.tab{padding:10px 14px;font-size:12.5px;font-weight:500;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;background:none;border-top:none;border-left:none;border-right:none;font-family:'IBM Plex Sans';transition:all .15s;}
+.tab:hover{color:var(--text);}
+.tab.on{color:var(--y);border-bottom-color:var(--y);}
+.tab .n{font-family:'IBM Plex Mono';font-size:9px;margin-left:5px;background:var(--bg3);padding:1px 5px;border-radius:3px;}
+.tab.on .n{background:var(--ydim);color:var(--y);}
+
+/* PAGES */
+.page{display:none;}
+.page.show{display:block;}
+
+/* Pulsuojantis live taškas */
+@keyframes live-pulse{0%,100%{opacity:1;}50%{opacity:0.3;}}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#6fbf8a;display:inline-block;animation:live-pulse 1.5s infinite;margin-right:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-screen" id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">🔧 SERVISU<em>CENTRAS</em></div>
+    <div class="login-title">Admin prisijungimas</div>
+    <div class="login-sub">God Mode — pilna sistema</div>
+    <input class="lf" type="text" id="l-user" placeholder="Vartotojo vardas" value="admin">
+    <input class="lf" type="password" id="l-pass" placeholder="Slaptažodis" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="lb" onclick="doLogin()">Prisijungti →</button>
+    <div class="login-err" id="l-err">❌ Neteisingi duomenys</div>
+    <div style="font-family:'IBM Plex Mono';font-size:10px;color:var(--dim);text-align:center;margin-top:14px;">Demo: admin / admin123</div>
+  </div>
+</div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="tb-logo">🔧 SERVISU<em>CENTRAS</em></div>
+  <div class="tb-badge">GOD MODE</div>
+  <a href="servisucentras-pagrindinis.html" style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);text-decoration:none;margin-left:8px;transition:color .15s;" onmouseover="this.style.color='#F5C400'" onmouseout="this.style.color='var(--muted)'">← Grįžti į puslapį</a>
+  <div class="tb-right">
+    <div class="tb-time" id="tb-time"></div>
+    <div class="tb-notif">🔔<div class="tb-notif-dot"></div></div>
+    <div class="tb-admin">
+      <div class="tb-av">A</div>
+      Admin
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sb-section">Apžvalga</div>
+  <button class="sb-item on" onclick="showPage('dashboard',this)"><span class="ic">📊</span> Dashboard</button>
+
+  <div class="sb-section">Vartotojai</div>
+  <button class="sb-item" onclick="showPage('clients',this)"><span class="ic">🚗</span> Klientai <span class="badge green" id="sb-clients-count">—</span></button>
+  <button class="sb-item" onclick="showPage('services',this)"><span class="ic">🔧</span> Servisai <span class="badge green" id="sb-services-count">—</span></button>
+
+  <div class="sb-section">Veikla</div>
+  <button class="sb-item" onclick="showPage('orders',this)"><span class="ic">📋</span> Užklausos <span class="badge" id="sb-orders-count">—</span></button>
+  <button class="sb-item" onclick="showPage('chat',this)"><span class="ic">💬</span> Chat žinutės</button>
+  <button class="sb-item" onclick="showPage('reviews',this)"><span class="ic">⭐</span> Atsiliepimai</button>
+
+  <div class="sb-section">Finansai</div>
+  <button class="sb-item" onclick="showPage('money',this)"><span class="ic">💰</span> Pajamos</button>
+  <button class="sb-item" onclick="showPage('commissions',this)"><span class="ic">📈</span> Komisiniai</button>
+
+  <div class="sb-section">Sistema</div>
+  <button class="sb-item" onclick="showPage('botservices',this)"><span class="ic">🤖</span> Bot servisai <span class="badge green" id="bot-active-badge">10</span></button>
+  <button class="sb-item" onclick="showPage('settings',this)"><span class="ic">⚙️</span> Nustatymai</button>
+  <button class="sb-item" style="color:var(--muted);" onclick="doLogout()"><span class="ic">🚪</span> Atsijungti</button>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- ════ DASHBOARD ════ -->
+  <div class="page show" id="p-dashboard">
+    <div class="page-head">
+      <div><div class="page-title">📊 Dashboard</div><div class="page-sub"><span class="live-dot"></span>Realiu laiku · Paskutinis atnaujinimas: <span id="last-upd"></span></div></div>
+      <div class="head-actions"><button class="btn">⬇ Eksportuoti</button><button class="btn btn-y">+ Pridėti servisą</button></div>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><div class="stat-lbl">Iš viso klientų</div><div class="stat-val" id="stat-clients" style="color:var(--y)">—</div><div class="stat-ch" id="stat-clients-ch"></div><div class="mini-chart" id="mc1"></div></div>
+      <div class="stat"><div class="stat-lbl">Aktyvūs servisai</div><div class="stat-val" id="stat-services" style="color:#6fbf8a">—</div><div class="stat-ch" id="stat-services-ch"></div><div class="mini-chart" id="mc2"></div></div>
+      <div class="stat"><div class="stat-lbl">Užklausos šiandien</div><div class="stat-val" id="stat-orders-today" style="color:#7ab0f0">—</div><div class="stat-ch" id="stat-orders-ch"></div><div class="mini-chart" id="mc3"></div></div>
+      <div class="stat"><div class="stat-lbl">Šio mėn. pajamos</div><div class="stat-val" id="stat-month-income" style="color:var(--y)">—</div><div class="stat-ch" id="stat-month-ch"></div><div class="mini-chart" id="mc4"></div></div>
+      <div class="stat"><div class="stat-lbl">Iš viso uždirbt.</div><div class="stat-val" id="stat-total-income" style="color:#c0a0f0">—</div><div class="stat-ch">nuo paleidimo</div><div class="mini-chart" id="mc5"></div></div>
+    </div>
+    <div class="content">
+      <div class="grid2">
+        <!-- Naujausios užklausos -->
+        <div class="table-wrap">
+          <div class="table-head"><div class="table-title">🔴 Naujos užklausos</div><span class="badge badge-new" id="new-orders-badge">0 naujų</span></div>
+          <table>
+            <tr><th>Klientas</th><th>Kategorija</th><th>Miestas</th><th>Statusas</th></tr>
+            <tbody id="dash-orders-body"></tbody>
+          </table>
+        </div>
+        <!-- Naujausi servisai -->
+        <div class="table-wrap">
+          <div class="table-head"><div class="table-title">🔧 Nauji servisai</div></div>
+          <table>
+            <tr><th>Pavadinimas</th><th>Miestas</th><th>Statusas</th></tr>
+            <tbody id="dash-services-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Savaitės pajamų grafikas -->
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">💰 Savaitės pajamos (realūs komisiniai)</div></div>
+        <div style="padding:16px 20px;display:flex;align-items:flex-end;gap:6px;height:100px;" id="week-chart"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ KLIENTAI ════ -->
+  <div class="page" id="p-clients">
+    <div class="page-head">
+      <div><div class="page-title">🚗 Klientai</div><div class="page-sub" id="clients-count-sub">— registruoti vartotojai</div></div>
+      <div class="head-actions"><button class="btn">⬇ Eksportuoti CSV</button></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head">
+          <div class="table-title">Visi klientai</div>
+          <input class="search-input" id="clients-search" placeholder="🔍 Ieškoti...">
+        </div>
+        <div class="tabs" id="clients-tabs">
+          <button class="tab on" data-filter="all">Visi <span class="n">0</span></button>
+          <button class="tab" data-filter="active">Aktyvūs <span class="n">0</span></button>
+          <button class="tab" data-filter="guest">Svečiai <span class="n">0</span></button>
+          <button class="tab" data-filter="banned">Užblokuoti <span class="n">0</span></button>
+        </div>
+        <table>
+          <tr><th>ID</th><th>Vardas</th><th>El. paštas</th><th>Tel.</th><th>Registracija</th><th>Statusas</th><th>Veiksmai</th></tr>
+          <tbody id="clients-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ SERVISAI ════ -->
+  <div class="page" id="p-services">
+    <div class="page-head">
+      <div><div class="page-title">🔧 Servisai</div><div class="page-sub" id="services-count-sub">— registruoti servisai</div></div>
+      <div class="head-actions"><button class="btn btn-y">+ Pridėti servisą</button></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head">
+          <div class="table-title">Visi servisai</div>
+          <input class="search-input" id="services-search" placeholder="🔍 Ieškoti...">
+        </div>
+        <div class="tabs" id="services-tabs">
+          <button class="tab on" data-filter="all">Visi <span class="n">0</span></button>
+          <button class="tab" data-filter="active">Aktyvūs <span class="n">0</span></button>
+          <button class="tab" data-filter="pending">Laukia patvirt. <span class="n">0</span></button>
+          <button class="tab" data-filter="banned">Sustabdyti <span class="n">0</span></button>
+        </div>
+        <table>
+          <tr><th>Pavadinimas</th><th>Miestas</th><th>Tipas</th><th>Užklausos</th><th>Nemokama iki</th><th>Komisiniai</th><th>Įvertinimas</th><th>Statusas</th><th>Veiksmai</th></tr>
+          <tbody id="services-table-body"></tbody>
+        </table>
+        <div style="padding:12px 20px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);">ℹ️ "Nemokama iki" = 6 mėn. nuo TO serviso registracijos datos (individualiai kiekvienam). Po šios datos, jei God Mode komisinis įjungtas (Nustatymai), servisas moka % nuo kiekvieno patvirtinto darbo.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ UŽKLAUSOS ════ -->
+  <div class="page" id="p-orders">
+    <div class="page-head">
+      <div><div class="page-title">📋 Užklausos</div><div class="page-sub">Visos kliento užklausos ir jų statusai</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Visos užklausos</div><input class="search-input" id="orders-search" placeholder="🔍 Ieškoti..."></div>
+        <div class="tabs" id="orders-tabs">
+          <button class="tab on" data-filter="all">Visos <span class="n">0</span></button>
+          <button class="tab" data-filter="new">Naujos <span class="n">0</span></button>
+          <button class="tab" data-filter="in_progress">Vykdomos <span class="n">0</span></button>
+          <button class="tab" data-filter="done">Atliktos <span class="n">0</span></button>
+        </div>
+        <table>
+          <tr><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Komis.</th><th>Statusas</th></tr>
+          <tbody id="orders-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PINIGAI ════ -->
+  <div class="page" id="p-money">
+    <div class="page-head">
+      <div><div class="page-title">💰 Pajamos</div><div class="page-sub">Komisiniai — % nuo darbo kainos (po 6 mėn. nemokamo laikotarpio, jei God Mode įjungtas)</div></div>
+      <div class="head-actions"><button class="btn">⬇ Atsisiųsti ataskaitą</button></div>
+    </div>
+    <div class="content">
+      <div class="grid2">
+        <div class="table-wrap">
+          <div class="table-head"><div class="table-title">Pajamų suvestinė</div></div>
+          <div>
+            <div class="income-row"><div style="display:flex;align-items:center;gap:8px;"><div class="income-dot" style="background:var(--y)"></div>Šiandien</div><div class="income-amount" id="income-today" style="color:var(--y)">—</div></div>
+            <div class="income-row"><div style="display:flex;align-items:center;gap:8px;"><div class="income-dot" style="background:#6fbf8a"></div>Šią savaitę</div><div class="income-amount" id="income-week" style="color:#6fbf8a">—</div></div>
+            <div class="income-row"><div style="display:flex;align-items:center;gap:8px;"><div class="income-dot" style="background:#7ab0f0"></div>Šį mėnesį</div><div class="income-amount" id="income-month" style="color:#7ab0f0">—</div></div>
+            <div class="income-row"><div style="display:flex;align-items:center;gap:8px;"><div class="income-dot" style="background:#c0a0f0"></div>Iš viso</div><div class="income-amount" id="income-total" style="color:#c0a0f0">—</div></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <div class="table-head"><div class="table-title">Pelningiausi servisai</div></div>
+          <table>
+            <tr><th>Servisas</th><th>Užsakymai</th><th>Komisiniai</th></tr>
+            <tbody id="top-services-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Mėnesių istorija -->
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Mėnesių istorija</div></div>
+        <table>
+          <tr><th>Mėnuo</th><th>Užklausų</th><th>Užsakymų</th><th>Komisiniai</th></tr>
+          <tbody id="month-history-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ BOT SERVISAI ════ -->
+  <div class="page" id="p-botservices">
+    <div class="page-head">
+      <div><div class="page-title">🤖 Bot servisai</div><div class="page-sub">Sėkliniai (dirbtiniai) servisai visuose miestuose — kol nėra tikrų servisų</div></div>
+      <div class="head-actions">
+        <button class="btn btn-y" id="bot-master-btn" onclick="toggleAllBots()">Išjungti visus</button>
+      </div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:5px;padding:14px 18px;margin-bottom:16px;font-size:12.5px;color:var(--muted);line-height:1.5;">
+        ℹ️ Šie servisai rodomi <b style="color:var(--text);">servisucentras-pagrindinis.html</b> puslapyje visuose miestuose, kad jie nebūtų tušti paleidimo metu. Čia gali išjungti bot'us rankiniu būdu — po vieną arba visus iš karto. Perjungimas realiai saugomas duomenų bazėje (<code style="color:var(--y);">PATCH /api/admin/bots/:id/toggle</code>) ir iš karto atsispindi viešame puslapyje, nes jis rodo tik <code style="color:var(--y);">status = 'active'</code> servisus. <b style="color:var(--text);">Pastaba:</b> kai admin patvirtina tikrą servisą (<code style="color:var(--y);">Servisai → Patvirtinti</code>), atitinkami bot'ai to paties miesto + kategorijos automatiškai išsijungia — rankinis perjungimas čia liko kaip papildoma galimybė, ne vienintelis kelias.
+      </div>
+      <div class="table-wrap">
+        <div class="table-head">
+          <div class="table-title">Bot servisai (visi miestai)</div>
+          <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);" id="bot-count-label">10 / 10 aktyvūs</span>
+        </div>
+        <table>
+          <tr><th>Pavadinimas</th><th>Kategorijos</th><th>Tipas</th><th>Statusas</th><th>Veiksmas</th></tr>
+          <tbody id="bot-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ NUSTATYMAI ════ -->
+  <div class="page" id="p-settings">
+    <div class="page-head">
+      <div><div class="page-title">⚙️ Nustatymai</div></div>
+    </div>
+    <div class="content">
+      <div class="table-wrap" style="padding:20px;">
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div style="background:var(--ydim);border:1px solid rgba(245,196,0,0.25);border-radius:5px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+            <div>
+              <div class="stat-lbl" style="margin-bottom:4px;color:var(--y);">⚡ God Mode — komisinio surinkimas</div>
+              <div style="font-size:12px;color:var(--muted);max-width:420px;">Kai ĮJUNGTA: servisai, kurių 6 mėn. nemokamas laikotarpis pasibaigęs, moka komisinį už kiekvieną patvirtintą darbą. Kai IŠJUNGTA: visiems servisams laikinai nemokama, nepriklausomai nuo registracijos datos.</div>
+            </div>
+            <label class="sw">
+              <input type="checkbox" id="commission-master" checked onchange="toggleCommissionMaster()">
+              <span class="sw-track"></span>
+            </label>
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Komisinio surinkimo būdas</div>
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--line2);border-radius:3px;background:var(--bg3);">
+                <input type="radio" name="collection-mode" value="manual" checked style="margin-top:2px;accent-color:var(--y);">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Rankinis</div>
+                  <div style="font-size:11.5px;color:var(--muted);">Sistema tik skaičiuoja ir rodo, kiek kas skolingas ("Komisiniai" skiltyje). Jokio automatinio nuskaitymo — patys susisiekiate ir surenkate (pvz. banko pavedimu).</div>
+                </div>
+              </label>
+              <label style="display:flex;align-items:flex-start;gap:10px;cursor:not-allowed;padding:10px 12px;border:1px solid var(--line);border-radius:3px;opacity:0.5;">
+                <input type="radio" name="collection-mode" value="stripe" disabled style="margin-top:2px;">
+                <div>
+                  <div style="font-size:13px;font-weight:600;">Automatinis (Stripe) — netrukus</div>
+                  <div style="font-size:11.5px;color:var(--muted);">Automatinis komisinio nuskaitymas per Stripe Connect. Dar neįdiegta.</div>
+                </div>
+              </label>
+            </div>
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Komisinio procentas</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input id="commission-pct" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--y);font-family:'IBM Plex Mono';font-size:16px;width:80px;outline:none;text-align:center;" value="2.5" oninput="updateCommissionExample()">
+              <span style="color:var(--muted);font-size:13px;">% nuo patvirtinto darbo kainos (ne fiksuota suma)</span>
+            </div>
+            <div style="margin-top:8px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);" id="commission-example">Pvz.: 40€ darbas → 1.00€ komisinis · 120€ darbas → 3.00€ komisinis</div>
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Nemokamas laikotarpis</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+              <input id="trial-months" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Mono';font-size:16px;width:80px;outline:none;text-align:center;" value="6">
+              <span style="color:var(--muted);font-size:13px;">mėnesiai — individualiai kiekvienam servisui nuo JO registracijos datos</span>
+            </div>
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Platformos pavadinimas</div>
+            <input id="platform-name" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;width:300px;outline:none;" value="ServisuCentras.lt">
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Admin slaptažodis</div>
+            <input type="password" id="admin-new-password" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;width:300px;outline:none;" placeholder="Naujas slaptažodis">
+          </div>
+          <div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Banko rekvizitai (rodomi rankinio surinkimo pranešimuose)</div>
+            <div style="display:flex;flex-direction:column;gap:8px;max-width:300px;">
+              <input id="bank-receiver" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;" placeholder="Gavėjo pavadinimas">
+              <input id="bank-iban" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--text);font-family:'IBM Plex Mono';font-size:14px;outline:none;" placeholder="LT00 0000 0000 0000 0000">
+            </div>
+          </div>
+          <button class="btn btn-y" id="save-settings-btn" style="width:fit-content;" onclick="saveSettings()">💾 Išsaugoti nustatymus</button>
+          <div id="settings-saved-msg" style="display:none;color:#6fbf8a;font-size:12.5px;">✓ Nustatymai išsaugoti</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tuščios puslapiai -->
+  <div class="page" id="p-chat"><div class="page-head"><div class="page-title">💬 Chat žinutės</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Čia matysite visas kliento žinutes servisams realiu laiku.</div></div></div>
+  <div class="page" id="p-reviews"><div class="page-head"><div class="page-title">⭐ Atsiliepimai</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Visi klientų atsiliepimai apie servisus.</div></div></div>
+  <div class="page" id="p-commissions">
+    <div class="page-head">
+      <div><div class="page-title">📈 Komisiniai / Sąskaitos</div><div class="page-sub" id="invoices-period-label"></div></div>
+      <div class="head-actions"><button class="btn btn-y" onclick="generateInvoiceMessages()">✉️ Generuoti pranešimus visiems</button></div>
+    </div>
+    <div class="content">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Šio mėnesio komisiniai (servisai po trial, kurie skolingi)</div></div>
+        <table>
+          <tr><th>Servisas</th><th>Patvirtintų darbų suma</th><th>Komisinis</th><th>Statusas</th><th>Veiksmas</th></tr>
+          <tbody id="invoices-table-body"></tbody>
+        </table>
+      </div>
+      <div class="table-wrap" id="generated-messages-wrap" style="display:none;">
+        <div class="table-head"><div class="table-title">Sugeneruoti pranešimai — nukopijuokite ir siųskite patys</div></div>
+        <div id="generated-messages-list" style="padding:16px 20px;display:flex;flex-direction:column;gap:16px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<script>
+const API_BASE = '/api';
+let adminToken = localStorage.getItem('sc_admin_token') || null;
+
+let categoriesCache = [];
+let dashboardCache = null;
+let clientsCache = [];
+let servicesCache = [];
+let ordersCache = [];
+let botsCache = [];
+let clientsFilter = 'all';
+let servicesFilter = 'all';
+let ordersFilter = 'all';
+
+function fmtEUR(n){ return (Number(n)||0).toFixed(2)+'€'; }
+function emptyRow(cols){ return `<tr><td colspan="${cols}" style="text-align:center;color:var(--muted);padding:20px;">Nėra duomenų</td></tr>`; }
+function categoryLabel(id){
+  const cat = categoriesCache.find(c=>c.id===id);
+  return cat ? cat.label : (id || '—');
+}
+function orderStatusBadge(status){
+  const map = {
+    new: ['badge-new','Nauja'], pending: ['badge-pending','Siūloma'],
+    in_progress: ['badge-active','Vykdoma'], done: ['badge-done','Atlikta'],
+    cancelled: ['badge-banned','Atšaukta'],
+  };
+  const [cls,label] = map[status] || ['badge-off', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function serviceStatusBadge(status){
+  const map = {
+    pending: ['badge-pending','Laukia patvirt.'], active: ['badge-active','Aktyvus'],
+    banned: ['badge-banned','Užblokuotas'], inactive: ['badge-off','Išjungtas'],
+  };
+  const [cls,label] = map[status] || ['badge-off', status];
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+function clientStatusBadge(c){
+  if(c.is_guest) return '<span class="badge badge-pending">Svečias</span>';
+  if(c.status==='banned') return '<span class="badge badge-banned">Užblokuotas</span>';
+  return '<span class="badge badge-active">Aktyvus</span>';
+}
+
+// ── API HELPERIS ──
+async function apiRequest(method, path, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: { 'Content-Type':'application/json', ...(adminToken ? {'Authorization':'Bearer '+adminToken} : {}) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if(res.status === 401){
+    adminToken = null;
+    localStorage.removeItem('sc_admin_token');
+    showLoginScreen();
+    throw new Error('Sesija baigėsi, prisijunkite iš naujo');
+  }
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || 'Klaida');
+  return data;
+}
+const apiGet = (path) => apiRequest('GET', path);
+const apiPost = (path, body) => apiRequest('POST', path, body || {});
+const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
+
+// LOGIN
+function showLoginScreen(){ document.getElementById('login-screen').style.display='flex'; }
+function hideLoginScreen(){ document.getElementById('login-screen').style.display='none'; }
+
+async function doLogin(){
+  const u = document.getElementById('l-user').value;
+  const p = document.getElementById('l-pass').value;
+  document.getElementById('l-err').style.display = 'none';
+  try{
+    const data = await apiRequest('POST', '/admin/login', { username: u, password: p });
+    adminToken = data.token;
+    localStorage.setItem('sc_admin_token', adminToken);
+    hideLoginScreen();
+    await loadEverything();
+  } catch(err){
+    document.getElementById('l-err').style.display = 'block';
+  }
+}
+function doLogout(){
+  adminToken = null;
+  localStorage.removeItem('sc_admin_token');
+  showLoginScreen();
+}
+document.getElementById('l-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+// ── DASHBOARD ──
+function renderDashboardTables(dash){
+  document.getElementById('dash-orders-body').innerHTML = dash.newOrders.slice(0,6).map(o=>`
+    <tr>
+      <td><b>${o.first_name||''} ${o.last_name||''}</b></td>
+      <td>${categoryLabel(o.category_id)}</td>
+      <td>${o.city||'—'}</td>
+      <td>${orderStatusBadge(o.status)}</td>
+    </tr>`).join('') || emptyRow(4);
+  document.getElementById('dash-services-body').innerHTML = dash.newServices.slice(0,6).map(s=>`
+    <tr><td><b>${s.name}</b></td><td>${s.city}</td><td>${serviceStatusBadge(s.status)}</td></tr>
+  `).join('') || emptyRow(3);
+}
+
+function computeStatChanges(){
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const yesterday = new Date(now); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr = yesterday.toISOString().slice(0,10);
+  const todayCount = ordersCache.filter(o=>(o.created_at||'').slice(0,10)===todayStr).length;
+  const yesterdayCount = ordersCache.filter(o=>(o.created_at||'').slice(0,10)===yesterdayStr).length;
+  const diff = todayCount - yesterdayCount;
+  document.getElementById('stat-orders-ch').innerHTML = `<span class="${diff>=0?'up':'dn'}">${diff>=0?'↑':'↓'} ${Math.abs(diff)}</span> nuo vakar`;
+
+  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
+  const newClientsWeek = clientsCache.filter(c=>c.created_at && new Date(c.created_at.replace(' ','T')+'Z') >= weekAgo).length;
+  document.getElementById('stat-clients-ch').innerHTML = `<span class="up">↑ ${newClientsWeek}</span> šią savaitę`;
+
+  const thisMonth = now.toISOString().slice(0,7);
+  const newServicesMonth = servicesCache.filter(s=>!s.is_bot && (s.registered_at||'').slice(0,7)===thisMonth).length;
+  document.getElementById('stat-services-ch').innerHTML = `<span class="up">↑ ${newServicesMonth}</span> šį mėnesį`;
+}
+
+// ── KLIENTAI ──
+async function loadClients(){ clientsCache = await apiGet('/admin/clients'); renderClients(); }
+function renderClients(){
+  const q = (document.getElementById('clients-search').value || '').toLowerCase();
+  let list = clientsCache;
+  if(clientsFilter==='active') list = list.filter(c=>c.status==='active' && !c.is_guest);
+  else if(clientsFilter==='guest') list = list.filter(c=>c.is_guest);
+  else if(clientsFilter==='banned') list = list.filter(c=>c.status==='banned');
+  if(q) list = list.filter(c=>`${c.first_name||''} ${c.last_name||''} ${c.email||''}`.toLowerCase().includes(q));
+
+  document.getElementById('clients-table-body').innerHTML = list.map(c=>`
+    <tr>
+      <td style="color:var(--muted);font-family:'IBM Plex Mono';font-size:10px;">#${String(c.id).padStart(4,'0')}</td>
+      <td><b>${c.first_name||''} ${c.last_name||''}</b></td>
+      <td>${c.email||'—'}</td>
+      <td>${c.phone||'—'}</td>
+      <td>${(c.created_at||'').slice(0,10)}</td>
+      <td>${clientStatusBadge(c)}</td>
+      <td><div class="action-btns">${c.status==='banned'
+        ? `<button class="ab green" onclick="unbanClient(${c.id})">✓ Atblokuoti</button>`
+        : `<button class="ab red" onclick="banClient(${c.id})">🚫 Ban</button>`}</div></td>
+    </tr>`).join('') || emptyRow(7);
+
+  const counts = {
+    all: clientsCache.length,
+    active: clientsCache.filter(c=>c.status==='active' && !c.is_guest).length,
+    guest: clientsCache.filter(c=>c.is_guest).length,
+    banned: clientsCache.filter(c=>c.status==='banned').length,
+  };
+  document.querySelectorAll('#clients-tabs .tab').forEach(t=>{ t.querySelector('.n').textContent = counts[t.dataset.filter]; });
+  document.getElementById('clients-count-sub').textContent = clientsCache.length+' registruoti vartotojai';
+  document.getElementById('sb-clients-count').textContent = clientsCache.length;
+}
+async function banClient(id){ await apiPatch(`/admin/clients/${id}/ban`); await loadClients(); }
+async function unbanClient(id){ await apiPatch(`/admin/clients/${id}/unban`); await loadClients(); }
+
+// ── SERVISAI ──
+async function loadServices(){ servicesCache = await apiGet('/admin/services'); renderServices(); }
+function serviceActionButtons(s){
+  if(s.status==='pending') return `<button class="ab green" onclick="approveService(${s.id})">✓ Tvirtinti</button><button class="ab red" onclick="banService(${s.id})">✕</button>`;
+  if(s.status==='banned') return `<button class="ab green" onclick="unbanService(${s.id})">✓ Atblokuoti</button>`;
+  return `<button class="ab red" onclick="banService(${s.id})">🚫</button>`;
+}
+function renderServices(){
+  const q = (document.getElementById('services-search').value || '').toLowerCase();
+  let list = servicesCache.filter(s=>!s.is_bot);
+  if(servicesFilter!=='all') list = list.filter(s=>s.status===servicesFilter);
+  if(q) list = list.filter(s=>`${s.name} ${s.email||''} ${s.city}`.toLowerCase().includes(q));
+
+  document.getElementById('services-table-body').innerHTML = list.map(s=>`
+    <tr>
+      <td><b>${s.name}</b>${s.email?`<br><span style="font-size:10px;color:var(--muted);">${s.email}</span>`:''}</td>
+      <td>${s.city}</td>
+      <td>${s.service_type||'—'}</td>
+      <td>${s.orderCount}</td>
+      <td><span class="badge badge-active">iki ${(s.trialEndsAt||'').slice(0,10)}</span></td>
+      <td style="color:${s.commissionTotal>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${s.commissionTotal>0?fmtEUR(s.commissionTotal):'0€ (trial)'}</td>
+      <td>${s.rating!=null?'★ '+s.rating:'—'}</td>
+      <td>${serviceStatusBadge(s.status)}</td>
+      <td><div class="action-btns">${serviceActionButtons(s)}</div></td>
+    </tr>`).join('') || emptyRow(9);
+
+  const real = servicesCache.filter(s=>!s.is_bot);
+  const counts = {
+    all: real.length,
+    active: real.filter(s=>s.status==='active').length,
+    pending: real.filter(s=>s.status==='pending').length,
+    banned: real.filter(s=>s.status==='banned').length,
+  };
+  document.querySelectorAll('#services-tabs .tab').forEach(t=>{ t.querySelector('.n').textContent = counts[t.dataset.filter]; });
+  document.getElementById('services-count-sub').textContent = counts.all+' registruoti servisai';
+  document.getElementById('sb-services-count').textContent = counts.active;
+}
+async function approveService(id){ await apiPatch(`/admin/services/${id}/approve`); await loadServices(); }
+async function banService(id){ await apiPatch(`/admin/services/${id}/ban`); await loadServices(); }
+async function unbanService(id){ await apiPatch(`/admin/services/${id}/unban`); await loadServices(); }
+
+// ── UŽKLAUSOS ──
+async function loadOrders(){ ordersCache = await apiGet('/admin/orders'); renderOrders(); }
+function renderOrders(){
+  const q = (document.getElementById('orders-search').value || '').toLowerCase();
+  let list = ordersCache;
+  if(ordersFilter==='new') list = list.filter(o=>o.status==='new');
+  else if(ordersFilter==='in_progress') list = list.filter(o=>o.status==='pending'||o.status==='in_progress');
+  else if(ordersFilter==='done') list = list.filter(o=>o.status==='done');
+  if(q) list = list.filter(o=>`${o.first_name||''} ${o.last_name||''} ${o.service_name||''}`.toLowerCase().includes(q));
+
+  document.getElementById('orders-table-body').innerHTML = list.map(o=>`
+    <tr>
+      <td style="font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);">#${String(o.id).padStart(4,'0')}</td>
+      <td>${o.first_name||''} ${o.last_name||''}</td>
+      <td>${categoryLabel(o.category_id)}</td>
+      <td>${o.service_name||'—'}</td>
+      <td>${o.price!=null?fmtEUR(o.price):'—'}</td>
+      <td>${(o.created_at||'').slice(0,10)}</td>
+      <td style="color:${o.commission_amount>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${o.commission_amount!=null?fmtEUR(o.commission_amount):'—'}</td>
+      <td>${orderStatusBadge(o.status)}</td>
+    </tr>`).join('') || emptyRow(8);
+
+  const counts = {
+    all: ordersCache.length,
+    new: ordersCache.filter(o=>o.status==='new').length,
+    in_progress: ordersCache.filter(o=>o.status==='pending'||o.status==='in_progress').length,
+    done: ordersCache.filter(o=>o.status==='done').length,
+  };
+  document.querySelectorAll('#orders-tabs .tab').forEach(t=>{ t.querySelector('.n').textContent = counts[t.dataset.filter]; });
+}
+
+// ── PAJAMOS ──
+function renderMoney(){
+  const now = new Date();
+  const todayStr = now.toISOString().slice(0,10);
+  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
+  const doneOrders = ordersCache.filter(o=>o.status==='done' && o.completed_at);
+  const todayIncome = doneOrders.filter(o=>o.completed_at.slice(0,10)===todayStr).reduce((a,o)=>a+(o.commission_amount||0),0);
+  const weekIncome = doneOrders.filter(o=>new Date(o.completed_at.replace(' ','T')+'Z')>=weekAgo).reduce((a,o)=>a+(o.commission_amount||0),0);
+  document.getElementById('income-today').textContent = fmtEUR(todayIncome);
+  document.getElementById('income-week').textContent = fmtEUR(weekIncome);
+  document.getElementById('income-month').textContent = fmtEUR(dashboardCache?.monthIncome);
+  document.getElementById('income-total').textContent = fmtEUR(dashboardCache?.totalIncome);
+
+  const topServices = servicesCache.filter(s=>!s.is_bot).slice().sort((a,b)=>b.commissionTotal-a.commissionTotal).slice(0,4);
+  document.getElementById('top-services-body').innerHTML = topServices.map(s=>`
+    <tr><td><b>${s.name}</b></td><td>${s.orderCount}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(s.commissionTotal)}</td></tr>
+  `).join('') || emptyRow(3);
+
+  renderMonthHistory();
+  renderWeekChart();
+}
+
+function renderMonthHistory(){
+  const byMonth = {};
+  ordersCache.forEach(o=>{
+    const month = (o.created_at||'').slice(0,7);
+    if(!month) return;
+    byMonth[month] = byMonth[month] || { requests:0, done:0, commission:0 };
+    byMonth[month].requests++;
+    if(o.status==='done'){ byMonth[month].done++; byMonth[month].commission += (o.commission_amount||0); }
+  });
+  const LT_MONTHS = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+  const months = Object.keys(byMonth).sort().reverse().slice(0,6);
+  document.getElementById('month-history-body').innerHTML = months.map(m=>{
+    const [y,mm] = m.split('-');
+    const d = byMonth[m];
+    return `<tr><td><b>${y} ${LT_MONTHS[parseInt(mm,10)-1]}</b></td><td>${d.requests}</td><td>${d.done}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(d.commission)}</td></tr>`;
+  }).join('') || emptyRow(4);
+}
+
+function renderWeekChart(){
+  const days = ['Sek','Pir','Ant','Tre','Ket','Pen','Šeš']; // getDay(): 0=Sek
+  const now = new Date();
+  const sums = [0,0,0,0,0,0,0];
+  const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate()-now.getDay()); startOfWeek.setHours(0,0,0,0);
+  ordersCache.forEach(o=>{
+    if(o.status!=='done' || !o.completed_at) return;
+    const d = new Date(o.completed_at.replace(' ','T')+'Z');
+    if(d>=startOfWeek) sums[d.getDay()] += (o.commission_amount||0);
+  });
+  const max = Math.max(...sums, 1);
+  const order = [1,2,3,4,5,6,0]; // Pir..Sek rodymo tvarka
+  const todayIdx = now.getDay();
+  document.getElementById('week-chart').innerHTML = order.map(i=>{
+    const height = Math.max(6, Math.round(sums[i]/max*100));
+    const isToday = i===todayIdx;
+    return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
+      <div style="flex:1;display:flex;align-items:flex-end;"><div style="background:${isToday?'rgba(245,196,0,0.25)':'var(--ydim)'};border:1px solid ${isToday?'rgba(245,196,0,0.4)':'rgba(245,196,0,0.2)'};border-radius:2px 2px 0 0;width:100%;height:${height}%"></div></div>
+      <div style="font-family:'IBM Plex Mono';font-size:9px;color:${isToday?'var(--y)':'var(--muted)'};font-weight:${isToday?600:400};">${days[i]}${isToday?' ←':''}</div>
+      <div style="font-family:'IBM Plex Mono';font-size:10px;color:${isToday?'var(--y)':'var(--muted)'};font-weight:${isToday?600:400};">${sums[i].toFixed(0)}€</div>
+    </div>`;
+  }).join('');
+}
+
+// ── BOT SERVISAI (visi miestai) ──
+async function loadBots(){ botsCache = await apiGet('/admin/bots'); renderBotsUI(); }
+function renderBotsUI(){
+  document.getElementById('bot-table-body').innerHTML = botsCache.map(b => `
+    <tr>
+      <td><b>${b.name}</b></td>
+      <td style="color:var(--muted);font-size:12px;">${b.categories.join(', ')}</td>
+      <td>${b.service_type||'—'}</td>
+      <td><span class="badge ${b.status==='active'?'badge-active':'badge-off'}">${b.status==='active'?'Aktyvus':'Išjungtas'}</span></td>
+      <td>
+        <label class="sw">
+          <input type="checkbox" ${b.status==='active'?'checked':''} onchange="toggleBot(${b.id})">
+          <span class="sw-track"></span>
+        </label>
+      </td>
+    </tr>`).join('');
+  const activeCount = botsCache.filter(b=>b.status==='active').length;
+  document.getElementById('bot-count-label').textContent = activeCount+' / '+botsCache.length+' aktyvūs';
+  document.getElementById('bot-active-badge').textContent = activeCount;
+  document.getElementById('bot-master-btn').textContent = activeCount===0 ? 'Įjungti visus' : 'Išjungti visus';
+}
+async function toggleBot(id){ await apiPatch(`/admin/bots/${id}/toggle`); await loadBots(); }
+async function toggleAllBots(){ await apiPost('/admin/bots/toggle-all'); await loadBots(); }
+
+// ── NUSTATYMAI (God Mode) ──
+function updateCommissionExample(){
+  const pct = parseFloat(document.getElementById('commission-pct').value) || 0;
+  const ex1 = (40 * pct / 100).toFixed(2);
+  const ex2 = (120 * pct / 100).toFixed(2);
+  document.getElementById('commission-example').textContent =
+    `Pvz.: 40€ darbas → ${ex1}€ komisinis · 120€ darbas → ${ex2}€ komisinis`;
+}
+async function loadSettings(){
+  const s = await apiGet('/admin/settings');
+  document.getElementById('commission-master').checked = !!s.commission_master_enabled;
+  document.getElementById('commission-pct').value = s.commission_percent;
+  document.getElementById('trial-months').value = s.trial_months;
+  document.getElementById('platform-name').value = s.platform_name;
+  document.getElementById('bank-receiver').value = s.bank_receiver || '';
+  document.getElementById('bank-iban').value = s.bank_iban || '';
+  const modeRadio = document.querySelector(`input[name="collection-mode"][value="${s.collection_mode}"]`);
+  if(modeRadio && !modeRadio.disabled) modeRadio.checked = true;
+  updateCommissionExample();
+}
+async function toggleCommissionMaster(){
+  const on = document.getElementById('commission-master').checked;
+  await apiPatch('/admin/settings', { commissionMasterEnabled: on });
+}
+async function saveSettings(){
+  const payload = {
+    platformName: document.getElementById('platform-name').value.trim(),
+    bankReceiver: document.getElementById('bank-receiver').value.trim(),
+    bankIban: document.getElementById('bank-iban').value.trim(),
+  };
+  // Skaitinius laukus siunčiame TIK jei jie realiai teisingi — apsauga, kad tuščias/blogas
+  // laukelis netyčia neišsaugotų 0 vietoj esamos reikšmės.
+  const pct = parseFloat(document.getElementById('commission-pct').value);
+  if(!isNaN(pct)) payload.commissionPercent = pct;
+  const trial = parseInt(document.getElementById('trial-months').value, 10);
+  if(!isNaN(trial)) payload.trialMonths = trial;
+
+  const selectedMode = document.querySelector('input[name="collection-mode"]:checked');
+  if(selectedMode) payload.collectionMode = selectedMode.value;
+
+  const newPass = document.getElementById('admin-new-password').value;
+  if(newPass) payload.adminPassword = newPass;
+  const btn = document.getElementById('save-settings-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
+  try{
+    await apiPatch('/admin/settings', payload);
+    document.getElementById('admin-new-password').value = '';
+    const msg = document.getElementById('settings-saved-msg');
+    msg.style.display = 'block';
+    setTimeout(()=>msg.style.display='none', 2500);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+// ── SĄSKAITOS / KOMISINIAI (rankinis surinkimas, kol nėra Stripe) ──
+let invoicesCache = [];
+
+function currentPeriodLabel(){
+  const now = new Date();
+  const LT_MONTHS = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+  return `${LT_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
+}
+
+async function loadInvoices(){
+  invoicesCache = await apiGet('/admin/invoices');
+  document.getElementById('invoices-period-label').textContent = 'Laikotarpis: ' + currentPeriodLabel();
+  renderInvoicesTable();
+}
+
+function renderInvoicesTable(){
+  document.getElementById('invoices-table-body').innerHTML = invoicesCache.map(inv => `
+    <tr>
+      <td><b>${inv.service_name}</b></td>
+      <td>${fmtEUR(inv.work_total)}</td>
+      <td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(inv.amount_due)}</td>
+      <td>${inv.status==='paid'
+        ? `<span class="badge badge-active">✓ Apmokėta${inv.paid_at?' '+inv.paid_at.slice(0,10):''}</span>`
+        : `<span class="badge badge-pending">Neapmokėta</span>`}</td>
+      <td>${inv.status==='paid' ? '—' : `<button class="ab green" onclick="markInvoicePaid(${inv.id})">✓ Pažymėti apmokėta</button>`}</td>
+    </tr>
+  `).join('') || emptyRow(5);
+}
+
+async function markInvoicePaid(id){
+  await apiPatch(`/admin/invoices/${id}/pay`);
+  await loadInvoices();
+}
+
+async function generateInvoiceMessages(){
+  const messages = await apiPost('/admin/invoices/generate-messages');
+  const wrap = document.getElementById('generated-messages-wrap');
+  const list = document.getElementById('generated-messages-list');
+  if(messages.length === 0){
+    list.innerHTML = '<div style="color:var(--muted);font-size:12.5px;">Nėra neapmokėtų sąskaitų šį mėnesį.</div>';
+  } else {
+    list.innerHTML = messages.map((m,i) => `
+      <div>
+        <div style="font-weight:600;margin-bottom:6px;font-size:13px;">${m.serviceName}</div>
+        <textarea readonly id="msg-${i}" style="width:100%;min-height:160px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:10px;color:var(--text);font-family:'IBM Plex Mono';font-size:11.5px;line-height:1.5;resize:vertical;">${m.message}</textarea>
+        <button class="btn" style="margin-top:6px;" onclick="copyMessage(${i}, this)">📋 Kopijuoti</button>
+      </div>
+    `).join('');
+  }
+  wrap.style.display = 'block';
+}
+
+async function copyMessage(i, btn){
+  const ta = document.getElementById('msg-'+i);
+  ta.select();
+  try{
+    await navigator.clipboard.writeText(ta.value);
+  } catch(e){
+    document.execCommand('copy');
+  }
+  const orig = btn.textContent;
+  btn.textContent = '✓ Nukopijuota';
+  setTimeout(()=>{ btn.textContent = orig; }, 1800);
+}
+
+// ── VISO KROVIMAS PO PRISIJUNGIMO ──
+async function loadEverything(){
+  categoriesCache = await apiGet('/categories');
+  const dash = await apiGet('/admin/dashboard');
+  dashboardCache = dash;
+  renderDashboardTables(dash);
+  document.getElementById('stat-clients').textContent = dash.totalClients;
+  document.getElementById('stat-services').textContent = dash.activeServices;
+  document.getElementById('stat-orders-today').textContent = dash.ordersToday;
+  document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
+  document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
+
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices()]);
+  computeStatChanges();
+  renderMoney();
+  document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;
+}
+
+// NAVIGATION
+function showPage(id, el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('show'));
+  document.getElementById('p-'+id).classList.add('show');
+  document.querySelectorAll('.sb-item').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+}
+
+// FILTER TABS
+function wireFilterTabs(containerId, setFilter, render){
+  document.querySelectorAll(`#${containerId} .tab`).forEach(t=>{
+    t.addEventListener('click', ()=>{
+      document.querySelectorAll(`#${containerId} .tab`).forEach(x=>x.classList.remove('on'));
+      t.classList.add('on');
+      setFilter(t.dataset.filter);
+      render();
+    });
+  });
+}
+wireFilterTabs('clients-tabs', (f)=>clientsFilter=f, renderClients);
+wireFilterTabs('services-tabs', (f)=>servicesFilter=f, renderServices);
+wireFilterTabs('orders-tabs', (f)=>ordersFilter=f, renderOrders);
+document.getElementById('clients-search').addEventListener('input', renderClients);
+document.getElementById('services-search').addEventListener('input', renderServices);
+document.getElementById('orders-search').addEventListener('input', renderOrders);
+
+// CLOCK
+function updateTime(){
+  const now = new Date();
+  const d = ['Sek','Pir','Ant','Tre','Ket','Pen','Šeš'][now.getDay()];
+  document.getElementById('tb-time').textContent = d+' '+now.getHours()+':'+String(now.getMinutes()).padStart(2,'0')+':'+String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('last-upd').textContent = now.getHours()+':'+String(now.getMinutes()).padStart(2,'0');
+}
+setInterval(updateTime, 1000);
+updateTime();
+
+// INIT — jei jau yra galiojantis tokenas, praleisti login ekraną
+(async function initAdmin(){
+  if(adminToken){
+    try{ await loadEverything(); hideLoginScreen(); }
+    catch(err){ showLoginScreen(); }
+  } else {
+    showLoginScreen();
+  }
+})();
+</script>
+</body>
+</html>

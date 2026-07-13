@@ -1,0 +1,1257 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<title>ServisuCentras — Serviso valdymas</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0F10;
+  --bg2:#161819;
+  --bg3:#1E2022;
+  --bg4:#262931;
+  --line:rgba(255,255,255,0.07);
+  --line2:rgba(255,255,255,0.13);
+  --text:#F0EDE5;
+  --muted:#7A8088;
+  --dim:#3A3F45;
+  --yellow:#F5C400;
+  --yellow-dim:rgba(245,196,0,0.1);
+  --green:#3D6B4A;
+  --green-dim:rgba(61,107,74,0.14);
+  --red:#8B1A1A;
+  --red-dim:rgba(139,26,26,0.13);
+  --blue:#3A7BD5;
+  --blue-dim:rgba(58,123,213,0.15);
+  --r:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;min-height:100vh;}
+
+.tribar{display:flex;height:3px;}
+.tribar span{flex:1;}
+
+/* TOP NAV */
+.topnav{
+  display:flex;align-items:center;gap:0;
+  border-bottom:1px solid var(--line);
+  padding:0 0 0 0;
+  height:52px;
+}
+.nav-logo{
+  font-family:'Oswald';font-size:16px;font-weight:700;letter-spacing:0.04em;
+  padding:0 24px;height:100%;display:flex;align-items:center;
+  border-right:1px solid var(--line);white-space:nowrap;
+}
+.nav-logo em{font-style:normal;color:var(--yellow);}
+.nav-service-name{
+  padding:0 20px;font-size:13.5px;font-weight:600;color:var(--muted);
+  height:100%;display:flex;align-items:center;gap:8px;
+  border-right:1px solid var(--line);
+}
+.nav-service-name b{color:var(--text);}
+.status-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-family:'IBM Plex Mono';font-size:10px;padding:3px 9px;
+  border-radius:20px;cursor:pointer;border:none;font-weight:500;
+}
+.status-pill.open{background:var(--green-dim);color:#6fa382;}
+.status-pill.closed{background:var(--red-dim);color:#c97a72;}
+.nav-right{margin-left:auto;display:flex;align-items:center;gap:0;height:100%;}
+.nav-icon-btn{
+  width:52px;height:100%;display:flex;align-items:center;justify-content:center;
+  border-left:1px solid var(--line);cursor:pointer;font-size:16px;
+  background:none;border-top:none;border-bottom:none;border-right:none;
+  color:var(--muted);transition:color .15s;position:relative;
+}
+.nav-icon-btn:hover{color:var(--text);}
+.notif-badge{
+  position:absolute;top:10px;right:10px;
+  width:16px;height:16px;border-radius:50%;
+  background:var(--red);color:#fff;
+  font-size:9px;font-family:'IBM Plex Mono';font-weight:600;
+  display:flex;align-items:center;justify-content:center;
+}
+.nav-avatar{
+  width:52px;height:100%;display:flex;align-items:center;justify-content:center;
+  border-left:1px solid var(--line);cursor:pointer;
+}
+.avatar{width:30px;height:30px;border-radius:50%;background:var(--yellow);color:var(--bg);font-family:'Oswald';font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+
+/* LAYOUT */
+.shell{display:flex;flex:1;}
+
+/* SIDEBAR NAV */
+.sidenav{
+  width:220px;border-right:1px solid var(--line);
+  display:flex;flex-direction:column;
+  flex-shrink:0;
+}
+.sidenav-section{padding:20px 14px 8px;font-family:'IBM Plex Mono';font-size:9.5px;color:var(--dim);letter-spacing:0.1em;text-transform:uppercase;}
+.sidenav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;cursor:pointer;
+  font-size:13.5px;font-weight:500;color:var(--muted);
+  border-radius:0;transition:all .15s;
+  border-left:2px solid transparent;
+  background:none;border-top:none;border-bottom:none;border-right:none;
+  width:100%;text-align:left;font-family:'IBM Plex Sans';
+}
+.sidenav-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.sidenav-item.active{color:var(--yellow);border-left-color:var(--yellow);background:var(--yellow-dim);}
+.sidenav-item .icon{font-size:15px;width:20px;text-align:center;}
+.sidenav-item .badge{margin-left:auto;font-family:'IBM Plex Mono';font-size:10px;background:var(--red);color:#fff;padding:1px 6px;border-radius:10px;}
+.sidenav-bottom{margin-top:auto;border-top:1px solid var(--line);padding:12px 14px;}
+.sidenav-item.danger{color:var(--muted);}
+.sidenav-item.danger:hover{color:var(--red);}
+
+/* MAIN CONTENT */
+.main{flex:1;overflow:auto;display:flex;flex-direction:column;}
+
+/* PAGE HEADER */
+.page-header{
+  padding:22px 28px 18px;
+  border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;
+}
+.page-title{font-family:'Oswald';font-size:22px;font-weight:600;}
+.page-date{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.header-actions{display:flex;gap:8px;}
+.btn{
+  font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;
+  padding:8px 16px;border-radius:var(--r);cursor:pointer;
+  border:1px solid var(--line2);background:var(--bg2);color:var(--text);
+  transition:all .15s;
+}
+.btn:hover{border-color:rgba(245,196,0,0.3);color:var(--yellow);}
+.btn-primary{background:var(--yellow);color:var(--bg);border-color:var(--yellow);}
+.btn-primary:hover{background:#FFD740;color:var(--bg);}
+
+/* STATS ROW */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);}
+.stat-box{background:var(--bg);padding:20px 24px;}
+.stat-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;}
+.stat-val{font-family:'Oswald';font-size:28px;font-weight:600;line-height:1;margin-bottom:4px;}
+.stat-val.yellow{color:var(--yellow);}
+.stat-val.green{color:#6fa382;}
+.stat-val.red{color:#c97a72;}
+.stat-val.blue{color:#7ab0f0;}
+.stat-change{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);}
+.stat-change .up{color:#6fa382;}
+.stat-change .dn{color:#c97a72;}
+
+/* CONTENT GRID */
+.content-grid{display:grid;grid-template-columns:1fr 360px;gap:0;flex:1;}
+@media(max-width:1100px){.content-grid{grid-template-columns:1fr;}}
+
+/* ORDERS PANEL */
+.orders-panel{border-right:1px solid var(--line);display:flex;flex-direction:column;}
+.panel-header{
+  padding:16px 24px;border-bottom:1px solid var(--line);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.panel-title{font-family:'Oswald';font-size:16px;font-weight:600;display:flex;align-items:center;gap:10px;}
+.panel-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);}
+.ptab{
+  padding:10px 18px;font-size:12.5px;font-weight:500;color:var(--muted);
+  cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;
+  font-family:'IBM Plex Sans';background:none;border-top:none;border-left:none;border-right:none;
+}
+.ptab:hover{color:var(--text);}
+.ptab.active{color:var(--yellow);border-bottom-color:var(--yellow);}
+.ptab .n{margin-left:6px;font-family:'IBM Plex Mono';font-size:10px;background:var(--bg3);padding:1px 5px;border-radius:3px;}
+.ptab.active .n{background:var(--yellow-dim);color:var(--yellow);}
+
+/* ORDER CARDS */
+.order-list{display:flex;flex-direction:column;gap:0;overflow-y:auto;}
+.ocard{
+  padding:16px 24px;border-bottom:1px solid var(--line);
+  cursor:pointer;transition:background .15s;
+  display:grid;grid-template-columns:1fr auto;gap:12px;
+}
+.ocard:hover{background:var(--bg2);}
+.ocard.selected{background:var(--bg2);border-left:2px solid var(--yellow);}
+
+.ocard-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+.ocard-cat{font-family:'IBM Plex Mono';font-size:10px;padding:2px 7px;border-radius:2px;font-weight:500;}
+.cat-diagnostika{background:rgba(58,123,213,0.15);color:#7ab0f0;}
+.cat-elektronika{background:rgba(245,196,0,0.12);color:var(--yellow);}
+.cat-variklis{background:rgba(200,100,50,0.15);color:#e09060;}
+.cat-vaziuokle{background:rgba(150,100,200,0.15);color:#c0a0f0;}
+.cat-stabdziai{background:rgba(192,57,43,0.15);color:#c97a72;}
+.cat-padangos{background:rgba(74,124,89,0.15);color:#6fa382;}
+.cat-kebulas{background:rgba(100,150,200,0.15);color:#80b0e0;}
+.cat-prieziura{background:rgba(180,160,80,0.15);color:#d0c060;}
+.cat-apsvietimas{background:rgba(245,196,0,0.12);color:var(--yellow);}
+.cat-kondicionierius{background:rgba(58,180,213,0.15);color:#7ad0e0;}
+.cat-stiklai{background:rgba(150,180,200,0.15);color:#a0c0d0;}
+.cat-plovykla{background:rgba(58,123,213,0.15);color:#7ab0f0;}
+.cat-raktai{background:rgba(150,100,200,0.15);color:#c0a0f0;}
+
+.ocard-time{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);}
+.ocard-car{font-size:14px;font-weight:600;margin-bottom:3px;}
+.ocard-desc{font-size:12.5px;color:var(--muted);line-height:1.4;margin-bottom:6px;}
+.ocard-footer{display:flex;align-items:center;gap:10px;}
+.ocard-client{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);}
+.ocard-slot{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--yellow);}
+
+.ocard-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center;}
+.action-btn{
+  font-family:'IBM Plex Mono';font-size:10px;padding:5px 10px;border-radius:2px;
+  cursor:pointer;white-space:nowrap;border:1px solid;transition:all .15s;background:none;
+}
+.action-btn.accept{color:#6fa382;border-color:rgba(74,124,89,0.4);}
+.action-btn.accept:hover{background:var(--green-dim);}
+.action-btn.decline{color:#c97a72;border-color:rgba(192,57,43,0.3);}
+.action-btn.decline:hover{background:var(--red-dim);}
+.action-btn.call{color:var(--yellow);border-color:rgba(245,196,0,0.3);}
+.action-btn.call:hover{background:var(--yellow-dim);}
+.action-btn.done{color:var(--muted);border-color:var(--line2);}
+
+.status-badge{font-family:'IBM Plex Mono';font-size:9.5px;padding:3px 8px;border-radius:2px;font-weight:500;}
+.sb-new{background:var(--yellow-dim);color:var(--yellow);}
+.sb-confirmed{background:var(--green-dim);color:#6fa382;}
+.sb-done{background:rgba(255,255,255,0.05);color:var(--muted);}
+.sb-declined{background:var(--red-dim);color:#c97a72;}
+
+/* RIGHT PANEL — šiandien */
+.right-panel{display:flex;flex-direction:column;}
+.rp-section{padding:20px;border-bottom:1px solid var(--line);}
+.rp-title{font-family:'Oswald';font-size:15px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+.rp-title span{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);font-weight:400;}
+
+/* Šiandienos tvarkaraštis */
+.timeline{display:flex;flex-direction:column;gap:6px;}
+.tl-item{display:flex;gap:12px;align-items:flex-start;}
+.tl-time{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);width:36px;flex-shrink:0;padding-top:3px;}
+.tl-bar{width:3px;border-radius:2px;flex-shrink:0;margin-top:4px;}
+.tl-content{flex:1;background:var(--bg2);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line);}
+.tl-content.active{border-color:rgba(245,196,0,0.25);background:var(--yellow-dim);}
+.tl-content.free{border-style:dashed;background:transparent;}
+.tl-car{font-size:12.5px;font-weight:600;margin-bottom:2px;}
+.tl-detail{font-size:11px;color:var(--muted);}
+.tl-now{font-family:'IBM Plex Mono';font-size:9px;color:var(--yellow);background:var(--yellow-dim);padding:1px 6px;border-radius:2px;margin-left:6px;}
+
+/* Greiti veiksmai */
+.quick-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.qa-btn{
+  padding:14px 10px;border-radius:var(--r);border:1px solid var(--line);
+  background:var(--bg2);cursor:pointer;text-align:center;transition:all .15s;
+  font-family:'IBM Plex Sans';color:var(--text);
+}
+.qa-btn:hover{border-color:rgba(245,196,0,0.3);}
+.qa-icon{font-size:22px;margin-bottom:6px;}
+.qa-label{font-size:11.5px;font-weight:500;}
+.qa-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* Savaitės mini stats */
+.week-bars{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:4px;}
+.wbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
+.wbar{background:var(--yellow-dim);border-radius:2px 2px 0 0;width:100%;transition:height .3s;border:1px solid rgba(245,196,0,0.2);}
+.wbar.today{background:rgba(245,196,0,0.4);border-color:rgba(245,196,0,0.5);}
+.wbar-label{font-family:'IBM Plex Mono';font-size:9px;color:var(--dim);}
+.wbar-label.today{color:var(--yellow);}
+
+/* DASHBOARD PAGES (Užklausos/Profilis/Statistika/Paslaugos/Kalendorius) */
+.dash-page{display:none;}
+.dash-page.show{display:block;}
+.pf-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:6px;}
+.pf-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;transition:border-color .15s;}
+.pf-input:focus{border-color:rgba(245,196,0,0.4);}
+.pf-row{display:flex;gap:10px;}
+.pf-group{flex:1;margin-bottom:14px;}
+
+/* STATISTIKA */
+.stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:20px 24px;}
+.stat-card{background:var(--bg);padding:18px 20px;}
+
+/* PASLAUGOS */
+.svc-row{display:flex;align-items:center;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);}
+.svc-row:last-child{border-bottom:none;}
+.svc-row-name{flex:1;font-size:13.5px;font-weight:500;}
+.svc-row-price{width:120px;display:flex;align-items:center;gap:6px;}
+.svc-row-price input{width:80px;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:12px;outline:none;}
+.svc-row-price input:disabled{opacity:0.35;}
+
+/* AUTO-ATNAUJINIMAS — naujo įrašo dėmesio atkreipimas */
+@keyframes newOrderPulse{
+  0%{background:rgba(245,196,0,0.4);}
+  100%{background:transparent;}
+}
+.ocard.new-highlight{animation:newOrderPulse 2.6s ease-out;}
+@keyframes tabFlash{
+  0%{background:rgba(245,196,0,0.55);color:var(--bg);}
+  100%{background:transparent;color:var(--yellow);}
+}
+.ptab.tab-flash{animation:tabFlash 2.6s ease-out;}
+</style>
+</head>
+<body>
+
+<div class="tribar">
+  <span style="background:#F5C400"></span>
+  <span style="background:#3D6B4A"></span>
+  <span style="background:#8B1A1A"></span>
+</div>
+
+<!-- TOP NAV -->
+<div class="topnav">
+  <div class="nav-logo">SERVISU<em>CENTRAS</em></div>
+  <div class="nav-service-name">
+    <b id="nav-service-name">—</b>
+    <button class="status-pill open" id="status-toggle" onclick="toggleStatus()">● DIRBA</button>
+  </div>
+  <div class="nav-right">
+    <button class="nav-icon-btn" title="Pranešimai" onclick="showNotifications()">
+      🔔
+      <div class="notif-badge">3</div>
+    </button>
+    <button class="nav-icon-btn" title="Pagalba">❓</button>
+    <div class="nav-avatar"><div class="avatar" id="nav-avatar">?</div></div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <!-- SIDE NAV -->
+  <nav class="sidenav">
+    <div class="sidenav-section">Pagrindinis</div>
+    <button class="sidenav-item active" onclick="switchDashPage('orders', this)"><span class="icon">📋</span> Užklausos <span class="badge" id="sidenav-orders-badge">0</span></button>
+    <button class="sidenav-item" onclick="switchDashPage('calendar', this)"><span class="icon">📅</span> Kalendorius</button>
+    <button class="sidenav-item" onclick="switchDashPage('stats', this)"><span class="icon">📊</span> Statistika</button>
+
+    <div class="sidenav-section">Servisas</div>
+    <button class="sidenav-item" onclick="switchDashPage('services', this)"><span class="icon">🏷️</span> Paslaugos</button>
+    <button class="sidenav-item" onclick="switchDashPage('profile', this)"><span class="icon">🕐</span> Darbo laikas</button>
+    <button class="sidenav-item" onclick="switchDashPage('profile', this)"><span class="icon">👤</span> Profilis</button>
+    <button class="sidenav-item"><span class="icon">⭐</span> Atsiliepimai</button>
+
+    <div class="sidenav-bottom">
+      <button class="sidenav-item danger" onclick="switchDashPage('settings', this)"><span class="icon">⚙️</span> Nustatymai</button>
+      <button class="sidenav-item danger" onclick="location.href='automeistrai-login.html'"><span class="icon">🚪</span> Atsijungti</button>
+    </div>
+  </nav>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- PAGE HEADER -->
+    <div class="page-header">
+      <div>
+        <div class="page-title" id="page-title">Užklausos</div>
+        <div class="page-date" id="cur-date"></div>
+      </div>
+      <div class="header-actions" id="header-actions">
+        <button class="btn" onclick="exportData()">⬇ Eksportuoti</button>
+        <button class="btn btn-primary" onclick="addTimeSlot()">+ Pridėti laiką</button>
+      </div>
+    </div>
+
+    <!-- ═══ UŽKLAUSOS ═══ -->
+    <div class="dash-page show" id="page-orders">
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-label">Šiandien užklausų</div>
+          <div class="stat-val yellow" id="stat-today">—</div>
+          <div class="stat-change" id="stat-today-ch"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Šią savaitę</div>
+          <div class="stat-val blue" id="stat-week">—</div>
+          <div class="stat-change">iš viso užklausų</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Patvirtinta</div>
+          <div class="stat-val green" id="stat-confirmed">—</div>
+          <div class="stat-change" id="stat-confirmed-ch"></div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-label">Vidutinis įvertinimas</div>
+          <div class="stat-val yellow" id="stat-rating">—</div>
+          <div class="stat-change">iš serviso profilio</div>
+        </div>
+      </div>
+
+      <!-- CONTENT GRID -->
+      <div class="content-grid">
+
+        <!-- ORDERS -->
+        <div class="orders-panel">
+          <div class="panel-header">
+            <div class="panel-title">Gautos užklausos <span class="status-badge sb-new" id="new-count-badge">0 naujos</span></div>
+          </div>
+          <div class="panel-tabs" id="panel-tabs"></div>
+          <div class="order-list" id="order-list"></div>
+        </div>
+
+        <!-- RIGHT PANEL -->
+        <div class="right-panel">
+
+          <!-- Šiandien -->
+          <div class="rp-section">
+            <div class="rp-title">Šiandien <span id="today-label"></span></div>
+            <div class="timeline" id="timeline"></div>
+          </div>
+
+          <!-- Savaitės apkrova -->
+          <div class="rp-section">
+            <div class="rp-title">Savaitės apkrova <span>2026 W27</span></div>
+            <div class="week-bars" id="week-bars"></div>
+          </div>
+
+          <!-- Greiti veiksmai -->
+          <div class="rp-section">
+            <div class="rp-title">Greiti veiksmai</div>
+            <div class="quick-actions">
+              <div class="qa-btn" onclick="toggleStatus()">
+                <div class="qa-icon">🔒</div>
+                <div class="qa-label">Uždaryti</div>
+                <div class="qa-sub">Laikinai nedirbu</div>
+              </div>
+              <div class="qa-btn" onclick="sendReminderSms()">
+                <div class="qa-icon">📤</div>
+                <div class="qa-label">Siųsti SMS</div>
+                <div class="qa-sub">Klientui priminti</div>
+              </div>
+              <div class="qa-btn" onclick="blockVacationDates()">
+                <div class="qa-icon">⛔</div>
+                <div class="qa-label">Atostogos</div>
+                <div class="qa-sub">Blokuoti datas</div>
+              </div>
+              <div class="qa-btn" onclick="callLastClient()">
+                <div class="qa-icon">📞</div>
+                <div class="qa-label">Skambinti</div>
+                <div class="qa-sub">Paskutiniam klientui</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ PROFILIS ═══ -->
+    <div class="dash-page" id="page-profile">
+      <div class="content-grid" style="grid-template-columns:1fr;">
+        <div class="orders-panel" style="border-right:none;max-width:520px;">
+          <div class="panel-header">
+            <div class="panel-title">Serviso profilis</div>
+          </div>
+          <div style="padding:20px 24px;">
+            <div class="pf-group">
+              <label class="pf-label">Pavadinimas</label>
+              <input class="pf-input" id="profile-name" placeholder="Serviso pavadinimas">
+            </div>
+            <div class="pf-group">
+              <label class="pf-label">Adresas</label>
+              <input class="pf-input" id="profile-address" placeholder="Gatvė, miestas">
+            </div>
+            <div class="pf-row">
+              <div class="pf-group">
+                <label class="pf-label">Telefonas</label>
+                <input class="pf-input" id="profile-phone" placeholder="+370 600 00000">
+              </div>
+              <div class="pf-group">
+                <label class="pf-label">El. paštas</label>
+                <input class="pf-input" id="profile-email" type="email" placeholder="servisas@gmail.com">
+              </div>
+            </div>
+            <div class="pf-group">
+              <label class="pf-label">Darbo laikas</label>
+              <div id="work-hours-rows" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+            </div>
+            <div id="profile-msg" style="display:none;font-size:12.5px;margin-bottom:12px;margin-top:14px;"></div>
+            <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">💾 Išsaugoti profilį</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STATISTIKA ═══ -->
+    <div class="dash-page" id="page-stats">
+      <div id="stats-content"></div>
+    </div>
+
+    <!-- ═══ PASLAUGOS ═══ -->
+    <div class="dash-page" id="page-services">
+      <div class="content-grid" style="grid-template-columns:1fr;">
+        <div class="orders-panel" style="border-right:none;max-width:640px;">
+          <div class="panel-header">
+            <div class="panel-title">Paslaugos ir kainos</div>
+          </div>
+          <div style="padding:8px 0;" id="offerings-list"></div>
+          <div style="padding:16px 24px;border-top:1px solid var(--line);display:flex;align-items:center;gap:14px;">
+            <button class="btn btn-primary" id="offerings-save-btn" onclick="saveOfferings()">💾 Išsaugoti paslaugas</button>
+            <div id="offerings-msg" style="display:none;font-size:12.5px;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ KALENDORIUS ═══ -->
+    <div class="dash-page" id="page-calendar">
+      <div style="padding:40px;color:var(--muted);text-align:center;">Kalendorius bus paruoštas vėliau.</div>
+    </div>
+
+    <!-- ═══ NUSTATYMAI ═══ -->
+    <div class="dash-page" id="page-settings">
+      <div class="content-grid" style="grid-template-columns:1fr;">
+        <div class="orders-panel" style="border-right:none;max-width:520px;">
+          <div class="panel-header">
+            <div class="panel-title">Nustatymai</div>
+          </div>
+          <div style="padding:20px 24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding-bottom:16px;border-bottom:1px solid var(--line);">
+              <div>
+                <label class="pf-label" style="display:block;margin-bottom:4px;">Garsinis pranešimas apie naujas užklausas</label>
+                <div style="font-size:12px;color:var(--muted);max-width:360px;">Kai gaunama nauja užklausa, dashboard'as trumpai suskambins. Išjunkite, jei tai trukdo darbe.</div>
+              </div>
+              <input type="checkbox" id="sound-notif-toggle" onchange="toggleSoundNotif()" style="width:18px;height:18px;accent-color:var(--yellow);flex-shrink:0;cursor:pointer;">
+            </div>
+            <div style="padding-top:16px;display:flex;align-items:center;gap:12px;">
+              <button class="btn" onclick="playNewOrderSound()" style="border:1px solid var(--line2);background:var(--bg2);color:var(--text);">🔊 Bandyti garsą</button>
+              <span style="font-size:11.5px;color:var(--muted);">Paspauskite, kad išgirstumėte, kaip skamba pranešimas.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// Date
+const now = new Date();
+const days = ['Sekmadienis','Pirmadienis','Antradienis','Trečiadienis','Ketvirtadienis','Penktadienis','Šeštadienis'];
+const months = ['sausio','vasario','kovo','balandžio','gegužės','birželio','liepos','rugpjūčio','rugsėjo','spalio','lapkričio','gruodžio'];
+document.getElementById('cur-date').textContent = days[now.getDay()] + ', ' + now.getDate() + ' ' + months[now.getMonth()] + ' ' + now.getFullYear();
+document.getElementById('today-label').textContent = now.getDate() + '.' + String(now.getMonth()+1).padStart(2,'0');
+
+// ═══ REALŪS DUOMENYS IŠ BACKEND API ═══
+const API_BASE = '/api';
+let serviceToken = localStorage.getItem('sc_service_token');
+let serviceProfile = null;
+let categoriesCache = [];
+let ordersCache = [];
+let activeTab = 'new';
+let quotingOrderId = null;
+let quotingMode = null;
+
+if(!serviceToken){
+  window.location.href = 'automeistrai-login.html?type=service';
+}
+
+function fmtEUR(n){ return (Number(n)||0).toFixed(2)+'€'; }
+function categoryInfo(id){
+  const cat = categoriesCache.find(c=>c.id===id);
+  return { label: cat ? cat.label : (id || '—'), cls: 'cat-'+(id || 'prieziura') };
+}
+function timeAgo(dateStr){
+  if(!dateStr) return '';
+  const then = new Date(dateStr.replace(' ','T')+'Z');
+  const mins = Math.floor((Date.now() - then.getTime())/60000);
+  if(mins < 1) return 'ką tik';
+  if(mins < 60) return `prieš ${mins} min`;
+  const hours = Math.floor(mins/60);
+  if(hours < 24) return `prieš ${hours} val`;
+  return `prieš ${Math.floor(hours/24)} d.`;
+}
+
+async function apiRequest(method, path, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: { 'Content-Type':'application/json', ...(serviceToken ? {'Authorization':'Bearer '+serviceToken} : {}) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if(res.status === 401){
+    localStorage.removeItem('sc_service_token');
+    window.location.href = 'automeistrai-login.html?type=service';
+    throw new Error('Sesija baigėsi');
+  }
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || 'Klaida');
+  return data;
+}
+const apiGet = (path) => apiRequest('GET', path);
+const apiPost = (path, body) => apiRequest('POST', path, body || {});
+
+const TAB_STATUS = ['new','confirmed','done'];
+const TAB_LABELS = {new:'Naujos', confirmed:'Patvirtintos', done:'Atliktos'};
+
+function tabFilter(o, tab){
+  const myId = serviceProfile.id;
+  if(tab==='new') return o.service_id === null;
+  if(tab==='confirmed') return o.service_id === myId && o.status === 'in_progress';
+  if(tab==='done') return o.service_id === myId && o.status === 'done';
+  return false;
+}
+
+function renderTabs(){
+  document.getElementById('panel-tabs').innerHTML = TAB_STATUS.map(s => {
+    const count = ordersCache.filter(o => tabFilter(o, s)).length;
+    return `<button class="ptab ${s===activeTab?'active':''}" data-tab="${s}" onclick="setTab('${s}')">${TAB_LABELS[s]} <span class="n">${count}</span></button>`;
+  }).join('');
+}
+
+function setTab(status){
+  activeTab = status;
+  renderTabs();
+  renderOrders();
+}
+
+function formatSchedule(v){
+  if(!v) return '';
+  const [datePart, timePart] = v.split('T');
+  if(!datePart) return v;
+  const [, m, d] = datePart.split('-');
+  const MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+  return `${d} ${MONTHS_SHORT[parseInt(m,10)-1]} ${timePart||''}`;
+}
+
+function actionsForOrder(o){
+  const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
+  if(quotingOrderId === o.id){
+    if(quotingMode === 'schedule'){
+      return `
+        <div style="display:flex;gap:6px;align-items:center;">
+          <input type="datetime-local" id="price-input-${o.id}" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+          <button class="action-btn accept" onclick="submitSchedule(${o.id})">✓ Nustatyti</button>
+          <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
+        </div>`;
+    }
+    return `
+      <div style="display:flex;gap:6px;align-items:center;">
+        <input type="number" id="price-input-${o.id}" placeholder="Kaina €" style="width:70px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+        <button class="action-btn accept" onclick="submitPrice(${o.id})">✓ Siųsti</button>
+        <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
+      </div>`;
+  }
+  if(o.service_id === null){
+    return `
+      <button class="action-btn accept" onclick="startQuoting(${o.id},'quote')">✓ Pasiūlyti kainą</button>
+      <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>`;
+  }
+  if(o.status === 'in_progress'){
+    return `
+      <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>
+      <button class="action-btn call" onclick="startScheduling(${o.id})">📅 ${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'Priskirti laiką'}</button>
+      <button class="action-btn done" onclick="startQuoting(${o.id},'complete')">✓ Pažymėti atlikta</button>`;
+  }
+  if(o.status === 'done'){
+    return `<span class="status-badge sb-done">✓ Atlikta${o.price!=null?' · '+fmtEUR(o.price):''}</span>`;
+  }
+  return '';
+}
+
+function renderOrders(){
+  const filtered = ordersCache.filter(o => tabFilter(o, activeTab));
+  const list = document.getElementById('order-list');
+  if(filtered.length === 0){
+    list.innerHTML = `<div style="padding:32px 24px;color:var(--muted);font-size:13px;text-align:center;">Šioje kategorijoje užklausų nėra.</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(o => {
+    const cat = categoryInfo(o.category_id);
+    const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
+    return `
+    <div class="ocard" data-order-id="${o.id}">
+      <div>
+        <div class="ocard-top">
+          <span class="ocard-cat ${cat.cls}">${cat.label}</span>
+          <span class="ocard-time">${timeAgo(o.created_at)}</span>
+        </div>
+        <div class="ocard-car">${clientName}</div>
+        ${o.car_info ? `<div class="ocard-car" style="color:var(--y,#F5C400);font-weight:500;">🚗 ${o.car_info}</div>` : ''}
+        <div class="ocard-desc">${o.description||''}</div>
+        <div class="ocard-footer">
+          <span class="ocard-client">📞 ${o.phone||'—'}</span>
+          <span class="ocard-slot">#${String(o.id).padStart(4,'0')}</span>
+        </div>
+      </div>
+      <div class="ocard-actions">${actionsForOrder(o)}</div>
+    </div>`;
+  }).join('');
+}
+
+function startQuoting(id, mode){
+  quotingOrderId = id; quotingMode = mode;
+  renderOrders();
+  setTimeout(()=>{ const el = document.getElementById(`price-input-${id}`); if(el) el.focus(); }, 0);
+}
+function cancelQuoting(){ quotingOrderId = null; quotingMode = null; renderOrders(); }
+
+async function submitPrice(id){
+  const input = document.getElementById(`price-input-${id}`);
+  const price = parseFloat(input.value);
+  if(!price || price <= 0){ input.style.borderColor = 'rgba(192,57,43,0.6)'; return; }
+  try{
+    if(quotingMode === 'quote') await apiPost(`/orders/${id}/quote`, { price });
+    else await apiPost(`/orders/${id}/complete`, { price });
+    quotingOrderId = null; quotingMode = null;
+    await loadOrders();
+  } catch(err){
+    alert(err.message);
+  }
+}
+
+function startScheduling(id){
+  quotingOrderId = id; quotingMode = 'schedule';
+  renderOrders();
+  setTimeout(()=>{
+    const el = document.getElementById(`price-input-${id}`);
+    if(!el) return;
+    const o = ordersCache.find(x=>x.id===id);
+    if(o && o.scheduled_time) el.value = o.scheduled_time;
+    el.focus();
+  }, 0);
+}
+
+async function submitSchedule(id){
+  const input = document.getElementById(`price-input-${id}`);
+  if(!input.value){ input.style.borderColor = 'rgba(192,57,43,0.6)'; return; }
+  try{
+    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime: input.value });
+    quotingOrderId = null; quotingMode = null;
+    await loadOrders();
+  } catch(err){
+    alert(err.message);
+  }
+}
+
+function renderStats(){
+  const nowD = new Date();
+  const todayStr = nowD.toISOString().slice(0,10);
+  const yesterday = new Date(nowD); yesterday.setDate(yesterday.getDate()-1);
+  const yesterdayStr = yesterday.toISOString().slice(0,10);
+  const todayCount = ordersCache.filter(o=>(o.created_at||'').slice(0,10)===todayStr).length;
+  const yesterdayCount = ordersCache.filter(o=>(o.created_at||'').slice(0,10)===yesterdayStr).length;
+  document.getElementById('stat-today').textContent = todayCount;
+  const diff = todayCount - yesterdayCount;
+  document.getElementById('stat-today-ch').innerHTML = `<span class="${diff>=0?'up':'dn'}">${diff>=0?'↑':'↓'} ${Math.abs(diff)}</span> nuo vakar`;
+
+  const weekAgo = new Date(nowD); weekAgo.setDate(weekAgo.getDate()-7);
+  const weekCount = ordersCache.filter(o=>o.created_at && new Date(o.created_at.replace(' ','T')+'Z') >= weekAgo).length;
+  document.getElementById('stat-week').textContent = weekCount;
+
+  const myId = serviceProfile.id;
+  const confirmedOrDone = ordersCache.filter(o=>o.service_id===myId && (o.status==='in_progress'||o.status==='done')).length;
+  document.getElementById('stat-confirmed').textContent = confirmedOrDone;
+  document.getElementById('stat-confirmed-ch').textContent = ordersCache.length>0
+    ? Math.round(confirmedOrDone/ordersCache.length*100)+'% priėmimo rodiklis' : '—';
+
+  const newCount = ordersCache.filter(o=>o.service_id===null).length;
+  document.getElementById('new-count-badge').textContent = newCount+' naujos';
+  document.getElementById('sidenav-orders-badge').textContent = newCount;
+}
+
+function renderWeekBars(){
+  const DAYS_SHORT = ['Pir','Ant','Tre','Ket','Pen','Šeš'];
+  const nowD = new Date();
+  const startOfWeek = new Date(nowD); startOfWeek.setDate(nowD.getDate() - ((nowD.getDay()+6)%7)); startOfWeek.setHours(0,0,0,0);
+  const counts = [0,0,0,0,0,0];
+  ordersCache.forEach(o=>{
+    if(!o.created_at) return;
+    const d = new Date(o.created_at.replace(' ','T')+'Z');
+    if(d < startOfWeek) return;
+    const idx = (d.getDay()+6)%7;
+    if(idx < 6) counts[idx]++;
+  });
+  const max = Math.max(...counts, 1);
+  const todayIdx = (nowD.getDay()+6)%7;
+  document.getElementById('week-bars').innerHTML = DAYS_SHORT.map((d,i) => `
+    <div class="wbar-wrap">
+      <div class="wbar ${i===todayIdx?'today':''}" style="height:${Math.max(4, Math.round(counts[i]/max*100))}%"></div>
+      <div class="wbar-label ${i===todayIdx?'today':''}">${d}</div>
+    </div>
+  `).join('');
+}
+
+async function loadOrders(){
+  ordersCache = await apiGet('/orders');
+  renderStats();
+  renderTabs();
+  renderOrders();
+  renderWeekBars();
+}
+
+// ═══ AUTO-ATNAUJINIMAS (polling, be viso puslapio perkrovimo) ═══
+let pollTimer = null;
+let audioCtx = null;
+let soundNotifEnabled = localStorage.getItem('sc_sound_notif') !== 'off';
+
+function loadSettingsPage(){
+  document.getElementById('sound-notif-toggle').checked = soundNotifEnabled;
+}
+
+function toggleSoundNotif(){
+  soundNotifEnabled = document.getElementById('sound-notif-toggle').checked;
+  localStorage.setItem('sc_sound_notif', soundNotifEnabled ? 'on' : 'off');
+}
+
+function playNewOrderSound(){
+  if(!soundNotifEnabled) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.35);
+    osc.connect(gain); gain.connect(audioCtx.destination);
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.35);
+  } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
+}
+
+function flashNewTab(){
+  const tab = document.querySelector('#panel-tabs .ptab[data-tab="new"]');
+  if(!tab) return;
+  tab.classList.add('tab-flash');
+  setTimeout(()=>tab.classList.remove('tab-flash'), 2600);
+}
+
+function highlightNewCards(ids){
+  ids.forEach(id=>{
+    const el = document.querySelector(`.ocard[data-order-id="${id}"]`);
+    if(!el) return;
+    el.classList.add('new-highlight');
+    setTimeout(()=>el.classList.remove('new-highlight'), 2600);
+  });
+}
+
+async function pollOrders(){
+  try{
+    const fresh = await apiGet('/orders');
+    const oldIds = new Set(ordersCache.map(o=>o.id));
+    const newlyArrived = fresh.filter(o => o.status === 'new' && !oldIds.has(o.id));
+
+    ordersCache = fresh;
+    renderStats();
+    renderTabs();
+    renderWeekBars();
+    // Kol servisas kažką redaguoja (kainos/laiko laukelis atidarytas), sąrašo neperpiešiame,
+    // kad neprarastume jo įvedamų duomenų — kiti elementai (badge'ai, tabai) vis tiek atsinaujina.
+    if(quotingOrderId === null){
+      renderOrders();
+    }
+
+    if(newlyArrived.length){
+      playNewOrderSound();
+      flashNewTab();
+      if(quotingOrderId === null && activeTab === 'new'){
+        highlightNewCards(newlyArrived.map(o=>o.id));
+      }
+    }
+  } catch(err){
+    // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
+  }
+}
+
+function startPolling(){
+  if(pollTimer) return;
+  pollTimer = setInterval(pollOrders, 12000);
+}
+function stopPolling(){
+  if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) stopPolling();
+  else startPolling();
+});
+
+// ═══ PUSLAPIŲ NAVIGACIJA (Užklausos / Profilis / Statistika / Paslaugos / Kalendorius) ═══
+const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai' };
+const PAGE_LOADERS = { profile: loadProfileForm, stats: renderStatsPage, services: loadOfferings, calendar: renderCalendarPage, settings: loadSettingsPage };
+
+function switchDashPage(page, el){
+  document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('show'));
+  document.getElementById('page-'+page).classList.add('show');
+  document.getElementById('page-title').textContent = PAGE_TITLES[page] || page;
+  document.getElementById('cur-date').style.display = page==='orders' ? '' : 'none';
+  document.getElementById('header-actions').style.display = page==='orders' ? '' : 'none';
+  document.querySelectorAll('.sidenav-item').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const loader = PAGE_LOADERS[page];
+  if(loader) loader();
+}
+
+// ═══ PROFILIS ═══
+const WEEKDAYS_SHORT = ['Pir','Ant','Tre','Ket','Pen','Šeš','Sek'];
+
+// Fiksuotos 24 val. laiko parinktys (kas 30 min) — <input type="time"> rodo AM/PM
+// priklausomai nuo naršyklės/OS lokalės net su lang="lt", tad naudojame <select>
+// su iš anksto suformatuotu tekstu, kad visada rodytų tiksliai "08:00" formatą.
+const TIME_OPTIONS = Array.from({length:48}, (_,i)=>{
+  const h = String(Math.floor(i/2)).padStart(2,'0');
+  const m = i%2===0 ? '00' : '30';
+  return `${h}:${m}`;
+});
+
+function timeSelectHtml(cls, day, selected, disabled){
+  const value = selected || '08:00';
+  const opts = TIME_OPTIONS.includes(value) ? TIME_OPTIONS : [value, ...TIME_OPTIONS];
+  return `<select class="${cls}" data-day="${day}" ${disabled?'disabled':''} style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:12px;outline:none;">
+    ${opts.map(t=>`<option value="${t}" ${t===value?'selected':''}>${t}</option>`).join('')}
+  </select>`;
+}
+
+function renderWorkHoursRows(){
+  const hours = (serviceProfile.work_hours && serviceProfile.work_hours.length === 7)
+    ? serviceProfile.work_hours
+    : WEEKDAYS_SHORT.map((_,i)=>({
+        open: i < 5,
+        start: serviceProfile.work_start || '08:00',
+        end: serviceProfile.work_end || '18:00',
+      }));
+  document.getElementById('work-hours-rows').innerHTML = hours.map((h,i)=>`
+    <div style="display:flex;align-items:center;gap:10px;">
+      <input type="checkbox" class="wh-open" data-day="${i}" ${h.open?'checked':''} onchange="onWorkHoursToggle(${i})" style="width:16px;height:16px;accent-color:var(--yellow);flex-shrink:0;">
+      <span style="width:32px;font-size:12.5px;color:var(--muted);">${WEEKDAYS_SHORT[i]}</span>
+      ${timeSelectHtml('wh-start', i, h.start, !h.open)}
+      <span style="color:var(--muted);font-size:11px;">–</span>
+      ${timeSelectHtml('wh-end', i, h.end, !h.open)}
+    </div>
+  `).join('');
+}
+
+function onWorkHoursToggle(day){
+  const cb = document.querySelector(`.wh-open[data-day="${day}"]`);
+  document.querySelector(`.wh-start[data-day="${day}"]`).disabled = !cb.checked;
+  document.querySelector(`.wh-end[data-day="${day}"]`).disabled = !cb.checked;
+}
+
+function loadProfileForm(){
+  document.getElementById('profile-name').value = serviceProfile.name || '';
+  document.getElementById('profile-address').value = serviceProfile.address || '';
+  document.getElementById('profile-phone').value = serviceProfile.phone || '';
+  document.getElementById('profile-email').value = serviceProfile.email || '';
+  renderWorkHoursRows();
+}
+
+function showFormMsg(elId, text, ok){
+  const el = document.getElementById(elId);
+  el.textContent = text;
+  el.style.color = ok ? '#6fa382' : '#c97a72';
+  el.style.display = 'block';
+  if(ok) setTimeout(()=>{ el.style.display='none'; }, 2500);
+}
+
+async function saveProfile(){
+  const workHours = WEEKDAYS_SHORT.map((_,i)=>{
+    const cb = document.querySelector(`.wh-open[data-day="${i}"]`);
+    const startInput = document.querySelector(`.wh-start[data-day="${i}"]`);
+    const endInput = document.querySelector(`.wh-end[data-day="${i}"]`);
+    return { open: cb.checked, start: cb.checked ? startInput.value : null, end: cb.checked ? endInput.value : null };
+  });
+  const payload = {
+    name: document.getElementById('profile-name').value.trim(),
+    address: document.getElementById('profile-address').value.trim(),
+    phone: document.getElementById('profile-phone').value.trim(),
+    email: document.getElementById('profile-email').value.trim(),
+    workHours,
+  };
+  const btn = document.getElementById('profile-save-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
+  try{
+    serviceProfile = await apiRequest('PATCH', '/services/me', payload);
+    document.getElementById('nav-service-name').textContent = serviceProfile.name;
+    document.getElementById('nav-avatar').textContent = (serviceProfile.name || '?').charAt(0).toUpperCase();
+    showFormMsg('profile-msg', '✓ Profilis atnaujintas', true);
+  } catch(err){
+    showFormMsg('profile-msg', '⚠ '+err.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+// ═══ STATISTIKA ═══
+function renderStatsPage(){
+  const myId = serviceProfile.id;
+  const mine = ordersCache.filter(o=>o.service_id===myId);
+  const statusCounts = {new:0, pending:0, in_progress:0, done:0};
+  ordersCache.forEach(o=>{ if(statusCounts[o.status]!=null) statusCounts[o.status]++; });
+
+  const monthStr = new Date().toISOString().slice(0,7);
+  const netMonthIncome = mine
+    .filter(o=>o.status==='done' && o.completed_at && o.completed_at.slice(0,7)===monthStr)
+    .reduce((sum,o)=> sum + ((o.price||0) - (o.commission_amount||0)), 0);
+
+  const catCounts = {};
+  mine.forEach(o=>{ if(o.category_id) catCounts[o.category_id] = (catCounts[o.category_id]||0)+1; });
+  const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+  document.getElementById('stats-content').innerHTML = `
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-label">Naujos (visos matomos)</div><div class="stat-val yellow">${statusCounts.new}</div></div>
+      <div class="stat-card"><div class="stat-label">Pasiūlyta kaina</div><div class="stat-val blue">${statusCounts.pending}</div></div>
+      <div class="stat-card"><div class="stat-label">Vykdoma (mano)</div><div class="stat-val green">${statusCounts.in_progress}</div></div>
+      <div class="stat-card"><div class="stat-label">Atlikta (mano)</div><div class="stat-val" style="color:var(--muted)">${statusCounts.done}</div></div>
+    </div>
+    <div class="content-grid" style="grid-template-columns:1fr 1fr;">
+      <div class="orders-panel">
+        <div class="panel-header"><div class="panel-title">Šio mėnesio pajamos (po komisinio)</div></div>
+        <div style="padding:24px;">
+          <div class="stat-val yellow" style="font-size:32px;">${fmtEUR(netMonthIncome)}</div>
+          <div class="stat-change" style="margin-top:10px;">Vidutinis įvertinimas: ${serviceProfile.rating!=null ? serviceProfile.rating.toFixed(1)+' ★' : 'dar nėra įvertinimų'}</div>
+        </div>
+      </div>
+      <div class="right-panel">
+        <div class="rp-section">
+          <div class="rp-title">Populiariausios kategorijos</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            ${topCats.length ? topCats.map(([catId,count])=>`
+              <div style="display:flex;justify-content:space-between;font-size:12.5px;">
+                <span>${categoryInfo(catId).label}</span><span style="color:var(--yellow);font-family:'IBM Plex Mono';">${count}</span>
+              </div>`).join('') : '<div style="color:var(--muted);font-size:12.5px;">Dar nėra priimtų darbų.</div>'}
+          </div>
+        </div>
+        <div class="rp-section">
+          <div class="rp-title">Mano užsakymai šią savaitę</div>
+          <div class="week-bars" id="stats-week-bars"></div>
+        </div>
+      </div>
+    </div>
+  `;
+  renderStatsWeekBars(mine);
+}
+
+function renderStatsWeekBars(mine){
+  const DAYS_SHORT = ['Pir','Ant','Tre','Ket','Pen','Šeš'];
+  const nowD = new Date();
+  const startOfWeek = new Date(nowD); startOfWeek.setDate(nowD.getDate() - ((nowD.getDay()+6)%7)); startOfWeek.setHours(0,0,0,0);
+  const counts = [0,0,0,0,0,0];
+  mine.forEach(o=>{
+    if(!o.created_at) return;
+    const d = new Date(o.created_at.replace(' ','T')+'Z');
+    if(d < startOfWeek) return;
+    const idx = (d.getDay()+6)%7;
+    if(idx < 6) counts[idx]++;
+  });
+  const max = Math.max(...counts, 1);
+  const todayIdx = (nowD.getDay()+6)%7;
+  document.getElementById('stats-week-bars').innerHTML = DAYS_SHORT.map((d,i) => `
+    <div class="wbar-wrap">
+      <div class="wbar ${i===todayIdx?'today':''}" style="height:${Math.max(4, Math.round(counts[i]/max*100))}%"></div>
+      <div class="wbar-label ${i===todayIdx?'today':''}">${d}</div>
+    </div>
+  `).join('');
+}
+
+// ═══ PASLAUGOS ═══
+async function loadOfferings(){
+  const offerings = await apiGet('/services/me/offerings');
+  document.getElementById('offerings-list').innerHTML = offerings.map(o => `
+    <div class="svc-row">
+      <input type="checkbox" class="svc-active-cb" data-cat="${o.category_id}" ${o.active?'checked':''} onchange="onOfferingToggle(this)" style="width:16px;height:16px;accent-color:var(--yellow);flex-shrink:0;">
+      <div class="svc-row-name">${o.label}</div>
+      <div class="svc-row-price">
+        <span style="color:var(--muted);font-size:11px;">nuo</span>
+        <input type="number" class="svc-price-input" value="${o.priceFrom!=null?o.priceFrom:''}" placeholder="—" ${o.active?'':'disabled'}>
+        <span style="color:var(--muted);font-size:11px;">€</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function onOfferingToggle(cb){
+  const priceInput = cb.closest('.svc-row').querySelector('.svc-price-input');
+  priceInput.disabled = !cb.checked;
+}
+
+async function saveOfferings(){
+  const rows = document.querySelectorAll('#offerings-list .svc-row');
+  const offerings = Array.from(rows).map(row => {
+    const cb = row.querySelector('.svc-active-cb');
+    const priceInput = row.querySelector('.svc-price-input');
+    return {
+      categoryId: cb.dataset.cat,
+      active: cb.checked,
+      priceFrom: priceInput.value !== '' ? parseFloat(priceInput.value) : null,
+    };
+  });
+  const btn = document.getElementById('offerings-save-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
+  try{
+    await apiRequest('PUT', '/services/me/offerings', { offerings });
+    showFormMsg('offerings-msg', '✓ Paslaugos atnaujintos', true);
+  } catch(err){
+    showFormMsg('offerings-msg', '⚠ '+err.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+// ═══ KALENDORIUS ═══
+let calendarWeekOffset = 0;
+
+function localDateStr(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function renderCalendarPage(){
+  const myId = serviceProfile.id;
+  const mine = ordersCache.filter(o=>o.service_id===myId && (o.status==='in_progress' || o.status==='done'));
+  const unscheduled = mine.filter(o=>!o.scheduled_time);
+  const scheduled = mine.filter(o=>o.scheduled_time);
+
+  const now = new Date();
+  const todayStr = localDateStr(now);
+  const startOfThisWeek = new Date(now); startOfThisWeek.setDate(now.getDate() - ((now.getDay()+6)%7)); startOfThisWeek.setHours(0,0,0,0);
+  const weekStart = new Date(startOfThisWeek); weekStart.setDate(weekStart.getDate() + calendarWeekOffset*7);
+
+  const DAYS = ['Pir','Ant','Tre','Ket','Pen','Šeš','Sek'];
+  const dayColumns = DAYS.map((label,i) => {
+    const d = new Date(weekStart); d.setDate(weekStart.getDate()+i);
+    const dateStr = localDateStr(d);
+    const dayOrders = scheduled.filter(o=>o.scheduled_time.slice(0,10)===dateStr)
+      .sort((a,b)=> a.scheduled_time.localeCompare(b.scheduled_time));
+    const isToday = dateStr === todayStr;
+    return `
+      <div style="flex:1;min-width:0;border-right:1px solid var(--line);">
+        <div style="padding:10px;text-align:center;border-bottom:1px solid var(--line);background:${isToday?'var(--yellow-dim)':'transparent'};">
+          <div style="font-size:11px;color:${isToday?'var(--yellow)':'var(--muted)'};font-weight:600;">${label}</div>
+          <div style="font-family:'IBM Plex Mono';font-size:10px;color:${isToday?'var(--yellow)':'var(--dim)'};">${d.getDate()}.${String(d.getMonth()+1).padStart(2,'0')}</div>
+        </div>
+        <div style="padding:8px;display:flex;flex-direction:column;gap:6px;min-height:90px;">
+          ${dayOrders.map(o=>`
+            <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font-size:11px;">
+              <div style="color:var(--yellow);font-family:'IBM Plex Mono';font-size:10px;">${(o.scheduled_time.split('T')[1]||'')}</div>
+              <div style="font-weight:600;">${categoryInfo(o.category_id).label}</div>
+              <div style="color:var(--muted);font-size:10px;">${(o.first_name||'')+' '+(o.last_name||'')}</div>
+            </div>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+
+  const weekEnd = new Date(weekStart); weekEnd.setDate(weekStart.getDate()+6);
+  const rangeLabel = `${weekStart.getDate()}.${String(weekStart.getMonth()+1).padStart(2,'0')} – ${weekEnd.getDate()}.${String(weekEnd.getMonth()+1).padStart(2,'0')}`;
+
+  document.getElementById('page-calendar').innerHTML = `
+    <div style="padding:16px 24px;">
+      ${unscheduled.length ? `
+      <div class="orders-panel" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:20px;">
+        <div class="panel-header"><div class="panel-title">Nesuplanuoti darbai <span class="status-badge sb-new">${unscheduled.length}</span></div></div>
+        <div style="padding:8px 0;">
+          ${unscheduled.map(o=>`
+            <div class="svc-row">
+              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}</div>
+              <input type="datetime-local" id="cal-time-${o.id}" style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+              <button class="action-btn accept" onclick="assignCalendarTime(${o.id})">✓ Priskirti</button>
+            </div>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="orders-panel" style="border:1px solid var(--line);border-radius:var(--r);">
+        <div class="panel-header">
+          <button class="btn" onclick="shiftCalendarWeek(-1)">‹ Ankstesnė</button>
+          <div class="panel-title">${rangeLabel}</div>
+          <button class="btn" onclick="shiftCalendarWeek(1)">Kitą ›</button>
+        </div>
+        <div style="display:flex;">${dayColumns}</div>
+      </div>
+    </div>
+  `;
+}
+
+function shiftCalendarWeek(delta){
+  calendarWeekOffset += delta;
+  renderCalendarPage();
+}
+
+async function assignCalendarTime(id){
+  const input = document.getElementById(`cal-time-${id}`);
+  if(!input.value) return;
+  try{
+    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime: input.value });
+    await loadOrders();
+    renderCalendarPage();
+  } catch(err){
+    alert(err.message);
+  }
+}
+
+function callClient(name, phone){
+  alert('📞 Skambinama: ' + name + ' (' + (phone||'—') + ')');
+}
+function sendReminderSms(){
+  alert('📤 SMS priminimas išsiųstas paskutiniam klientui apie rezervaciją.');
+}
+function blockVacationDates(){
+  alert('⛔ Pasirink datas kalendoriuje, kurias nori blokuoti (funkcija bus pilnai veikianti prijungus kalendorių).');
+}
+function callLastClient(){
+  if(ordersCache.length === 0){ alert('Nėra užklausų.'); return; }
+  const last = ordersCache[0];
+  callClient(`${last.first_name||''} ${last.last_name||''}`.trim(), last.phone);
+}
+function showNotifications(){
+  alert('🔔 Turite naujų pranešimų: naujos užklausos ir atsiliepimai.');
+}
+function exportData(){
+  alert('⬇ Duomenys eksportuojami į CSV failą (bus paruošta atsisiuntimui).');
+}
+function addTimeSlot(){
+  alert('+ Atidaromas naujo laiko lango pridėjimo langas.');
+}
+
+async function init(){
+  try{
+    serviceProfile = await apiGet('/services/me');
+  } catch(err){
+    localStorage.removeItem('sc_service_token');
+    window.location.href = 'automeistrai-login.html?type=service';
+    return;
+  }
+  document.getElementById('nav-service-name').textContent = serviceProfile.name;
+  document.getElementById('nav-avatar').textContent = (serviceProfile.name || '?').charAt(0).toUpperCase();
+  document.getElementById('stat-rating').textContent = serviceProfile.rating != null ? serviceProfile.rating.toFixed(1)+' ★' : '—';
+
+  categoriesCache = await apiGet('/categories');
+  await loadOrders();
+
+  if(!document.hidden) startPolling();
+}
+init();
+
+// TIMELINE
+const TIMELINE = [
+  {time:'8:00', car:null, free:true},
+  {time:'9:00', car:'Skoda Octavia', detail:'Padangų keitimas', active:false},
+  {time:'10:00', car:'Toyota Corolla', detail:'Alyvos keitimas + filtrai', active:false},
+  {time:'11:00', car:null, free:true},
+  {time:'12:00', car:null, free:false, lunch:true},
+  {time:'13:00', car:'VW Golf', detail:'🔍 Diagnostika — CHECK ENGINE', active:true},
+  {time:'14:00', car:'VW Golf', detail:'↳ tęsiasi...', active:true},
+  {time:'15:00', car:null, free:true},
+  {time:'16:00', car:'Audi A4', detail:'⚡ Lango pakėlėjas', active:false},
+  {time:'17:00', car:null, free:true},
+];
+
+document.getElementById('timeline').innerHTML = TIMELINE.map(t => {
+  if(t.lunch) return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:36px;background:var(--dim)"></div><div class="tl-content free"><div class="tl-detail" style="font-size:10.5px">🍽️ Pietų pertrauka</div></div></div>`;
+  if(t.free) return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:36px;background:var(--green);opacity:0.4"></div><div class="tl-content free"><div class="tl-detail">Laisva</div></div></div>`;
+  return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:${t.active?'54':'44'}px;background:${t.active?'var(--yellow)':'var(--blue)'}"></div><div class="tl-content ${t.active?'active':''}"><div class="tl-car">${t.car}${t.active?'<span class="tl-now">DABAR</span>':''}</div><div class="tl-detail">${t.detail}</div></div></div>`;
+}).join('');
+
+// STATUS TOGGLE
+function toggleStatus(){
+  const btn = document.getElementById('status-toggle');
+  if(btn.classList.contains('open')){
+    btn.classList.remove('open');
+    btn.classList.add('closed');
+    btn.innerHTML = '● UŽDARYTA';
+  } else {
+    btn.classList.remove('closed');
+    btn.classList.add('open');
+    btn.innerHTML = '● DIRBA';
+  }
+}
+</script>
+</body>
+</html>
