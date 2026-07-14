@@ -378,6 +378,24 @@ Nauja funkcija — `reviews` lentelė jau buvo schema.sql, dabar realiai naudoja
 
 ---
 
+## Railway.app deploy paruošimas (2026-07-13)
+Projektas paruoštas paviešinimui Railway.app testavimui (be domeno, Railway suteiktu adresu).
+
+**Architektūrinis pakeitimas — vienas viešas adresas ir API, ir frontend'ui:**
+- `backend/src/server.js` dabar pats atiduoda root'e esančius statinius HTML failus (`express.static` + `GET /` → `servisucentras-pagrindinis.html`), ne tik `/api/*`. Anksčiau frontend'ą atiduodavo atskiras `static-server.js` (portas 5500) — jis lieka faile kaip legacy/alternatyvi lokali parinktis, bet nebe pagrindinis kelias.
+- Visuose 4 HTML failuose `API_BASE` pakeistas iš absoliutaus `http://localhost:3000/api` į santykinį `/api` — veikia nepriklausomai nuo domeno.
+- **Rastas ir pataisytas CORS spąstas per patikrinimą:** kai frontend+backend suvienyti tame pačiame origin'e, naršyklė vis tiek siunčia `Origin` antraštę POST užklausoms — `ALLOWED_ORIGINS` numatytoji reikšmė (buvo tik `:5500`) blokavo pačios sistemos užklausas su 403. Pataisyta — dabar numatyta `http://localhost:5500,http://localhost:3000` (server.js fallback + `.env`/`.env.example`). **Railway'uje `ALLOWED_ORIGINS` BŪTINA nustatyti į tikrą Railway suteiktą adresą**, kitaip pati svetainė negalės kviesti savo API.
+- `backend/src/db.js` — prieš atidarant DB, dabar pats susikuria trūkstamą `data/` aplanką (`fs.mkdirSync(..., {recursive:true})`) — apsauga švieziems Git/Railway checkout'ams.
+- Naujas root-level `package.json` (plonas shim'as: `postinstall`/`start` nukreipia į `backend/`) — kad Railway/Nixpacks automatiškai atrastų projektą be papildomo "Root Directory" nustatymo Railway panelėje.
+- `DB_PATH` env kintamasis (jau buvo pridėtas testams) dabar naudojamas ir produkcijai — Railway Volume rekomenduojamas mount'inti į `/data`, su `DB_PATH=/data/servisucentras.db`, kad SQLite duomenys išliktų tarp deploy'ų (be Volume, Railway failų sistema efemeriniška — DB dingtų po kiekvieno restart'o).
+- Root-level `.gitignore` pridėtas (anksčiau buvo tik `backend/.gitignore`) — apima `node_modules/`, `.env*` (išskyrus `.env.example`), `backend/data/*.db*`. Patikrinta per `git status`/`git ls-files`, kad joks realus slaptažodis ar DB failas su testiniais duomenimis nepateko į commit'ą.
+- **Git repo inicijuotas** (`git init` + pirmas commit, 32 failai) — **push NEDARYTAS**, paliktas savininkui po peržiūros.
+- Pilnas žingsnis-po-žingsnio Railway diegimo sąrašas (GitHub prijungimas, env kintamieji, Volume, viešo adreso radimas) pateiktas pokalbyje su Claude — nekopijuotas čia, kad nesikartotų ir nesentėtų, jei Railway UI pasikeis.
+
+**Patikrinta gyvai prieš commit'ą:** paleidus `backend` vienišai (be atskiro `static-server.js`), `http://localhost:3000/` rodo pagrindinį puslapį, `/servisucentras-admin.html` prisijungimas veikia per santykinį `/api`, automatiniai testai (6/6) praeina.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
