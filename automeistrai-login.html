@@ -182,8 +182,8 @@ select.field{cursor:pointer;}
 </div>
 
 <nav>
-  <button class="nav-back" onclick="window.history.back()">← Grįžti</button>
-  <a class="logo" href="#">SERVISU<em>CENTRAS</em></a>
+  <button class="nav-back" onclick="location.href='servisucentras-pagrindinis.html'">← Grįžti</button>
+  <a class="logo" href="servisucentras-pagrindinis.html">SERVISU<em>CENTRAS</em></a>
   <div style="width:80px"></div>
 </nav>
 
@@ -352,8 +352,8 @@ select.field{cursor:pointer;}
             <div class="field-group">
               <label class="field-label">Darbo valandos</label>
               <div class="field-row">
-                <input class="field" type="time" id="reg-s-work-start" value="08:00">
-                <input class="field" type="time" id="reg-s-work-end" value="18:00">
+                <select class="field" id="reg-s-work-start"></select>
+                <select class="field" id="reg-s-work-end"></select>
               </div>
             </div>
             <div style="display:flex;gap:8px;">
@@ -522,6 +522,21 @@ function goStep(n){
     if(i+1 < n) el.classList.add('done');
     else if(i+1 === n) el.classList.add('active');
   });
+}
+
+// DARBO VALANDOS — fiksuotas 24 val. formatas (ne <input type="time">, kuris rodo
+// AM/PM priklausomai nuo naršyklės/OS lokalės, net su lang="lt")
+const WORK_HOURS_OPTIONS = Array.from({length:48}, (_,i)=>{
+  const h = String(Math.floor(i/2)).padStart(2,'0');
+  const m = i%2===0 ? '00' : '30';
+  return `${h}:${m}`;
+});
+function populateWorkHourSelects(){
+  const opts = WORK_HOURS_OPTIONS.map(t=>`<option value="${t}">${t}</option>`).join('');
+  document.getElementById('reg-s-work-start').innerHTML = opts;
+  document.getElementById('reg-s-work-end').innerHTML = opts;
+  document.getElementById('reg-s-work-start').value = '08:00';
+  document.getElementById('reg-s-work-end').value = '18:00';
 }
 
 // CATEGORIJOS — realios, iš GET /api/categories
@@ -760,6 +775,7 @@ function initFromQuery(){
 }
 
 loadCategories();
+populateWorkHourSelects();
 initFromQuery();
 </script>
 </body>

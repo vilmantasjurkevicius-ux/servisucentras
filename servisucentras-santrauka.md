@@ -417,6 +417,25 @@ Savininkas užregistravo naują testinį servisą ir pastebėjo, kad `automeistr
 
 ---
 
+## Nuoroda "Į pagrindinį puslapį" + 24 val. laiko formatas (2026-07-15)
+
+**Nuoroda atgal iš dashboard'o.** `automeistrai-dashboard.html` viršutinėje juostoje visai nebuvo nuorodos atgal į `servisucentras-pagrindinis.html` — servisas, prisijungęs prie savo valdymo skydelio, neturėjo paprasto būdo grįžti. Pridėta aiški `← Pagrindinis` nuoroda kairėje, prieš "SERVISUCENTRAS" logotipą (paprastas `<a href="servisucentras-pagrindinis.html">`, ne JS/istorijos priklausoma). Kadangi tai įprasta naršyklės navigacija (ne atsijungimas), `sc_service_token` lieka `localStorage` — patikrinta gyvai: paspaudus nuorodą pereinama į pagrindinį puslapį, tokenas išlieka, grįžus atgal į dashboard'ą sesija vis dar galioja (neatsijungta).
+
+**`servisucentras-admin.html`** — patikrinta, esama nuoroda `← Grįžti į puslapį` (eil. ~188) jau rodo teisingai į `servisucentras-pagrindinis.html`. Taisyti nereikėjo.
+
+**`automeistrai-login.html`** — rastas ir pataisytas realus trūkumas: mygtukas `← Grįžti` naudojo `window.history.back()`, kuris NEGARANTUOJA grįžimo į mūsų pagrindinį puslapį (jei žmogus atėjo tiesiogiai/be naršyklės istorijos, mygtukas nieko nedarytų arba nuvestų kažkur kitur). Pakeista į tiesioginę nuorodą `location.href='servisucentras-pagrindinis.html'`. Taip pat logotipas (`<a class="logo" href="#">`) anksčiau vedė į tuščią `#` — dabar irgi veda į pagrindinį puslapį, atitinka tą patį "logotipas = namo" principą, kaip ir kituose puslapiuose.
+
+**24 valandų laiko formatas registracijos formoje.** Serviso registracijos 3 žingsnio "Darbo valandos" laukai (`reg-s-work-start`/`reg-s-work-end`) naudojo `<input type="time">`, kuris rodo AM/PM arba 24 val. formatą priklausomai nuo naršyklės/OS lokalės — nepriklausomai nuo `lang="lt"`. Tai ta pati problema, kuri jau buvo anksčiau pataisyta dashboard'o Profilio darbo laiko laukuose (žr. "Darbo laikas" sekciją aukščiau), bet ši konkreti vieta liko nepastebėta. Pataisyta identiškai — pakeista į `<select>` su 48 fiksuotomis "HH:MM" reikšmėmis (kas 30 min, 00:00–23:30), numatyta 08:00/18:00.
+
+**Patikrinta, kad formatas nuoseklus visur kitur:**
+- Dashboard'o Profilio darbo laikas (7 dienų eilutės) — jau anksčiau naudojo tą patį `<select>` sprendimą, be pakeitimų.
+- Viešas pagrindinis puslapis — servisų kortelėse rodomas tik boolean "DIRBA"/"UŽDARYTA" ženkliukas (`isOpenNow()`), NE raidinis laikas — AM/PM rizikos ten apskritai nėra.
+- Admin panelė — darbo laikas apskritai niekur nerodomas.
+
+**Patikrinta gyvai:** pilnas serviso registracijos srautas su pasirinktomis reikšmėmis 07:30/19:30 → DB įrašyta tiksliai `work_start='07:30'`, `work_end='19:30'`, jokio AM/PM iškraipymo. Testinis servisas išvalytas po patikrinimo. Automatiniai testai (6/6) toliau praeina.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
