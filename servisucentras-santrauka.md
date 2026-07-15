@@ -396,6 +396,27 @@ Projektas paruoštas paviešinimui Railway.app testavimui (be domeno, Railway su
 
 ---
 
+## Rasta ir pataisyta po pirmo Railway deploy (2026-07-13)
+Savininkas pastebėjo viešame Railway adrese: (1) sena "AUTOMEISTRAI" markė viršuje `automeistrai-login.html`, (2) kliento registracijos mygtukas nieko nedaro paspaudus.
+
+- **AUTOMEISTRAI logotipas — patvirtinta ir pataisyta.** `automeistrai-login.html:186` navigacijoje vis dar buvo `AUTO<em>MEISTRAI</em>`, nors `<title>`/`<h2>` jau seniau pataisyti į "ServisuCentras". Tai NEBUVO senos failo versijos problema (git istorijoje šis failas turi tik VIENĄ versiją, pirmame commit'e, ir ji jau turėjo šią klaidą) — tiesiog anksčiau pataisant branding'ą navigacijos logotipas buvo praleistas. Pakeista į `SERVISU<em>CENTRAS</em>`, atitinka kitų puslapių stilių.
+- **Registracijos mygtukas — LOKALIAI veikia nepriekaištingai** (patikrinta gyvai: `POST /api/auth/client/register` → `201 Created`, rodomas "Paskyra sukurta!" ekranas, jokių console klaidų). Kadangi kodas identiškas tam, kas jau yra GitHub'e, problema tikriausiai yra Railway aplinkos konfigūracijoje, ne pačiame kode.
+- **Rastas realus apribojimas (neįgyvendinta sąmoningai, saugumo sumetimais):** anksčiau duotose Railway instrukcijose buvo pasakyta, kad `ALLOWED_ORIGINS` galima laikinai palikti `*`. **Kodas šito NEPALAIKO** — CORS patikra lygina origin'ą su tiksliu sąrašu, `*` kaip pakaitos simbolis neveikia. Bandžiau pridėti wildcard palaikymą, bet tai buvo teisingai atmesta kaip saugumo susilpninimas (anksčiau šioje sesijoje CORS buvo sąmoningai sugriežtintas) — vietoj to, jei `ALLOWED_ORIGINS` Railway'uje nustatytas į `*` arba tuščią, jį reikia pakeisti į TIKSLŲ Railway domeną (žr. Railway deploy sekciją aukščiau, 5 žingsnis).
+- **Kas dar reikia patikrinti Railway pusėje** (negaliu patikrinti nuotoliniu būdu): ar `ALLOWED_ORIGINS` nustatytas į tikslų Railway domeną (ne `*`, ne tuščias, ne senas `localhost`); ar `JWT_SECRET`/`ADMIN_PASSWORD` iš viso nustatyti (serveris atsisako pasileisti be jų); Railway "Deployments" skiltyje patikrinti, ar naujausias deploy'as realiai pasisekęs (ne kabantis/klaidingas senesnis build'as).
+
+---
+
+## Dashboard "Šiandien" grafikas — pašalinti fiktyvūs duomenys (2026-07-15)
+Savininkas užregistravo naują testinį servisą ir pastebėjo, kad `automeistrai-dashboard.html` dešinėje esantis "Šiandien" laiko grafikas (8:00–17:00) rodė svetimus vizitus (Skoda Octavia, Toyota Corolla, VW Golf x2, Audi A4), kurių tas servisas niekada negavo.
+
+- **Priežastis:** `TIMELINE` masyvas (senas kodas, dar iš prieš-backend etapo) buvo visiškai statinis/hardcoded, atvaizduojamas vieną kartą scenarijaus įkėlimo metu, visiškai nepriklausomai nuo `ordersCache`/API. Liko pamirštas, kol buvo daroma real backend integracija ir Kalendoriaus funkcija.
+- **Pataisyta:** naujas `renderTimeline()` filtruoja `ordersCache` pagal `service_id === serviceProfile.id`, statusą (`in_progress`/`done`) ir `scheduled_time` datą = šiandien, sudėlioja į 8–17 val. tinklelį. Pietų pertrauka (12:00) liko fiksuota kaip vizualus elementas (ne kliento duomuo). Realaus vizito langelyje rodomas `car_info` (arba kliento vardas, arba kategorija kaip atsarginis variantas) + kategorijos pavadinimas; valanda, sutampanti su dabartiniu laiku, pažymima "DABAR". Tuščios valandos rodo "Laisva", kaip ir turėtų naujam servisui.
+- `renderTimeline()` kviečiamas ir iš `loadOrders()`, ir iš `pollOrders()` — grafikas atsinaujina kartu su likusiu dashboard'u (auto-refresh), ne tik pirmo įkėlimo metu.
+- **Patikrinta, kad ta pati problema nepasikartoja kitur:** "Savaitės apkrova" (`renderWeekBars()`) jau anksčiau buvo realiai sujungta su `ordersCache` — pataisymo nereikėjo.
+- **Patikrinta gyvai:** naujam testiniam servisui ("Testinis Garažas") grafikas rodė vien "Laisva" (+ pietūs); sukūrus realų užsakymą su `car_info="BMW E46, 2003"` ir suplanavus jį 9:00 val., grafikas teisingai parodė "BMW E46, 2003 / 🔍 Diagnostika" būtent 9:00 langelyje, kitos valandos liko "Laisva". Testiniai duomenys išvalyti po patikrinimo. Automatiniai testai (6/6) toliau praeina.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -776,6 +776,7 @@ async function loadOrders(){
   renderTabs();
   renderOrders();
   renderWeekBars();
+  renderTimeline();
 }
 
 // ═══ AUTO-ATNAUJINIMAS (polling, be viso puslapio perkrovimo) ═══
@@ -835,6 +836,7 @@ async function pollOrders(){
     renderStats();
     renderTabs();
     renderWeekBars();
+    renderTimeline();
     // Kol servisas kažką redaguoja (kainos/laiko laukelis atidarytas), sąrašo neperpiešiame,
     // kad neprarastume jo įvedamų duomenų — kiti elementai (badge'ai, tabai) vis tiek atsinaujina.
     if(quotingOrderId === null){
@@ -1219,25 +1221,35 @@ async function init(){
 }
 init();
 
-// TIMELINE
-const TIMELINE = [
-  {time:'8:00', car:null, free:true},
-  {time:'9:00', car:'Skoda Octavia', detail:'Padangų keitimas', active:false},
-  {time:'10:00', car:'Toyota Corolla', detail:'Alyvos keitimas + filtrai', active:false},
-  {time:'11:00', car:null, free:true},
-  {time:'12:00', car:null, free:false, lunch:true},
-  {time:'13:00', car:'VW Golf', detail:'🔍 Diagnostika — CHECK ENGINE', active:true},
-  {time:'14:00', car:'VW Golf', detail:'↳ tęsiasi...', active:true},
-  {time:'15:00', car:null, free:true},
-  {time:'16:00', car:'Audi A4', detail:'⚡ Lango pakėlėjas', active:false},
-  {time:'17:00', car:null, free:true},
-];
+// TIMELINE — realios šiandienos suplanuotos užklausos (orders.scheduled_time), ne demo duomenys
+const TIMELINE_HOURS = [8,9,10,11,12,13,14,15,16,17];
 
-document.getElementById('timeline').innerHTML = TIMELINE.map(t => {
-  if(t.lunch) return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:36px;background:var(--dim)"></div><div class="tl-content free"><div class="tl-detail" style="font-size:10.5px">🍽️ Pietų pertrauka</div></div></div>`;
-  if(t.free) return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:36px;background:var(--green);opacity:0.4"></div><div class="tl-content free"><div class="tl-detail">Laisva</div></div></div>`;
-  return `<div class="tl-item"><div class="tl-time">${t.time}</div><div class="tl-bar" style="height:${t.active?'54':'44'}px;background:${t.active?'var(--yellow)':'var(--blue)'}"></div><div class="tl-content ${t.active?'active':''}"><div class="tl-car">${t.car}${t.active?'<span class="tl-now">DABAR</span>':''}</div><div class="tl-detail">${t.detail}</div></div></div>`;
-}).join('');
+function renderTimeline(){
+  const myId = serviceProfile.id;
+  const now = new Date();
+  const todayStr = localDateStr(now);
+  const currentHour = now.getHours();
+
+  const byHour = {};
+  ordersCache
+    .filter(o => o.service_id === myId && (o.status === 'in_progress' || o.status === 'done')
+      && o.scheduled_time && o.scheduled_time.slice(0,10) === todayStr)
+    .forEach(o => { byHour[Number(o.scheduled_time.split('T')[1].slice(0,2))] = o; });
+
+  document.getElementById('timeline').innerHTML = TIMELINE_HOURS.map(h => {
+    const label = h + ':00';
+    if(h === 12){
+      return `<div class="tl-item"><div class="tl-time">${label}</div><div class="tl-bar" style="height:36px;background:var(--dim)"></div><div class="tl-content free"><div class="tl-detail" style="font-size:10.5px">🍽️ Pietų pertrauka</div></div></div>`;
+    }
+    const o = byHour[h];
+    if(!o){
+      return `<div class="tl-item"><div class="tl-time">${label}</div><div class="tl-bar" style="height:36px;background:var(--green);opacity:0.4"></div><div class="tl-content free"><div class="tl-detail">Laisva</div></div></div>`;
+    }
+    const active = h === currentHour;
+    const carLabel = o.car_info || `${o.first_name||''} ${o.last_name||''}`.trim() || categoryInfo(o.category_id).label;
+    return `<div class="tl-item"><div class="tl-time">${label}</div><div class="tl-bar" style="height:${active?'54':'44'}px;background:${active?'var(--yellow)':'var(--blue)'}"></div><div class="tl-content ${active?'active':''}"><div class="tl-car">${carLabel}${active?'<span class="tl-now">DABAR</span>':''}</div><div class="tl-detail">${categoryInfo(o.category_id).label}</div></div></div>`;
+  }).join('');
+}
 
 // STATUS TOGGLE
 function toggleStatus(){
