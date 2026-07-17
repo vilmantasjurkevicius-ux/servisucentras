@@ -436,6 +436,22 @@ Savininkas užregistravo naują testinį servisą ir pastebėjo, kad `automeistr
 
 ---
 
+## Responsive dizainas — dešinė forma dingdavo stačiame telefono rėžime (2026-07-15)
+
+**Kritinė klaida `automeistrai-login.html`.** `.page{display:flex}` su `.left{width:420px;flex-shrink:0}` — kairė pusė turėjo fiksuotą 420px plotį, kuris niekada nesitraukdavo. Siaurame stačiame ekrane (pvz. 375px) vien kairė pusė jau platesnė už visą ekraną, o dešinė (`.right{flex:1}`) tiesiog neturėdavo kur tilpti ir dingdavo po `.page{overflow:hidden}` — jokio `@media` šiam failui apskritai nebuvo. Servisas/klientas negalėjo prisijungti/registruotis per telefoną stačiu būdu.
+
+- **Pataisyta:** pridėtas `@media (max-width:620px)` — `.page` pereina į vertikalų (`column`) išdėstymą, `.left` tampa pilno pločio, `overflow` atlaisvintas, kad visas puslapis galėtų slinktis. Riba parinkta **žemiau** įprastų telefonų gulsčio režimo pločių (667px+), kad ta (savininko patvirtinta kaip jau veikianti) pusėgreta liktų nepakitusi — keičiasi tik stačias/siauras rėžimas.
+- **Patikrinta gyvai keliais pločiais:** 375px, 390px, 414px (portretas) → sukraunama vertikaliai, forma pilnai pasiekiama slenkant, mygtukai/laukai veikia (patikrinta realiai perjungiant skirtuką ir renkant lauką). 667px, 900px (gulsčias/platus) → abi pusės lieka greta, nepakitę.
+
+**Ta pati problemos klasė rasta ir `servisucentras-pagrindinis.html` — bet kitokia forma.** `<nav>` (logotipas + "Kaip veikia/Servisai/Diagnostika/Admin" nuorodos + "Prisijungti/Registruotis" mygtukai) neturėjo jokio siaurėjimo/susitraukimo mechanizmo — jų bendras plotis (~750px) neišsitenka į 375px ekraną. Tai sukeldavo **horizontalų viso puslapio persipildymą**, o pačiame testavimo įrankyje net priversdavo visą layout'ą apskaičiuoti pagal ~725px pločio "efektyvų" viewport'ą vietoj tikrojo įrenginio pločio (t.y. realiuose telefonuose šis elgesys galėtų sukelti arba nepageidaujamą horizontalų slinkimą, arba sumažintą/nutolusį viso puslapio vaizdą — abu blogai).
+- **Pataisyta:** `@media (max-width:640px)` paslepia antrinę navigaciją (`.nav-links` — visos jos nuorodos vis tiek pasiekiamos kitaip: "Kaip veikia"/"Servisai" tik slenka į tame pačiame puslapyje esančias sekcijas, "Diagnostika" turi atskirą, gerai matomą CTA mygtuką puslapyje), sutraukia logotipo tekstą ir mygtukų dydį, kad "Prisijungti"/"Registruotis" liktų visada matomi ir nesukeltų persipildymo.
+- **Patikrinta gyvai:** 375px → `window.innerWidth`/`document.documentElement.scrollWidth` sutampa (375=375, jokio persipildymo), "Prisijungti"/"Registruotis" matomi ir pasiekiami. 700px → antrinė navigacija vėl rodoma, joks persipildymas neatsiranda.
+- **Papildomai rasta ir pataisyta po savininko paklausimo, ar tekstas tikrai tilps:** 375px lygyje viskas tilpo, BET **320px** (senesni/mažesni telefonai, pvz. pirmos kartos iPhone SE) vis dar turėjo ~26px persipildymą — sutraukto varianto neužteko. Pridėtas antras, siauresnis `@media (max-width:380px)`, paslepiantis grynai dekoratyvinę logotipo ikoną (tekstas "SERVISUCENTRAS" pats identifikuoja prekės ženklą, ikona nebūtina). Patikrinta gyvai per visą realų diapazoną — 320/360/375/414/430px — visur `nav.scrollWidth === nav.clientWidth` (jokio persipildymo) IR joks tekstas neapkarpytas (`scrollWidth === clientWidth` kiekvienam elementui atskirai patikrinta: logotipo pavadinimui, abiem mygtukams).
+
+**Rasta, bet NEpataisyta (mažesnio prioriteto, savininko sprendimui):** `automeistrai-dashboard.html` ir `servisucentras-admin.html` abu turi fiksuoto pločio šoninį meniu (`.sidenav{width:220px}` / `.sidebar{width:200px}`, abu `flex-shrink:0`) + `.main{flex:1;overflow:auto}`. Siaurame telefono ekrane (375px) pagrindinis turinys **nedingsta** (skirtingai nuo login.html atvejo) — lieka matomas, bet suspaustas iki ~155–175px pločio, kas realiam duomenų lentelių/kortelių naudojimui būtų labai nepatogu. Kadangi šios dvi vietos yra darbui skirti (serviso/admin) įrankiai, dažniausiai naudojami nuo kompiuterio, o užduotis aiškiai įvardijo kritine problema tik registracijos/prisijungimo formą — šio suspaudimo netaisiau be atskiro patvirtinimo, kad neišplėsčiau užduoties apimties be reikalo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

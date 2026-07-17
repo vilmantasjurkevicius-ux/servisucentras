@@ -54,6 +54,25 @@ nav{
 .nav-btn-pri{background:var(--y);color:var(--bg);border:none;}
 .nav-btn-pri:hover{background:#FFD740;}
 
+/* Siaurame ekrane logotipas + nuorodos + Prisijungti/Registruotis kartu netelpa
+   viename rikiavime (viso ~750px reikia), sukelia horizontalų nav persipildymą.
+   Paslepiama antrinė navigacija (Kaip veikia/Servisai/Diagnostika/Admin — visos
+   pasiekiamos ir kitaip: slenkant puslapį arba per atskiras nuorodas), sutraukiamas
+   logotipas ir mygtukai, kad "Prisijungti"/"Registruotis" liktų visada matomi. */
+@media (max-width:640px){
+  nav{padding:0 14px;}
+  .nav-links{display:none;}
+  .logo-name{font-size:14px;}
+  .nav-btn{padding:6px 10px;font-size:12px;}
+}
+/* Pačiuose mažiausiuose telefonuose (pvz. 320px pločio) net ir sutraukto varianto
+   nepakanka — dar paslepiama grynai dekoratyvinė logotipo ikona (tekstas "SERVISUCENTRAS"
+   pats savaime identifikuoja prekės ženklą, ikona nebūtina). */
+@media (max-width:380px){
+  .logo-icon{display:none;}
+  .logo{gap:0;}
+}
+
 /* ══════════════════════════════════
    HERO
 ══════════════════════════════════ */

@@ -162,6 +162,18 @@ select.field{cursor:pointer;}
 .panel{display:none;}
 .panel.show{display:block;}
 
+/* RESPONSIVE — siaurame ekrane (telefono stačias rėžimas ir pan.) dešinė forma
+   nebetelpa greta kairės (fiksuoto 420px pločio) dalies ir dingsta po overflow:hidden.
+   Sukraunama vertikaliai, visas puslapis tampa slenkamas. Riba parinkta žemiau
+   įprastų telefonų gulsčio režimo pločių (~667px+), kad tas (jau veikiantis)
+   išdėstymas liktų nepakitęs — keičiasi tik stačias/siauras rėžimas. */
+@media (max-width: 620px){
+  html,body{height:auto;}
+  .page{flex-direction:column;overflow:visible;}
+  .left{width:100%;flex-shrink:1;border-right:none;border-bottom:1px solid var(--line);}
+  .right{overflow-y:visible;}
+}
+
 /* success */
 .success-box{text-align:center;padding:20px 0;}
 .success-icon{font-size:52px;margin-bottom:16px;}
