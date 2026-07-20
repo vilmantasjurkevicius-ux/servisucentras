@@ -315,6 +315,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
 .chat-head-info{flex:1;}
 .chat-head-title{font-size:14px;font-weight:600;margin-bottom:2px;}
 .chat-head-sub{font-family:'IBM Plex Mono';font-size:9.5px;color:#6fbf8a;letter-spacing:0.04em;}
+.chat-edit-link{color:#8fa3ac;cursor:pointer;text-decoration:underline;margin-left:5px;}
 .chat-head-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
 .chat-head-close:hover{color:var(--text);}
 .chat-online{padding:10px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;overflow-x:auto;flex-shrink:0;}
@@ -376,6 +377,9 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
 .gm-btn:hover{background:#FFD740;}
 .gm-note{font-size:11.5px;color:#555;text-align:center;margin-top:12px;}
 .gm-note a{color:var(--y);cursor:pointer;}
+.gm-known-row{font-size:13px;color:var(--text);background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:10px 13px;margin-bottom:16px;}
+.gm-known-row b{color:var(--y);}
+.gm-known-row a{color:var(--y);cursor:pointer;text-decoration:underline;margin-left:6px;}
 </style>
 </head>
 <body>
@@ -593,21 +597,26 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
   </div>
 </div>
 
-<!-- SVEČIO REGISTRACIJA -->
+<!-- SVEČIO REGISTRACIJA / AUTOMOBILIO PATIKSLINIMAS / DUOMENŲ KEITIMAS (viena forma, 3 režimai) -->
 <div class="guest-overlay" id="guest-overlay">
   <div class="guest-modal">
     <button class="gm-close" onclick="closeGuest()">✕</button>
-    <div class="gm-icon">👤</div>
-    <div class="gm-title">Prieš rašant servisams</div>
-    <div class="gm-sub">Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b></div>
-    <label class="gm-label">Vardas</label>
-    <input class="gm-field" id="gm-name" type="text" placeholder="Jūsų vardas">
-    <label class="gm-label">Telefono numeris</label>
-    <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000">
-    <label class="gm-label">Automobilio modelis ir metai</label>
-    <input class="gm-field" id="gm-car" type="text" placeholder="pvz. VW Golf, 2018">
-    <button class="gm-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
-    <div class="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
+    <div class="gm-icon" id="gm-icon">👤</div>
+    <div class="gm-title" id="gm-title">Prieš rašant servisams</div>
+    <div class="gm-sub" id="gm-sub">Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b></div>
+    <div class="gm-known-row" id="gm-known-row" style="display:none;"></div>
+    <div id="gm-identity-fields">
+      <label class="gm-label">Vardas</label>
+      <input class="gm-field" id="gm-name" type="text" placeholder="Jūsų vardas">
+      <label class="gm-label">Telefono numeris</label>
+      <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000">
+    </div>
+    <div id="gm-car-group">
+      <label class="gm-label">Automobilio modelis ir metai</label>
+      <input class="gm-field" id="gm-car" type="text" placeholder="pvz. VW Golf, 2018">
+    </div>
+    <button class="gm-btn" id="gm-submit-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
+    <div class="gm-note" id="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
   </div>
 </div>
 
@@ -761,48 +770,150 @@ document.querySelectorAll('.sort-tab').forEach(t=>{
 })();
 
 /* ══ CHAT ══ */
+// Vardas/telefonas — kliento TAPATYBĖ, prisimenami tarp apsilankymų (localStorage).
+// Automobilio info — KONKREČIOS UŽKLAUSOS duomuo, NIEKADA neišsaugomas localStorage,
+// klausiamas iš naujo kiekvienam naujam pokalbiui (kol currentOrderId dar null).
 let clientToken = localStorage.getItem('sc_client_token') || null;
 let guestName = localStorage.getItem('sc_client_name') || '';
-let guestCarInfo = localStorage.getItem('sc_client_car') || '';
+let guestPhone = localStorage.getItem('sc_client_phone') || '';
+let guestCarInfo = '';
 let currentOrderId = null;
+let guestOverlayMode = 'new'; // 'new' | 'car' | 'edit'
+
+function chatSubHtml(name){
+  return '● Sveiki, '+name+'! <a class="chat-edit-link" onclick="editGuestInfo()">✎ Pakeisti duomenis</a>';
+}
 
 function openChat(){
-  if(guestName && clientToken){ showChat(); }
-  else { document.getElementById('guest-overlay').classList.add('show'); setTimeout(()=>document.getElementById('gm-name').focus(),200); }
+  if(guestName && clientToken){
+    if(!currentOrderId){ showGuestOverlay('car'); }
+    else { showChat(); }
+  } else {
+    showGuestOverlay('new');
+  }
 }
 function closeChat(){ document.getElementById('chat-panel').classList.remove('show'); document.getElementById('chat-overlay').classList.remove('show'); }
-function showChat(){ document.getElementById('chat-panel').classList.add('show'); document.getElementById('chat-overlay').classList.add('show'); setTimeout(()=>document.getElementById('chat-input').focus(),300); }
-function closeGuest(){ document.getElementById('guest-overlay').classList.remove('show'); }
+function showChat(){
+  if(guestName){ document.getElementById('chat-sub').innerHTML = chatSubHtml(guestName); }
+  document.getElementById('chat-panel').classList.add('show'); document.getElementById('chat-overlay').classList.add('show'); setTimeout(()=>document.getElementById('chat-input').focus(),300);
+}
+
+function showGuestOverlay(mode){
+  guestOverlayMode = mode;
+  const nameField = document.getElementById('gm-name');
+  const phoneField = document.getElementById('gm-phone');
+  const carField = document.getElementById('gm-car');
+  const identityFields = document.getElementById('gm-identity-fields');
+  const carGroup = document.getElementById('gm-car-group');
+  const knownRow = document.getElementById('gm-known-row');
+  const title = document.getElementById('gm-title');
+  const sub = document.getElementById('gm-sub');
+  const note = document.getElementById('gm-note');
+  const btn = document.getElementById('gm-submit-btn');
+
+  if(mode === 'car'){
+    document.getElementById('chat-panel').classList.remove('show');
+    document.getElementById('chat-overlay').classList.remove('show');
+    identityFields.style.display = 'none';
+    carGroup.style.display = 'block';
+    knownRow.style.display = 'block';
+    knownRow.innerHTML = 'Sveiki, <b>'+guestName+'</b>! <a onclick="showGuestOverlay(\'edit\')">Ne jūs? Pakeisti duomenis</a>';
+    title.textContent = 'Apie kurį automobilį klausiate šįkart?';
+    sub.textContent = 'Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart.';
+    note.style.display = 'none';
+    carField.value = '';
+    btn.textContent = '💬 Tęsti →';
+  } else if(mode === 'edit'){
+    document.getElementById('chat-panel').classList.remove('show');
+    document.getElementById('chat-overlay').classList.remove('show');
+    identityFields.style.display = 'block';
+    carGroup.style.display = 'none';
+    knownRow.style.display = 'none';
+    title.textContent = 'Pakeisti duomenis';
+    sub.textContent = 'Atnaujinkite vardą arba telefono numerį, jei suklydote juos vedant.';
+    note.style.display = 'block';
+    nameField.value = guestName;
+    phoneField.value = guestPhone;
+    nameField.style.borderColor = ''; phoneField.style.borderColor = '';
+    btn.textContent = '💾 Išsaugoti →';
+  } else {
+    identityFields.style.display = 'block';
+    carGroup.style.display = 'block';
+    knownRow.style.display = 'none';
+    title.textContent = 'Prieš rašant servisams';
+    sub.innerHTML = 'Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b>';
+    note.style.display = 'block';
+    nameField.value = ''; phoneField.value = ''; carField.value = '';
+    nameField.style.borderColor = ''; phoneField.style.borderColor = '';
+    btn.textContent = '💬 Rašyti servisams →';
+  }
+
+  document.getElementById('guest-overlay').classList.add('show');
+  setTimeout(()=>{ (mode==='car' ? carField : nameField).focus(); }, 200);
+}
+
+function closeGuest(){
+  document.getElementById('guest-overlay').classList.remove('show');
+  // Atšaukus 'automobilis'/'keisti' režimą (ne pirmą registraciją), grįžtama į jau veikiantį pokalbį
+  if((guestOverlayMode === 'car' || guestOverlayMode === 'edit') && clientToken){ showChat(); }
+}
+
+function editGuestInfo(){ showGuestOverlay('edit'); }
 
 async function guestOk(){
-  const name=document.getElementById('gm-name').value.trim();
-  const phone=document.getElementById('gm-phone').value.trim();
-  const carInfo=document.getElementById('gm-car').value.trim();
+  const carInfo = document.getElementById('gm-car').value.trim();
+
+  // 'car' režimas — vardas/telefonas jau žinomi, token galiojantis, jokio API kvietimo nereikia
+  if(guestOverlayMode === 'car'){
+    guestCarInfo = carInfo;
+    document.getElementById('guest-overlay').classList.remove('show');
+    showChat();
+    return;
+  }
+
+  const name = document.getElementById('gm-name').value.trim();
+  const phone = document.getElementById('gm-phone').value.trim();
   if(!name){ document.getElementById('gm-name').style.borderColor='rgba(192,57,43,0.6)'; document.getElementById('gm-name').focus(); return; }
   if(!phone){ document.getElementById('gm-phone').style.borderColor='rgba(192,57,43,0.6)'; document.getElementById('gm-phone').focus(); return; }
 
-  const btn = document.querySelector('.gm-btn');
+  const btn = document.getElementById('gm-submit-btn');
   const origLabel = btn.textContent;
-  btn.disabled = true; btn.textContent = 'Jungiama...';
+  btn.disabled = true; btn.textContent = guestOverlayMode === 'edit' ? 'Saugoma...' : 'Jungiama...';
   try{
-    const res = await fetch(`${API_BASE}/auth/guest`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ firstName:name, phone })
-    });
-    const data = await res.json();
-    if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
+    if(guestOverlayMode === 'edit'){
+      // Duomenų keitimas — PATCH tai pačiai (jau esamai) kliento paskyrai, ne naujos kūrimas
+      const res = await fetch(`${API_BASE}/clients/me`, {
+        method:'PATCH', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+        body: JSON.stringify({ firstName:name, phone })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko išsaugoti');
 
-    clientToken = data.token;
-    guestName = name;
-    guestCarInfo = carInfo;
-    localStorage.setItem('sc_client_token', clientToken);
-    localStorage.setItem('sc_client_name', guestName);
-    localStorage.setItem('sc_client_car', guestCarInfo);
+      guestName = name; guestPhone = phone;
+      localStorage.setItem('sc_client_name', guestName);
+      localStorage.setItem('sc_client_phone', guestPhone);
 
-    closeGuest();
-    document.getElementById('chat-sub').textContent='● Sveiki, '+name+'!';
-    showChat();
-    setTimeout(()=>{ addSysMsg('👋 Sveiki, '+name+'! Servisai matys jūsų žinutę ir susisieks.'); },400);
+      document.getElementById('guest-overlay').classList.remove('show');
+      showChat();
+      addSysMsg('✓ Duomenys atnaujinti');
+    } else {
+      const res = await fetch(`${API_BASE}/auth/guest`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ firstName:name, phone })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
+
+      clientToken = data.token;
+      guestName = name; guestPhone = phone; guestCarInfo = carInfo;
+      localStorage.setItem('sc_client_token', clientToken);
+      localStorage.setItem('sc_client_name', guestName);
+      localStorage.setItem('sc_client_phone', guestPhone);
+
+      document.getElementById('guest-overlay').classList.remove('show');
+      showChat();
+      setTimeout(()=>{ addSysMsg('👋 Sveiki, '+name+'! Servisai matys jūsų žinutę ir susisieks.'); },400);
+    }
   } catch(err){
     alert(err.message);
   } finally {

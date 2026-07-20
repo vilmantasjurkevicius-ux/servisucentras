@@ -452,6 +452,34 @@ Savininkas užregistravo naują testinį servisą ir pastebėjo, kad `automeistr
 
 ---
 
+## Svečio duomenų keitimas + automobilio info nebe "įšaldyta" (2026-07-15)
+
+Du susiję pakeitimai svečio chat'e (`servisucentras-pagrindinis.html`), abu pačiame svečio formos overlay'uje (`#guest-overlay`), kuris dabar turi **3 režimus** (`guestOverlayMode`: `'new' | 'car' | 'edit'`), valdomus per `showGuestOverlay(mode)`:
+
+**1. Galimybė pakeisti vardą/telefoną.** Anksčiau, jei svečias suklysdavo (pvz. įvesdavo blogą telefono numerį), vienintelis būdas pataisyti būtų buvęs rankiniu būdu valyti naršyklės `localStorage` — nerealu tikram vartotojui. Dabar chat antraštėje, kai svečias jau žinomas, rodoma "● Sveiki, [Vardas]! **✎ Pakeisti duomenis**" (nuoroda, `chatSubHtml()` funkcija). Paspaudus — atsidaro ta pati forma su vardu/telefonu iš anksto užpildytu (automobilio laukas paslėptas, nes tai atskira sąvoka — žr. žemiau), leidžianti pataisyti ir išsaugoti.
+- **Techniškai:** naudojamas jau egzistavęs `PATCH /api/clients/me` endpoint'as (veikė bet kuriam `role:'client'`, taigi ir svečio tokenui, be jokio backend pakeitimo) — atnaujina TĄ PATĮ kliento įrašą DB (ne kuria naują), tad `client_id` išlieka tas pats. `localStorage` (`sc_client_name`, naujas `sc_client_phone`) atnaujinamas iškart.
+- **Senos užklausos:** kadangi klientų vardas/telefonas rodomi per `JOIN` (ne užšaldyti užklausos sukūrimo metu), pataisius duomenis, VISOS to kliento užklausos (senos ir naujos) admin/serviso peržiūroje iš karto rodys PATAISYTĄ kontaktą — tai tyčia, nes servisui/adminui visada naudingiau matyti dabartinį, teisingą telefono numerį susisiekimui, o ne istoriškai užšaldytą klaidą.
+
+**2. Automobilio info nebe "įšaldyta" kaip vardas/telefonas.** Anksčiau `car_info` buvo saugomas `localStorage` lygiai taip pat, kaip vardas/telefonas — bet tai neteisinga prielaida: vardas/telefonas yra kliento TAPATYBĖ (logiška prisiminti), o automobilis — KONKREČIOS UŽKLAUSOS duomuo (klientas gali turėti kelis automobilius arba klausti apie skirtingą kiekvieną kartą).
+- **Pataisyta logika:** `guestCarInfo` nebe skaitomas/rašomas į `localStorage` — tai grynai atminties (in-memory) kintamasis, kuris nulinamas kiekvieną kartą, kai puslapis įkeliamas iš naujo (t.y. kiekvienam "naujam pokalbiui" šia prasme).
+- Kai GRĮŽTANTIS svečias (vardas+telefonas jau žinomi iš `localStorage`) atidaro chat'ą ir **dar neturi aktyvios užklausos** šiame puslapio įkėlime (`currentOrderId === null`) → rodomas TIK trumpas automobilio klausimas ("Apie kurį automobilį klausiate šįkart?"), NE visa forma iš naujo — vardo/telefono laukai paslėpti, virš jų tik "Sveiki, [Vardas]! Ne jūs? Pakeisti duomenis" eilutė (paspaudus "Ne jūs?" — perjungia į pilną redagavimo formą).
+- Kai svečias JAU turi aktyvią, dar neuždarytą užklausą (`currentOrderId` nustatytas) — automobilio VĖL neklausiama, laikoma, kad tai tas pats pokalbis apie tą patį automobilį.
+- Automobilio info langelis neprivalomas — uždarius (✕) be pildymo, vis tiek pereinama į chat'ą su tuščiu `guestCarInfo`, kaip ir anksčiau.
+- Tai natūraliai sprendžia "kelių automobilių" atvejį be jokios papildomos sudėtingos sistemos — klientas tiesiog kaskart parašo, apie kurį automobilį klausia.
+
+**Patikrinta gyvai, pilnas srautas:**
+1. Naujas svečias, vardas "Test Vartotojas", **sąmoningai neteisingas** telefonas `+37060000001`, automobilis "Opel Astra, 2010" → užklausa #14 sukurta, DB patvirtinta: klaidingas telefonas + teisingas automobilis.
+2. Paspausta "✎ Pakeisti duomenis" → forma rodo vardą + KLAIDINGĄ telefoną (automobilio laukas paslėptas) → pakeista į teisingą `+37069998877`, išsaugota → DB patvirtinta: kliento telefonas atnaujintas, o užklausos #14 `car_info` liko NEPALIESTAS ("Opel Astra, 2010").
+3. Puslapis perkrautas (imituoja naują apsilankymą) → `guestName`/`guestPhone` teisingai atsistatė iš `localStorage` (su PATAISYTU telefonu), bet `guestCarInfo` tuščias, `currentOrderId` — `null`.
+4. Atidarius chat'ą — rodomas TIK automobilio klausimas (ne visa forma), su "Sveiki, Test Vartotojas!" sveikinimu. Įvestas NAUJAS automobilis "Škoda Fabia, 2015" → išsiųsta žinutė → sukurta NAUJA užklausa #15.
+5. DB patvirtinta: užklausa #14 (sena) → `car_info = "Opel Astra, 2010"` (nepakitęs); užklausa #15 (nauja) → `car_info = "Škoda Fabia, 2015"` — abi teisingos, nepriklausomos.
+6. Tęsiant TĄ PATĮ, jau aktyvų pokalbį (be puslapio perkrovimo) — automobilio nebeklausiama pakartotinai, chat atsidaro iškart.
+7. Automobilio klausimo praleidimas (✕) irgi patikrintas — vis tiek leidžia tęsti chat'ą.
+
+Testiniai duomenys (klientas, 2 užklausos) išvalyti po patikrinimo. Automatiniai testai (6/6) toliau praeina.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
