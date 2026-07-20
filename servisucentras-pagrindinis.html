@@ -985,6 +985,13 @@ function simulateReplies(){
     {msg:'Labas! Diagnostika pas mus nemokama jei remontuosite. Kokia problema konkrečiai?', price:Math.floor(25+Math.random()*40), time:'Šiandien 16:00', delay:4500},
     {msg:'Sveiki, galiu šiandien po 17:00 arba rytoj. Atvažiuokite — apžiūrėsim nemokamai 👍', price:Math.floor(15+Math.random()*35), time:'Šiandien 17:00', delay:7500},
   ];
+  // Bot servisai (is_bot=1) — placeholder'iai, kol neužsiregistravo tikras servisas.
+  // NEGALI siūlyti realios, įpareigojančios kainos — tik bendras atsakymas, be offer-card.
+  const botMsgs=[
+    'Ačiū už žinutę! Dėl tikslios kainos ir laisvo laiko geriausia paskambinti mums tiesiogiai telefonu.',
+    'Sveiki! Tiksliai kainai reikėtų apžiūros gyvai — susisiekite telefonu, aptarsime detales.',
+    'Labas! Parašėte teisingam servisui — dėl konkrečios kainos skambinkite mums tiesiogiai.',
+  ];
   candidates.forEach((svc,i)=>{
     const script = scripts[i] || scripts[0];
     const av = svc.name.charAt(0).toUpperCase();
@@ -999,7 +1006,13 @@ function simulateReplies(){
         const rd=document.createElement('div');
         rd.className='msg-s';
         const safeName = svc.name.replace(/'/g,"\\'");
-        rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${script.msg}<div class="offer-card" id="oc-${svc.id}" onclick="acceptOffer(this,${svc.id},'${safeName}',${script.price},'${script.time}')"><div class="offer-top"><div class="offer-svc-name">💰 Pasiūlymas</div><div class="offer-price">${script.price}€</div></div><div class="offer-det">📍 ${svc.name} · 🕐 ${script.time}</div><button class="offer-acc-btn">✓ Priimti</button></div></div><div class="mt">${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}</div></div>`;
+        const timeStr = `${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
+        if(svc.is_bot){
+          const botMsg = botMsgs[i % botMsgs.length];
+          rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${botMsg}</div><div class="mt">${timeStr}</div></div>`;
+        } else {
+          rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${script.msg}<div class="offer-card" id="oc-${svc.id}" onclick="acceptOffer(this,${svc.id},'${safeName}',${script.price},'${script.time}')"><div class="offer-top"><div class="offer-svc-name">💰 Pasiūlymas</div><div class="offer-price">${script.price}€</div></div><div class="offer-det">📍 ${svc.name} · 🕐 ${script.time}</div><button class="offer-acc-btn">✓ Priimti</button></div></div><div class="mt">${timeStr}</div></div>`;
+        }
         msgs.appendChild(rd); msgs.scrollTop=msgs.scrollHeight;
       },1500);
     }, script.delay);

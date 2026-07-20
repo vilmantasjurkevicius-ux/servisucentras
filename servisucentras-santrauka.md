@@ -485,6 +485,24 @@ Visi 4 telefono numerio laukai (svečio chat pagrindiniame puslapyje, serviso/kl
 
 ---
 
+## Bot servisai negali siūlyti kainos + servisai nemato vieni kitų pasiūlymų (2026-07-20)
+
+**Dalis 1 — bot servisai chat'e atsako, bet be kainos.** `servisucentras-pagrindinis.html`'s `simulateReplies()` (suvaidinti "gyvi" atsakymai chat'e po kliento žinutės, žr. Auto-atnaujinimas/bot logikos sekcijas aukščiau) anksčiau VISIEMS kandidatams — tiek tikriems servisams, tiek bot'ams — rodydavo tą patį scenarijų su kainos pasiūlymu (`offer-card` + `€` + "✓ Priimti" mygtukas). Kadangi bot'ai — tik placeholder'iai, kol neužsiregistruos tikras servisas (neturi paskyros, negali realiai atlikti darbo — žr. "Bot" servisų logikos sekciją), jiems neteisinga rodyti realų, "priimamą" kainos pasiūlymą.
+- **Pataisyta:** `candidates.forEach` dabar tikrina `svc.is_bot`. Jei bot'as — rodomas TIK bendras, informatyvus tekstas (pvz. "Dėl tikslios kainos ir laisvo laiko geriausia paskambinti mums tiesiogiai"), BE `offer-card`/kainos/"Priimti" mygtuko. Jei tikras servisas (`is_bot=0`) — elgesys nepakitęs, kaina ir toliau siūloma kaip anksčiau.
+- Tai taip pat netiesiogiai išsprendžia latentinę problemą: anksčiau klientas TEORIŠKAI galėjo "priimti" bot'o pasiūlymą (`POST /orders/:id/accept` su bot'o ID) — užklausa būtų amžinai kabėjusi, nes bot'as fiziškai negali prisijungti ir ją užbaigti. Dabar bot'ams apskritai nerodomas joks priimamas pasiūlymas.
+- **Patikrinta gyvai:** Ukmergė + kategorija „diagnostika" turi 1 tikrą servisą ("Testinis Garažas") + 2 bot'us ("Motorsport UKM", "Ukmergės Autoservisas"). Sukurta užklausa, sulaukta visų 3 simuliuotų atsakymų: tikras servisas → turi `offer-card` su kaina; abu bot'ai → tik tekstinis atsakymas, `offer-card` nėra.
+
+**Dalis 2 — servisai nemato vieni kitų pasiūlytos kainos (daugiavendorinis modelis).** Architektūra: viena užklausa (`orders`) gali gauti kainos pasiūlymus iš KELIŲ skirtingų servisų — kiekvienas pasiūlymas įrašomas kaip atskira eilutė `order_messages` lentelėje (`sender_type='service', sender_id=<id>, price_quote=X`), visi susieti su tuo pačiu `order_id`. **Rasta ir pataisyta reali privatumo spraga:** `GET /api/orders/:id/messages` anksčiau grąžindavo VISAS tos užklausos žinutes VISIEMS — joks nuosavybės/rolės filtras nebuvo taikomas. Tai reiškė, kad bet kuris servisas (ar net klientas, kuriam ta užklausa nepriklauso) galėtų per API pamatyti VISŲ kitų servisų pasiūlytas kainas tai pačiai užklausai — realus konkurencinio privatumo pažeidimas daugiavendoriniame modelyje (dabartinė dashboard sąsaja šio endpoint'o dar nenaudoja, bet pati API buvo pažeidžiama).
+- **Pataisyta** (`backend/src/routes/orders.routes.js`, `GET /:id/messages`):
+  - Pridėtas nuosavybės patikrinimas klientams: jei `req.user.role === 'client'` ir `order.client_id !== req.user.id` → `403`.
+  - Servisams žinutės filtruojamos: matoma tik `sender_type !== 'service'` (t.y. kliento žinutės, bendros visiems besidomintiems servisams) ARBA `sender_id === req.user.id` (savo pačių žinutės/pasiūlymai). Kito serviso pasiūlymas — niekada nerodomas.
+  - Klientas (užklausos savininkas) mato VISKĄ — visus pasiūlymus, kad galėtų palyginti kainas ir pasirinkti.
+- **Patikrinta gyvai:** du skirtingi tikri servisai (id 11 ir 12) pasiūlė 45€ ir 60€ tai pačiai užklausai → servisas 11 per API matė TIK savo 45€ (nematė 60€), servisas 12 matė TIK savo 60€ (nematė 45€), klientas matė ABU (45€ ir 60€), o kitas (svetimas) klientas gavo 403.
+- **Pridėtas automatinis regresijos testas** (`backend/test/api.test.js`, "daugiavendorinis modelis: servisai nemato vieni kitų kainos, klientas mato abu") — registruoja 2 servisus tame pačiame mieste/kategorijoje, abu pasiūlo skirtingą kainą tai pačiai užklausai, patvirtina izoliaciją. Automatiniai testai dabar 7/7.
+- **Neliesta (nebuvo prašyta, paminėta informacijai):** `POST /api/orders/:id/messages` (žinutės siuntimas) irgi neturi nuosavybės patikrinimo — bet kuris galiojantis tokenas gali PARAŠYTI į bet kurios užklausos giją. Tai atskira, mažesnio prioriteto problema nei kainos MATOMUMAS, kurio konkrečiai buvo paprašyta — nefiksuota, kad neišplėsčiau užduoties apimties be atskiro patvirtinimo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

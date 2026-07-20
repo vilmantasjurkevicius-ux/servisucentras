@@ -92,7 +92,21 @@ router.patch('/:id/schedule', authRequired, requireRole('service'), (req, res) =
 
 // ── UŽKLAUSOS ŽINUTĖS (WhatsApp stiliaus chatas) ──
 router.get('/:id/messages', authRequired, (req, res) => {
-  const messages = db.prepare('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC').all(req.params.id);
+  const order = getOrder(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
+  if (req.user.role === 'client' && order.client_id !== req.user.id) {
+    return res.status(403).json({ error: 'Ši užklausa jums nepriklauso' });
+  }
+
+  let messages = db.prepare('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC').all(order.id);
+
+  // Daugiavendorinis modelis — kelis servisai gali siūlyti kainą tai pačiai (dar
+  // neuždarytai) užklausai. Servisas mato TIK savo pačio žinutes/pasiūlymus ir
+  // kliento žinutes — NIEKADA kito, konkuruojančio serviso kainos. Klientas mato viską.
+  if (req.user.role === 'service') {
+    messages = messages.filter((m) => m.sender_type !== 'service' || m.sender_id === req.user.id);
+  }
+
   res.json(messages);
 });
 

@@ -142,3 +142,49 @@ test(
     assert.equal(reviewsList.data[0].comment, 'Puikus darbas!');
   }
 );
+
+test('daugiavendorinis modelis: servisai nemato vieni kitų kainos, klientas mato abu', async () => {
+  const clientReg = await api('POST', '/api/auth/client/register', {
+    body: { firstName: 'Palyginimo', lastName: 'Klientas', email: `palyginimas-${Date.now()}@test.lt`, password: 'slaptas123' },
+  });
+  const clientToken = clientReg.data.token;
+
+  const svcAReg = await api('POST', '/api/auth/service/register', {
+    body: { name: 'Servisas A', email: `svc-a-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', categoryIds: ['stabdziai'] },
+  });
+  const svcBReg = await api('POST', '/api/auth/service/register', {
+    body: { name: 'Servisas B', email: `svc-b-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', categoryIds: ['stabdziai'] },
+  });
+  const tokenA = svcAReg.data.token;
+  const tokenB = svcBReg.data.token;
+  const idA = svcAReg.data.service.id;
+  const idB = svcBReg.data.service.id;
+
+  const orderCreate = await api('POST', '/api/orders', {
+    token: clientToken,
+    body: { categoryId: 'stabdziai', city: 'Kaunas', description: 'Girgžda stabdžiai' },
+  });
+  const orderId = orderCreate.data.id;
+
+  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenA, body: { price: 45, message: 'Galime rytoj' } });
+  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenB, body: { price: 60, message: 'Galime šiandien' } });
+
+  const asA = await api('GET', `/api/orders/${orderId}/messages`, { token: tokenA });
+  assert.equal(asA.data.length, 1, 'Servisas A turi matyti tik savo žinutę');
+  assert.equal(asA.data[0].sender_id, idA);
+  assert.equal(asA.data[0].price_quote, 45);
+
+  const asB = await api('GET', `/api/orders/${orderId}/messages`, { token: tokenB });
+  assert.equal(asB.data.length, 1, 'Servisas B turi matyti tik savo žinutę');
+  assert.equal(asB.data[0].sender_id, idB);
+  assert.equal(asB.data[0].price_quote, 60);
+
+  const asClient = await api('GET', `/api/orders/${orderId}/messages`, { token: clientToken });
+  assert.equal(asClient.data.length, 2, 'Klientas turi matyti abu pasiūlymus, kad galėtų palyginti');
+
+  const otherClientReg = await api('POST', '/api/auth/client/register', {
+    body: { firstName: 'Kitas', lastName: 'Klientas', email: `kitas-${Date.now()}@test.lt`, password: 'slaptas123' },
+  });
+  const asOtherClient = await api('GET', `/api/orders/${orderId}/messages`, { token: otherClientReg.data.token });
+  assert.equal(asOtherClient.status, 403, 'svetimas klientas neturi matyti šios užklausos žinučių');
+});
