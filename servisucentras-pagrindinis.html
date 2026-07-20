@@ -609,7 +609,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
       <label class="gm-label">Vardas</label>
       <input class="gm-field" id="gm-name" type="text" placeholder="Jūsų vardas">
       <label class="gm-label">Telefono numeris</label>
-      <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000">
+      <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000" onfocus="this.setSelectionRange(this.value.length,this.value.length)">
     </div>
     <div id="gm-car-group">
       <label class="gm-label">Automobilio modelis ir metai</label>
@@ -843,7 +843,7 @@ function showGuestOverlay(mode){
     title.textContent = 'Prieš rašant servisams';
     sub.innerHTML = 'Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b>';
     note.style.display = 'block';
-    nameField.value = ''; phoneField.value = ''; carField.value = '';
+    nameField.value = ''; phoneField.value = '+370 '; carField.value = '';
     nameField.style.borderColor = ''; phoneField.style.borderColor = '';
     btn.textContent = '💬 Rašyti servisams →';
   }

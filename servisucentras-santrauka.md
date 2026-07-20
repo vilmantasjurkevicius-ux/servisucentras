@@ -480,6 +480,11 @@ Testiniai duomenys (klientas, 2 užklausos) išvalyti po patikrinimo. Automatini
 
 ---
 
+## Telefono lauke iš anksto "+370 " (2026-07-20)
+Visi 4 telefono numerio laukai (svečio chat pagrindiniame puslapyje, serviso/kliento registracija, svečio forma login puslapyje) dabar iš anksto turi `+370 ` prefiksą — vartotojui nebereikia jo rašyti kaskart, tik tęsti nuo likusių skaitmenų. Kursorius fokusavimo metu automatiškai atsistato teksto gale (`onfocus="this.setSelectionRange(this.value.length,this.value.length)"`). `automeistrai-login.html` — statinis `value="+370 "` ant `<input>`. `servisucentras-pagrindinis.html` (svečio overlay) — nustatoma dinamiškai `showGuestOverlay('new')` funkcijoje (ne 'edit'/'car' režimuose, kur laukas arba paslėptas, arba užpildomas realia jau žinoma reikšme). Patikrinta gyvai: registracija su „+370 61234567" → DB įrašyta tiksliai ta reikšmė.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
