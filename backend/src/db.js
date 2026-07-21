@@ -10,7 +10,13 @@ const SCHEMA_PATH = path.join(__dirname, 'schema.sql');
 fs.mkdirSync(path.dirname(DB_PATH), { recursive: true });
 
 const db = new DatabaseSync(DB_PATH);
-db.exec('PRAGMA journal_mode = WAL');
+// WAL laikydavo neseniausius įrašus atskirame -wal faile, kuris susilieja į pagrindinį
+// .db failą tik per checkpoint'ą — jei procesas/aplinka persikrauna anksčiau nei tai
+// įvyksta, tie įrašai dingsta (taip prarandami testiniai duomenys šioje sesijoje, greičiausiai
+// ta pati priežastis dėl ko production rodė 0 klientų). DELETE režimu kiekvienas commit'as
+// iškart įrašomas į patį .db failą — nėra atskiro neužfiksuoto failo, kurį galima prarasti.
+// Šiam mažo srauto projektui papildoma I/O kaina nereikšminga, patvarumas svarbesnis.
+db.exec('PRAGMA journal_mode = DELETE');
 db.exec('PRAGMA foreign_keys = ON');
 
 db.exec(fs.readFileSync(SCHEMA_PATH, 'utf8'));

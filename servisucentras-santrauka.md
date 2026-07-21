@@ -561,6 +561,23 @@ Patikrinta kiekvienam failui atskirai per 320/360/390/414/430/900/1280px pločiu
 
 ---
 
+## DB patvarumas — WAL režimas prarasdavo neseniausius duomenis (2026-07-21)
+
+Po aukščiau aprašyto funkcionalumo, vartotojas paprašė patikrinti, ar viskas veikia. Perpatikrinant gyvai paaiškėjo, kad VISI tos pačios sesijos metu sukurti testiniai duomenys (klientas, 2 servisai, 2 užklausos su realiais pasiūlymais) API požiūriu dingo — seniai (dar liepos pradžioje) sukurta sėklinė duomenų bazė liko nepaliesta.
+
+**Priežastis:** `backend/src/db.js` naudojo `PRAGMA journal_mode = WAL` — šiame režime neseniausi įrašai laikomi atskirame `.db-wal` faile ir susilieja į pagrindinį `.db` failą tik per checkpoint'ą. Jei procesas/aplinka persikrauna anksčiau nei checkpoint įvyksta, tie įrašai dingsta, nors patys failai (WAL, SHM) fiziškai išlieka diske. Tai **greičiausiai ta pati priežastis**, dėl kurios anksčiau (2026-07-13 užduotyje) buvo pastebėta, kad production Railway aplinkoje matėsi 0 klientų/0 užklausų — atviras, tuomet neatsakytas klausimas.
+
+**Pataisyta:** `db.js` perjungtas į `PRAGMA journal_mode = DELETE` — kiekvienas commit'as iškart įrašomas į patį `.db` failą, nėra atskiro neužfiksuoto failo, kurį galima prarasti. Mažo srauto projektui (viena maža vietos rinkos platforma) papildoma I/O kaina nereikšminga, patvarumas svarbesnis.
+
+**Patikrinta gyvai — regresijos testas pačiam radiniui:**
+1. Perjungus režimą ir perkrovus serverį, `.db-wal`/`.db-shm` failai išnyko, visi anksčiau "pamesti" duomenys (klientai/servisai) atsirado atgal pagrindiniame `.db` faile (WAL automatiškai susiliejo perjungimo metu).
+2. Serveris perkrautas DAR KARTĄ (tikras regresijos testas) — duomenys IŠLIKO (anksčiau šiuo momentu jie būtų dingę).
+3. Automatiniai testai (7/7) praeina nepakitę.
+
+**Rekomendacija Railway/production aplinkai:** verta patikrinti, ar tas pats `journal_mode` pakeitimas išsprendžia ir ten pastebėtą 0 klientų/0 užklausų reiškinį — kitą kartą deploy'inant šis fix'as jau bus įtrauktas automatiškai (žr. `backend/src/db.js`).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
