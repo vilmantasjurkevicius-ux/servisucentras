@@ -26,6 +26,9 @@ function migrate() {
   if (!orderCols.includes('scheduled_time')) db.exec('ALTER TABLE orders ADD COLUMN scheduled_time TEXT');
   if (!orderCols.includes('car_info')) db.exec('ALTER TABLE orders ADD COLUMN car_info TEXT');
 
+  const msgCols = db.prepare("PRAGMA table_info(order_messages)").all().map((c) => c.name);
+  if (!msgCols.includes('available_time')) db.exec('ALTER TABLE order_messages ADD COLUMN available_time TEXT');
+
   const serviceCols = db.prepare("PRAGMA table_info(services)").all().map((c) => c.name);
   if (!serviceCols.includes('work_hours')) db.exec('ALTER TABLE services ADD COLUMN work_hours TEXT');
 

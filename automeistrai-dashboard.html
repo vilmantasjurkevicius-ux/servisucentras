@@ -239,6 +239,18 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .ocard-client{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);}
 .ocard-slot{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--yellow);}
 
+.ocard-chat-toggle{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
+.ocard-chat-toggle:hover{color:var(--text);}
+.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;}
+.ochat-msg{max-width:88%;}
+.ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:2px;}
+.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line);border-radius:3px 10px 10px 10px;padding:7px 10px;font-size:12.5px;line-height:1.4;}
+.ochat-msg.mine{align-self:flex-end;max-width:88%;}
+.ochat-msg.mine .bubble{background:var(--yellow-dim);border-color:rgba(245,196,0,0.3);border-radius:10px 3px 10px 10px;}
+.ochat-msg.mine .who{text-align:right;}
+.ochat-offer{font-family:'IBM Plex Mono';font-size:11px;color:var(--yellow);margin-top:3px;}
+.ochat-empty{color:var(--muted);font-size:12px;text-align:center;padding:6px 0;}
+
 .ocard-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center;}
 .action-btn{
   font-family:'IBM Plex Mono';font-size:10px;padding:5px 10px;border-radius:2px;
@@ -586,6 +598,7 @@ let ordersCache = [];
 let activeTab = 'new';
 let quotingOrderId = null;
 let quotingMode = null;
+let expandedOrderId = null;
 
 if(!serviceToken){
   window.location.href = 'automeistrai-login.html?type=service';
@@ -669,11 +682,16 @@ function actionsForOrder(o){
           <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
         </div>`;
     }
+    const showTimeField = quotingMode === 'quote';
     return `
-      <div style="display:flex;gap:6px;align-items:center;">
-        <input type="number" id="price-input-${o.id}" placeholder="Kaina €" style="width:70px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
-        <button class="action-btn accept" onclick="submitPrice(${o.id})">✓ Siųsti</button>
-        <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
+      <div style="display:flex;flex-direction:column;gap:4px;">
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input type="number" id="price-input-${o.id}" placeholder="Kaina €" style="width:70px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;" onkeydown="if(event.key==='Enter') submitPrice(${o.id})">
+          ${showTimeField ? `<input type="datetime-local" id="time-input-${o.id}" title="Kada galite priimti automobilį (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;" onkeydown="if(event.key==='Enter') submitPrice(${o.id})">` : ''}
+          <button class="action-btn accept" onclick="submitPrice(${o.id})">✓ Siųsti</button>
+          <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
+        </div>
+        <div id="price-error-${o.id}" style="display:none;color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';"></div>
       </div>`;
   }
   if(o.service_id === null){
@@ -716,11 +734,57 @@ function renderOrders(){
         <div class="ocard-footer">
           <span class="ocard-client">📞 ${o.phone||'—'}</span>
           <span class="ocard-slot">#${String(o.id).padStart(4,'0')}</span>
+          <button class="ocard-chat-toggle" onclick="toggleChatThread(${o.id})">${expandedOrderId===o.id?'▲ Slėpti pokalbį':'💬 Pokalbis'}</button>
         </div>
+        ${expandedOrderId===o.id ? `<div class="ochat" id="ochat-${o.id}"><div class="ochat-empty">Kraunama...</div></div>` : ''}
       </div>
       <div class="ocard-actions">${actionsForOrder(o)}</div>
     </div>`;
   }).join('');
+  if(expandedOrderId !== null) loadChatThread(expandedOrderId);
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function toggleChatThread(id){
+  if(expandedOrderId === id){
+    expandedOrderId = null;
+    renderOrders();
+    return;
+  }
+  expandedOrderId = id;
+  renderOrders();
+  loadChatThread(id);
+}
+
+async function loadChatThread(id){
+  const container = document.getElementById(`ochat-${id}`);
+  if(!container) return;
+  try{
+    const messages = await apiGet(`/orders/${id}/messages`);
+    if(expandedOrderId !== id) return;
+    if(messages.length === 0){
+      container.innerHTML = `<div class="ochat-empty">Pokalbio dar nėra.</div>`;
+      return;
+    }
+    container.innerHTML = messages.map(m => {
+      const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
+      const who = m.sender_type === 'client' ? 'Klientas' : (mine ? 'Jūs' : 'Kitas servisas');
+      const offerBits = [];
+      if(m.price_quote != null) offerBits.push(fmtEUR(m.price_quote));
+      if(m.available_time) offerBits.push('🕒 '+formatSchedule(m.available_time));
+      return `
+        <div class="ochat-msg ${mine?'mine':''}">
+          <div class="who">${who} · ${timeAgo(m.created_at)}</div>
+          ${m.message ? `<div class="bubble">${escapeHtml(m.message)}</div>` : ''}
+          ${offerBits.length ? `<div class="ochat-offer">${offerBits.join(' · ')}</div>` : ''}
+        </div>`;
+    }).join('');
+  } catch(err){
+    container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>`;
+  }
 }
 
 function startQuoting(id, mode){
@@ -732,15 +796,28 @@ function cancelQuoting(){ quotingOrderId = null; quotingMode = null; renderOrder
 
 async function submitPrice(id){
   const input = document.getElementById(`price-input-${id}`);
+  const errEl = document.getElementById(`price-error-${id}`);
   const price = parseFloat(input.value);
-  if(!price || price <= 0){ input.style.borderColor = 'rgba(192,57,43,0.6)'; return; }
+  if(!price || price <= 0){
+    input.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Įveskite kainą (didesnę už 0)'; errEl.style.display = 'block'; }
+    input.focus();
+    return;
+  }
+  input.style.borderColor = '';
+  if(errEl) errEl.style.display = 'none';
   try{
-    if(quotingMode === 'quote') await apiPost(`/orders/${id}/quote`, { price });
-    else await apiPost(`/orders/${id}/complete`, { price });
+    if(quotingMode === 'quote'){
+      const timeInput = document.getElementById(`time-input-${id}`);
+      await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput && timeInput.value ? timeInput.value : null });
+    } else {
+      await apiPost(`/orders/${id}/complete`, { price });
+    }
     quotingOrderId = null; quotingMode = null;
     await loadOrders();
   } catch(err){
-    alert(err.message);
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+    else alert(err.message);
   }
 }
 

@@ -143,7 +143,7 @@ test(
   }
 );
 
-test('daugiavendorinis modelis: servisai nemato vieni kitų kainos, klientas mato abu', async () => {
+test('daugiavendorinis modelis: pokalbio tekstas matomas visiems, kaina ir laikas — tik savam servisui, klientas mato abu', async () => {
   const clientReg = await api('POST', '/api/auth/client/register', {
     body: { firstName: 'Palyginimo', lastName: 'Klientas', email: `palyginimas-${Date.now()}@test.lt`, password: 'slaptas123' },
   });
@@ -166,21 +166,29 @@ test('daugiavendorinis modelis: servisai nemato vieni kitų kainos, klientas mat
   });
   const orderId = orderCreate.data.id;
 
-  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenA, body: { price: 45, message: 'Galime rytoj' } });
-  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenB, body: { price: 60, message: 'Galime šiandien' } });
+  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenA, body: { price: 45, message: 'Galime rytoj', availableTime: '2026-07-22T09:00' } });
+  await api('POST', `/api/orders/${orderId}/quote`, { token: tokenB, body: { price: 60, message: 'Galime šiandien', availableTime: '2026-07-21T15:00' } });
 
   const asA = await api('GET', `/api/orders/${orderId}/messages`, { token: tokenA });
-  assert.equal(asA.data.length, 1, 'Servisas A turi matyti tik savo žinutę');
-  assert.equal(asA.data[0].sender_id, idA);
-  assert.equal(asA.data[0].price_quote, 45);
+  assert.equal(asA.data.length, 2, 'Servisas A turi matyti abiejų žinučių TEKSTĄ');
+  const aOwn = asA.data.find((m) => m.sender_id === idA);
+  const aRival = asA.data.find((m) => m.sender_id === idB);
+  assert.equal(aOwn.price_quote, 45, 'savo kainą servisas A mato');
+  assert.equal(aOwn.available_time, '2026-07-22T09:00', 'savo siūlomą laiką servisas A mato');
+  assert.equal(aRival.message, 'Galime šiandien', 'konkurento TEKSTAS lieka matomas');
+  assert.equal(aRival.price_quote, null, 'konkurento kaina paslėpta');
+  assert.equal(aRival.available_time, null, 'konkurento siūlomas laikas paslėptas');
 
   const asB = await api('GET', `/api/orders/${orderId}/messages`, { token: tokenB });
-  assert.equal(asB.data.length, 1, 'Servisas B turi matyti tik savo žinutę');
-  assert.equal(asB.data[0].sender_id, idB);
-  assert.equal(asB.data[0].price_quote, 60);
+  assert.equal(asB.data.length, 2, 'Servisas B turi matyti abiejų žinučių TEKSTĄ');
+  const bOwn = asB.data.find((m) => m.sender_id === idB);
+  const bRival = asB.data.find((m) => m.sender_id === idA);
+  assert.equal(bOwn.price_quote, 60);
+  assert.equal(bRival.price_quote, null, 'konkurento (A) kaina paslėpta servisui B');
 
   const asClient = await api('GET', `/api/orders/${orderId}/messages`, { token: clientToken });
   assert.equal(asClient.data.length, 2, 'Klientas turi matyti abu pasiūlymus, kad galėtų palyginti');
+  assert.ok(asClient.data.every((m) => m.price_quote != null), 'klientui abi kainos matomos, niekas neredaguota');
 
   const otherClientReg = await api('POST', '/api/auth/client/register', {
     body: { firstName: 'Kitas', lastName: 'Klientas', email: `kitas-${Date.now()}@test.lt`, password: 'slaptas123' },

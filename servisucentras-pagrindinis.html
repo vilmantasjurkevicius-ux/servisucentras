@@ -820,6 +820,8 @@ let guestPhone = localStorage.getItem('sc_client_phone') || '';
 let guestCarInfo = '';
 let currentOrderId = null;
 let guestOverlayMode = 'new'; // 'new' | 'car' | 'edit'
+let renderedMessageIds = new Set();
+let chatPollTimer = null;
 
 function chatSubHtml(name){
   return '● Sveiki, '+name+'! <a class="chat-edit-link" onclick="editGuestInfo()">✎ Pakeisti duomenis</a>';
@@ -1000,6 +1002,7 @@ async function sendMsg(){
       currentOrderId = data.id;
       addSysMsg('✓ Užklausa #'+currentOrderId+' sukurta ir išsiųsta servisams');
       simulateReplies();
+      startOrderPolling();
     } else {
       const res = await fetch(`${API_BASE}/orders/${currentOrderId}/messages`, {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
@@ -1014,27 +1017,22 @@ async function sendMsg(){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-// Realūs servisai (iš cityServices), scenarijaus tekstas/laikai — vis dar
-// suvaidinti demonstracijai, nes nėra atskiro serviso-pusės atsakiklio realiu laiku.
-// Priėmus pasiūlymą, tikras POST /orders/:id/accept vis tiek įrašomas į DB.
+// Bot servisai (is_bot=1) — placeholder'iai, kol neužsiregistravo tikras servisas.
+// NEGALI siūlyti realios, įpareigojančios kainos — tik suvaidintas bendras atsakymas,
+// be offer-card (bot'ai neturi paskyros, negali realiai priimti/atlikti darbo).
+// Tikrų servisų pasiūlymai NEBE suvaidinti — jie atkeliauja per pollOrderMessages()
+// iš realaus GET /orders/:id/messages, žr. žemiau.
 function simulateReplies(){
   const msgs=document.getElementById('chat-msgs');
-  const candidates = cityServices.filter(s=>s.categories.some(c=>c.id===activeCat)).slice(0,3);
+  const candidates = cityServices.filter(s=>s.is_bot && s.categories.some(c=>c.id===activeCat)).slice(0,3);
   if(candidates.length===0) return;
-  const scripts=[
-    {msg:'Sveiki! Galiu apžiūrėti ir pasakyti tikslesnę kainą. Koks automobilis?', price:Math.floor(20+Math.random()*30), time:'Rytoj 10:00', delay:2000},
-    {msg:'Labas! Diagnostika pas mus nemokama jei remontuosite. Kokia problema konkrečiai?', price:Math.floor(25+Math.random()*40), time:'Šiandien 16:00', delay:4500},
-    {msg:'Sveiki, galiu šiandien po 17:00 arba rytoj. Atvažiuokite — apžiūrėsim nemokamai 👍', price:Math.floor(15+Math.random()*35), time:'Šiandien 17:00', delay:7500},
-  ];
-  // Bot servisai (is_bot=1) — placeholder'iai, kol neužsiregistravo tikras servisas.
-  // NEGALI siūlyti realios, įpareigojančios kainos — tik bendras atsakymas, be offer-card.
   const botMsgs=[
     'Ačiū už žinutę! Dėl tikslios kainos ir laisvo laiko geriausia paskambinti mums tiesiogiai telefonu.',
     'Sveiki! Tiksliai kainai reikėtų apžiūros gyvai — susisiekite telefonu, aptarsime detales.',
     'Labas! Parašėte teisingam servisui — dėl konkrečios kainos skambinkite mums tiesiogiai.',
   ];
+  const delays = [2000, 4500, 7000];
   candidates.forEach((svc,i)=>{
-    const script = scripts[i] || scripts[0];
     const av = svc.name.charAt(0).toUpperCase();
     setTimeout(()=>{
       const td=document.createElement('div');
@@ -1046,18 +1044,69 @@ function simulateReplies(){
         if(te) te.remove();
         const rd=document.createElement('div');
         rd.className='msg-s';
-        const safeName = svc.name.replace(/'/g,"\\'");
         const timeStr = `${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
-        if(svc.is_bot){
-          const botMsg = botMsgs[i % botMsgs.length];
-          rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${botMsg}</div><div class="mt">${timeStr}</div></div>`;
-        } else {
-          rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${script.msg}<div class="offer-card" id="oc-${svc.id}" onclick="acceptOffer(this,${svc.id},'${safeName}',${script.price},'${script.time}')"><div class="offer-top"><div class="offer-svc-name">💰 Pasiūlymas</div><div class="offer-price">${script.price}€</div></div><div class="offer-det">📍 ${svc.name} · 🕐 ${script.time}</div><button class="offer-acc-btn">✓ Priimti</button></div></div><div class="mt">${timeStr}</div></div>`;
-        }
+        const botMsg = botMsgs[i % botMsgs.length];
+        rd.innerHTML=`<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${svc.name}</div><div class="bubble">${botMsg}</div><div class="mt">${timeStr}</div></div>`;
         msgs.appendChild(rd); msgs.scrollTop=msgs.scrollHeight;
       },1500);
-    }, script.delay);
+    }, delays[i] || 2000+i*2500);
   });
+}
+
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function formatOfferTime(v){
+  if(!v) return '';
+  const [datePart, timePart] = v.split('T');
+  if(!datePart) return v;
+  const [, m, d] = datePart.split('-');
+  const MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+  return `${d} ${MONTHS_SHORT[parseInt(m,10)-1]} ${timePart||''}`;
+}
+
+// Realių servisų pasiūlymai — tikri duomenys iš backend'o, ne suvaidinti. Klientas
+// mato VISŲ tinkamų servisų kainas (gali palyginti), kiekvienas servisas mato tik
+// savo — tą privatumo taisyklę jau užtikrina GET /orders/:id/messages serverio pusėje.
+function startOrderPolling(){
+  if(chatPollTimer) clearInterval(chatPollTimer);
+  pollOrderMessages();
+  chatPollTimer = setInterval(pollOrderMessages, 4000);
+}
+
+async function pollOrderMessages(){
+  if(!currentOrderId || !clientToken) return;
+  try{
+    const res = await fetch(`${API_BASE}/orders/${currentOrderId}/messages`, {
+      headers: { 'Authorization': 'Bearer '+clientToken }
+    });
+    if(!res.ok) return;
+    const messages = await res.json();
+    const msgs = document.getElementById('chat-msgs');
+    messages.forEach(m => {
+      if(renderedMessageIds.has(m.id)) return;
+      renderedMessageIds.add(m.id);
+      if(m.sender_type !== 'service') return; // savo žinutes klientas jau mato lokaliai, siunčiant
+
+      const svc = cityServices.find(s=>s.id===m.sender_id);
+      const svcName = svc ? svc.name : 'Servisas';
+      const av = svcName.charAt(0).toUpperCase();
+      const timeStr = `${new Date().getHours()}:${String(new Date().getMinutes()).padStart(2,'0')}`;
+      const rd = document.createElement('div');
+      rd.className = 'msg-s';
+      if(m.price_quote != null){
+        const safeName = svcName.replace(/'/g,"\\'");
+        const timeLabel = m.available_time ? formatOfferTime(m.available_time) : 'susitarsime telefonu';
+        const safeTimeLabel = timeLabel.replace(/'/g,"\\'");
+        rd.innerHTML = `<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${escapeHtml(svcName)}</div><div class="bubble">${m.message?escapeHtml(m.message):'Turime pasiūlymą:'}<div class="offer-card" id="oc-${m.id}" onclick="acceptOffer(this,${m.sender_id},'${safeName}',${m.price_quote},'${safeTimeLabel}')"><div class="offer-top"><div class="offer-svc-name">💰 Pasiūlymas</div><div class="offer-price">${m.price_quote}€</div></div><div class="offer-det">📍 ${escapeHtml(svcName)} · 🕐 ${timeLabel}</div><button class="offer-acc-btn">✓ Priimti</button></div></div><div class="mt">${timeStr}</div></div>`;
+      } else {
+        rd.innerHTML = `<div class="msg-s-av">${av}</div><div class="msg-s-wrap"><div class="msg-s-name">${escapeHtml(svcName)}</div><div class="bubble">${escapeHtml(m.message||'')}</div><div class="mt">${timeStr}</div></div>`;
+      }
+      msgs.appendChild(rd);
+      msgs.scrollTop = msgs.scrollHeight;
+    });
+  } catch(err){ /* tylus fail — kitas ciklas po 4s pabandys vėl */ }
 }
 
 async function acceptOffer(el, serviceId, svcName, price, time){

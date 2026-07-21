@@ -501,6 +501,8 @@ Visi 4 telefono numerio laukai (svečio chat pagrindiniame puslapyje, serviso/kl
 - **Pridėtas automatinis regresijos testas** (`backend/test/api.test.js`, "daugiavendorinis modelis: servisai nemato vieni kitų kainos, klientas mato abu") — registruoja 2 servisus tame pačiame mieste/kategorijoje, abu pasiūlo skirtingą kainą tai pačiai užklausai, patvirtina izoliaciją. Automatiniai testai dabar 7/7.
 - **Neliesta (nebuvo prašyta, paminėta informacijai):** `POST /api/orders/:id/messages` (žinutės siuntimas) irgi neturi nuosavybės patikrinimo — bet kuris galiojantis tokenas gali PARAŠYTI į bet kurios užklausos giją. Tai atskira, mažesnio prioriteto problema nei kainos MATOMUMAS, kurio konkrečiai buvo paprašyta — nefiksuota, kad neišplėsčiau užduoties apimties be atskiro patvirtinimo.
 
+> **Pastaba (2026-07-21):** aukščiau aprašytas "servisas visiškai nemato kito serviso žinutės" elgesys buvo PATIKSLINTAS — žr. „GALUTINIS chat matomumo sprendimas" žemiau. Nuo šiol TEKSTAS lieka matomas visiems, tik KAINA/LAIKAS redaguojami.
+
 ---
 
 ## Pilnas mobiliojo ekrano patikrinimas — visi failai (2026-07-21)
@@ -520,6 +522,42 @@ Patikrinta kiekvienam failui atskirai per 320/360/390/414/430/900/1280px pločiu
 **`servisucentras-diagnostika.html` — failo NĖRA projekte.** Kitų puslapių `<a href="servisucentras-diagnostika.html">` nuorodos (nav meniu, mobile meniu) rodo į neegzistuojantį failą — tai jau egzistavusi "negyva" nuoroda, ne šios užduoties sukurta problema. Niekas nebuvo tikrinama/taisoma šiam failui, nes jo tiesiog nėra — reikėtų arba sukurti šį puslapį, arba pašalinti nuorodas, jei diagnostikos funkcija apskritai neplanuojama.
 
 **Bendra pastaba ateičiai:** visur, kur pridedama nauja mobili-only CSS taisyklė tam pačiam selektoriui kaip jau esanti bazinė taisyklė, bazinė taisyklė PRIVALO būti anksčiau faile nei `@media` perrašymas — priešingu atveju laimi vėlesnė (nepriklausomai nuo media query), nes specifiškumas vienodas. Ši klaida šioje užduotyje pasikartojo 2 kartus (pagrindinis.html nav, admin.html stats-row) ir abu kartus buvo iškart pastebėta testavimo metu ir ištaisyta.
+
+---
+
+## GALUTINIS chat matomumo sprendimas + serviso siūlomas laikas + realus kliento chat'as (2026-07-21)
+
+**GALUTINĖ taisyklė (pakeičia 2026-07-20 aprašytą elgesį aukščiau):**
+- **TEKSTAS matomas VISIEMS** — klientas ir visi tinkami servisai mato tą pačią pokalbio tekstinę dalį (kliento žinutes, servisų bendrus komentarus/klausimus).
+- **KAINA ir SIŪLOMAS LAIKAS lieka PRIVATŪS** — kiekvienas servisas mato TIK savo paties kainą/laiką. Klientas mato VISŲ servisų kainas/laikus (gali palyginti). Servisai TARPUSAVYJE kainų/laikų nemato.
+- **Pataisyta** (`backend/src/routes/orders.routes.js`, `GET /:id/messages`): vietoj to, kad VISIŠKAI išfiltruotų kito serviso žinutę (senas elgesys), dabar žinutė PALIEKAMA (tekstas matomas), bet `price_quote`/`available_time` redaguojami į `null`, jei žinutės siuntėjas — kitas servisas, ne užklausą peržiūrintis.
+
+**Naujas laukas: serviso siūlomas laikas (`available_time`).** Servisas gali pasiūlyti ne tik kainą, bet ir laiką, kada gali priimti automobilį — analogiškai kainai, tas pačias privatumo taisykles (privatu tarp serviso ir kliento).
+- DB: `order_messages.available_time TEXT` (nauja migracija, add-only).
+- `POST /orders/:id/quote` priima papildomą `availableTime` lauką (nebūtinas).
+- Dashboard'e ("Pasiūlyti kainą") šalia kainos lauko atsirado `datetime-local` laukas.
+
+**Ištaisyta reali "Pasiūlyti kainą" mygtuko klaida.** Vartotojas pranešė, kad mygtukas serviso pusėje "neveikia". Ištirta gyvai (prisijungus kaip realus servisas, stebint console/network) — pats mygtukas ir API veikė teisingai (`201 Created`), bet:
+- Paspaudus "Siųsti" su tuščiu kainos lauku, vienintelis atsakas buvo raudonas rėmelis aplink lauką — JOKIO teksto/pranešimo apie klaidą. Vartotojui tai atrodo kaip "niekas nevyksta".
+- Paspaudus Enter kainos lauke (natūralus instinktas vietoj mažo mygtuko paspaudimo) — NIEKAS nevykdavo, nes laukas neturėjo jokio `keydown`/Enter apdorojimo.
+- **Pataisyta** (`automeistrai-dashboard.html`): pridėtas matomas klaidos tekstas ("Įveskite kainą (didesnę už 0)") po lauku vietoj vien rėmelio spalvos keitimo; pridėtas Enter klavišo apdorojimas kainos ir laiko laukams (`onkeydown`).
+
+**Dashboard: pilnas pokalbio vaizdas "Užklausos" skiltyje (NE Profilis).** Ant kiekvienos užklausos kortelės atsirado "💬 Pokalbis" mygtukas — paspaudus, kortelė išsiskleidžia ir parodo VISĄ pokalbio giją (kliento žinutės + visų servisų tekstiniai atsakymai, pagal privatumo taisyklę — savo kaina/laikas matomi paryškinti, kito serviso kaina/laikas niekada nerodomi). Sąmoningai NEDĖTA į Profilis skiltį, kaip aiškiai paprašyta — integruota tiesiai į Užklausos sąrašą. Pokalbis automatiškai atsinaujina kartu su likusiu poll'inimu (12s ciklas), kad neliktų įstrigęs "Kraunama..." būsenoje.
+
+**Didžiausias radinys: kliento chat'as (`servisucentras-pagrindinis.html`) iki šiol NIEKADA nerodė realios serviso kainos.** Tiriant "rodyti laiką šalia kainos" užduotį paaiškėjo, kad `simulateReplies()` VISIEMS servisams (ne tik bot'ams) generuodavo pilnai SUVAIDINTĄ kainą (`Math.floor(20+Math.random()*30)` ir pan.) ir hardcoded laiką ("Rytoj 10:00") — visiškai nesusijusius su tuo, ką realus servisas iš tikrųjų įvesdavo dashboard'e per "Pasiūlyti kainą". Klientas per visą platformos gyvavimą matydavo tik atsitiktinę suvaidintą kainą chat'e, niekada tikrąją. Paklausus vartotojo, patvirtinta: **pilnai sujungti su realiais duomenimis.**
+- **Pataisyta:** `simulateReplies()` dabar veikia TIK bot servisams (suvaidintas bendras atsakymas be kainos, kaip ir anksčiau — bot'ai negali realiai priimti darbo).
+- Realiems servisams pridėta `startOrderPolling()`/`pollOrderMessages()` — kas 4s tikrina `GET /orders/:id/messages`, naujas serviso žinutes su `price_quote` paverčia į TIKRĄ `offer-card` (reali kaina, realus laikas arba "susitarsime telefonu" jei laikas nenurodytas), žinutes be kainos — į paprastą teksto burbulą. Naudoja `renderedMessageIds` Set, kad tos pačios žinutės nepersirodytų kas ciklą.
+- "✓ Priimti" ant realaus pasiūlymo iškviečia TĄ PATĮ `POST /orders/:id/accept`, kaip ir anksčiau (nekeista).
+- Pridėtas `escapeHtml()` naujam žinutės teksto atvaizdavimui (apsauga nuo XSS realiu servisų/klientų įvedamu tekstu) — pastebėta, kad likusi chat'o dalis (pvz. `sendMsg()`) šio neturi (sena, neliesta), bet naujam kodui pritaikyta iš karto.
+
+**Patikrinta gyvai, pilnas srautas su 2 servisais:**
+1. Sukurta nauja užklausa Kaune, kategorija "stabdžiai".
+2. Servisas A (dashboard) pasiūlė 88€ + laiką "2026-07-21T18:00" + žinutę "Galime priimti jau šiandien".
+3. Servisas B (dashboard) pasiūlė 65€, be laiko, be žinutės.
+4. Kliento chat'e (per ~4s poll'inimą) atsirado ABU realūs pasiūlymai: "88€ · 📍 Bug Servisas A · 🕐 21 liep 18:00" ir "65€ · 📍 Bug Servisas B · 🕐 susitarsime telefonu".
+5. Servisas A dashboard'e (per "💬 Pokalbis") matė SAVO 3 kainas + kliento tekstą + Serviso B TEKSTĄ ("Galime priimti šiandien 16 val"), bet NE Serviso B kainą/laiką (redaguota į null).
+6. Klientas paspaudė "Priimti" ant Serviso B pasiūlymo → `POST /orders/:id/accept` → DB patvirtinta: `service_id=26, status='in_progress'`.
+7. Automatiniai backend testai atnaujinti šiam GALUTINIAM elgesiui (7/7 praeina).
 
 ---
 

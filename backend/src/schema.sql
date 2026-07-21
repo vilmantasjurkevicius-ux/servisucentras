@@ -85,6 +85,7 @@ CREATE TABLE IF NOT EXISTS order_messages (
   sender_id INTEGER,
   message TEXT,
   price_quote REAL,
+  available_time TEXT, -- serviso siūlomas laikas, kada gali priimti automobilį (kaip ir kaina, privatu tarp serviso ir kliento)
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

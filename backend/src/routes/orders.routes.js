@@ -47,7 +47,7 @@ router.get('/:id', authRequired, (req, res) => {
 
 // ── SERVISAS SIŪLO KAINĄ (chat žinutė su kainos pasiūlymu) ──
 router.post('/:id/quote', authRequired, requireRole('service'), (req, res) => {
-  const { price, message } = req.body;
+  const { price, message, availableTime } = req.body;
   const order = getOrder(req.params.id);
   if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
   if (order.status !== 'new' && order.status !== 'pending') {
@@ -55,9 +55,9 @@ router.post('/:id/quote', authRequired, requireRole('service'), (req, res) => {
   }
 
   db.prepare(`
-    INSERT INTO order_messages (order_id, sender_type, sender_id, message, price_quote)
-    VALUES (?, 'service', ?, ?, ?)
-  `).run(order.id, req.user.id, message || null, price || null);
+    INSERT INTO order_messages (order_id, sender_type, sender_id, message, price_quote, available_time)
+    VALUES (?, 'service', ?, ?, ?, ?)
+  `).run(order.id, req.user.id, message || null, price || null, availableTime || null);
 
   if (order.status === 'new') {
     db.prepare("UPDATE orders SET status = 'pending' WHERE id = ?").run(order.id);
@@ -101,10 +101,17 @@ router.get('/:id/messages', authRequired, (req, res) => {
   let messages = db.prepare('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC').all(order.id);
 
   // Daugiavendorinis modelis — kelis servisai gali siūlyti kainą tai pačiai (dar
-  // neuždarytai) užklausai. Servisas mato TIK savo pačio žinutes/pasiūlymus ir
-  // kliento žinutes — NIEKADA kito, konkuruojančio serviso kainos. Klientas mato viską.
+  // neuždarytai) užklausai. Pokalbio TEKSTAS matomas visiems tinkamiems servisams
+  // (bendras, atviras pokalbis), bet KAINA ir SIŪLOMAS LAIKAS — konkurencinė
+  // informacija — lieka privatūs: servisas mato tik savo pačio kainą/laiką,
+  // konkuruojančio serviso žinutėse šie laukai redaguojami (null). Klientas mato viską.
   if (req.user.role === 'service') {
-    messages = messages.filter((m) => m.sender_type !== 'service' || m.sender_id === req.user.id);
+    messages = messages.map((m) => {
+      if (m.sender_type === 'service' && m.sender_id !== req.user.id) {
+        return { ...m, price_quote: null, available_time: null };
+      }
+      return m;
+    });
   }
 
   res.json(messages);
