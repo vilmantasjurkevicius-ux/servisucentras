@@ -85,8 +85,17 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 }
 .avatar{width:30px;height:30px;border-radius:50%;background:var(--yellow);color:var(--bg);font-family:'Oswald';font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center;}
 
+/* Hamburger meniu šoniniam navui — siaurame ekrane rodomas tik per @media žemiau */
+.sidenav-hamburger{
+  display:none;align-items:center;justify-content:center;
+  width:42px;height:100%;background:none;border:none;border-right:1px solid var(--line);
+  color:var(--text);font-size:18px;cursor:pointer;flex-shrink:0;
+}
+.nav-back-link .short-text{display:none;}
+.sidenav-backdrop{display:none;}
+
 /* LAYOUT */
-.shell{display:flex;flex:1;}
+.shell{display:flex;flex:1;position:relative;}
 
 /* SIDEBAR NAV */
 .sidenav{
@@ -114,6 +123,34 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 /* MAIN CONTENT */
 .main{flex:1;overflow:auto;display:flex;flex-direction:column;}
+
+/* Siaurame ekrane viršutinė juosta (logotipas+pavadinimas+serviso vardas+ikonos) ir
+   fiksuoto 220px pločio šoninis meniu kartu netelpa — pagrindinis turinys likdavo
+   suspaustas iki ~150-170px. Juosta sutraukiama, šoninis meniu tampa stumdomu
+   (off-canvas) skydeliu, atveriamas hamburger mygtuku. */
+@media (max-width:640px){
+  .sidenav-hamburger{display:flex;}
+  .nav-back-link .full-text{display:none;}
+  .nav-back-link .short-text{display:inline;}
+  .nav-back-link{padding:0 10px;}
+  .nav-logo{padding:0 10px;font-size:12px;}
+  .nav-service-name{padding:0 10px;font-size:11.5px;max-width:100px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+  .nav-icon-btn,.nav-avatar{width:40px;}
+
+  .sidenav{
+    display:none;
+    position:fixed;top:52px;left:0;bottom:0;z-index:500;
+    width:240px;background:var(--bg);
+    box-shadow:2px 0 16px rgba(0,0,0,0.35);
+  }
+  .sidenav.show{display:flex;}
+  .sidenav-backdrop{
+    display:none;
+    position:fixed;top:52px;left:0;right:0;bottom:0;z-index:499;
+    background:rgba(0,0,0,0.5);
+  }
+  .sidenav-backdrop.show{display:block;}
+}
 
 /* PAGE HEADER */
 .page-header{
@@ -303,7 +340,8 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 <!-- TOP NAV -->
 <div class="topnav">
-  <a class="nav-back-link" href="servisucentras-pagrindinis.html" title="Grįžti į pagrindinį puslapį">← Pagrindinis</a>
+  <button class="sidenav-hamburger" id="sidenav-hamburger-btn" onclick="toggleSidenav()" aria-label="Meniu">☰</button>
+  <a class="nav-back-link" href="servisucentras-pagrindinis.html" title="Grįžti į pagrindinį puslapį"><span class="full-text">← Pagrindinis</span><span class="short-text">←</span></a>
   <div class="nav-logo">SERVISU<em>CENTRAS</em></div>
   <div class="nav-service-name">
     <b id="nav-service-name">—</b>
@@ -320,9 +358,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 </div>
 
 <div class="shell">
+  <div class="sidenav-backdrop" id="sidenav-backdrop" onclick="closeSidenav()"></div>
 
   <!-- SIDE NAV -->
-  <nav class="sidenav">
+  <nav class="sidenav" id="sidenav">
     <div class="sidenav-section">Pagrindinis</div>
     <button class="sidenav-item active" onclick="switchDashPage('orders', this)"><span class="icon">📋</span> Užklausos <span class="badge" id="sidenav-orders-badge">0</span></button>
     <button class="sidenav-item" onclick="switchDashPage('calendar', this)"><span class="icon">📅</span> Kalendorius</button>
@@ -888,6 +927,17 @@ function switchDashPage(page, el){
   if(el) el.classList.add('active');
   const loader = PAGE_LOADERS[page];
   if(loader) loader();
+  closeSidenav();
+}
+
+// ═══ MOBILE ŠONINIS MENIU (hamburger) ═══
+function toggleSidenav(){
+  document.getElementById('sidenav').classList.toggle('show');
+  document.getElementById('sidenav-backdrop').classList.toggle('show');
+}
+function closeSidenav(){
+  document.getElementById('sidenav').classList.remove('show');
+  document.getElementById('sidenav-backdrop').classList.remove('show');
 }
 
 // ═══ PROFILIS ═══
