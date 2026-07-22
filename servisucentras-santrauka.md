@@ -578,6 +578,33 @@ Po aukščiau aprašyto funkcionalumo, vartotojas paprašė patikrinti, ar viska
 
 ---
 
+## Užklausos pokalbio vaizdo perdizainas pagal patvirtintą maketą (2026-07-22)
+
+Ankstesnės užduoties metu (a952543) "Užklausos" skiltyje atsirado veikiantis, bet vizualiai neišbaigtas pokalbio vaizdas ("💬 Pokalbis" mygtukas išskleidžia giją). Vartotojas paruošė ir patvirtino maketą (`dashboard-chat-maketas.html`), kaip tas vaizdas turėtų atrodyti — ši užduotis tai įgyvendino. **Backend privatumo logika nekeista** (kaip buvo, taip ir liko: tekstas visiems, kaina/laikas — tik savam servisui + klientui), tik pridėta/pagerinta vaizdinė dalis.
+
+**Žinučių burbulai perstilinti pagal maketą** (naudojant esamas dashboard'o CSS kintamąsias — spalvos jau iš anksto sutapo su maketu, keitimų nereikėjo):
+- **Kliento žinutė** — pilkas burbulas kairėje (nepakito).
+- **Savo (mine) žinutė** — žalias burbulas (`var(--green-dim)`) dešinėje; jei prie žinutės yra kaina/laikas, jie rodomi kaip paryškinta eilutė burbulo apačioje: "💰 Jūsų pasiūlymas: 45€ · Laikas: 21 liep 15:00".
+- **Kito serviso žinutė** — pritemdytas burbulas (`var(--bg2)`, `opacity:0.75`) kairėje, su REALIU serviso pavadinimu antraštėje (ne anonimizuota "Kitas servisas") ir "🔒 Kaina/laikas privatu (matys tik klientas)" vietoj kainos/laiko.
+
+**Backend papildymas (tik atvaizdavimui, ne privatumo pakeitimas):** `GET /orders/:id/messages` dabar grąžina ir `sender_name` (kliento vardą arba serviso pavadinimą) — reikalinga, kad būtų galima rodyti REALŲ konkuruojančio serviso pavadinimą maketo pavyzdyje. Tai neatskleidžia nieko naujo — servisų pavadinimai jau vieši per `GET /api/services`.
+
+**Du atskiri įvesties laukai chat'o apačioje (nauja):**
+- **Kainos/laiko dėžutė** (geltona, `var(--yellow-dim)`) — kainos ir laiko laukai + "Atnaujinti pasiūlymą" mygtukas. Rodoma TIK jei užklausa dar `new`/`pending` (t.y. tikrai galima siūlyti/atnaujinti kainą) — kai užklausa jau `in_progress`/`done`, dėžutė automatiškai pasislepia, liko tik teksto laukas.
+- **Teksto žinutės laukas** — paprastas `input` + "Siųsti →" mygtukas, siunčia į jau egzistavusį `POST /orders/:id/messages` (anksčiau šis endpoint'as neturėjo jokios UI sąsajos dashboard'e servisui, nors pats endpoint'as jau veikė).
+
+**Rastas ir ištaisytas realus bug'as testuojant:** `renderOrders()` visada perkuria VISĄ užklausų sąrašo HTML iš naujo (taigi ir atviro pokalbio įvesties laukus) — poll'inimo ciklas (`pollOrders()`, kas 12s) šitaip ištrindavo vartotojo įvedamą tekstą/kainą VIDURYJE rašymo, net su anksčiau pridėtu apsauginiu patikrinimu `loadChatThread()` viduje (tas patikrinimas pasirodė esąs nepakankamas, nes DOM jau būdavo sunaikintas PRIEŠ jį pasiekiant). Ištaisyta pridedant patikrinimą tiesiai `pollOrders()` lygyje: jei `document.activeElement` yra kažkur `.ochat` viduje, `renderOrders()` apskritai nekviečiamas tą ciklą. Patikrinta gyvai — simuliuotas poll'inimo ciklas VIDURYJE rašymo teksto lauke nebeištrina įvesto teksto.
+
+**Patikrinta gyvai su 2 servisais (Motorsport UKM + Broliai Vaitkūnai) tai pačiai užklausai:**
+1. Abu servisai pasiūlė skirtingą kainą/laiką → kiekvienas savo dashboard'e mato SAVO pasiūlymą žaliame burbulyje su kaina/laiku, KITO serviso REALIU pavadinimu pažymėtą pritemdytą burbulą su "🔒 privatu" vietoj kainos.
+2. Servisas A per naują teksto lauką išsiuntė žinutę klientui be kainos → iškart pasirodė gijoje kaip paprastas burbulas be pasiūlymo eilutės.
+3. Servisas A per naują kainos dėžutę atnaujino pasiūlymą (40€ → naujas laikas) → nauja žinutė su nauju pasiūlymu atsirado gijoje; Servisas B TOLIAU nematė šios atnaujintos kainos (liko "🔒 privatu").
+4. Klientas priėmė Serviso A pasiūlymą (`POST /orders/:id/accept`) → užklausa tapo `in_progress` → kainos dėžutė automatiškai dingo iš pokalbio, liko tik teksto laukas.
+5. Patikrinta 390px pločiu — jokio horizontalaus persipildymo.
+6. Automatiniai testai (7/7) praeina nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

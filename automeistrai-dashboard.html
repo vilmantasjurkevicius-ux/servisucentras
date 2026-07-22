@@ -241,15 +241,54 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 .ocard-chat-toggle{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
 .ocard-chat-toggle:hover{color:var(--text);}
-.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:8px;}
+.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
 .ochat-msg{max-width:88%;}
-.ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:2px;}
-.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line);border-radius:3px 10px 10px 10px;padding:7px 10px;font-size:12.5px;line-height:1.4;}
-.ochat-msg.mine{align-self:flex-end;max-width:88%;}
-.ochat-msg.mine .bubble{background:var(--yellow-dim);border-color:rgba(245,196,0,0.3);border-radius:10px 3px 10px 10px;}
+.ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:3px;}
+.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line2);border-radius:3px 10px 10px 10px;padding:8px 12px;font-size:12.5px;line-height:1.45;}
+
+.ochat-msg.mine{align-self:flex-end;}
 .ochat-msg.mine .who{text-align:right;}
-.ochat-offer{font-family:'IBM Plex Mono';font-size:11px;color:var(--yellow);margin-top:3px;}
+.ochat-msg.mine .bubble{background:var(--green-dim);border-color:rgba(61,107,74,0.4);border-radius:10px 3px 10px 10px;}
+.ochat-msg.mine .offer-line{color:#6fbf8a;font-family:'IBM Plex Mono';font-weight:600;font-size:11.5px;margin-top:5px;display:block;}
+
+.ochat-msg.other .who{color:var(--dim);}
+.ochat-msg.other .bubble{background:var(--bg2);border-color:var(--line);opacity:0.75;}
+.ochat-msg.other .price-hidden{
+  display:flex;align-items:center;gap:5px;margin-top:6px;font-size:10.5px;color:var(--muted);
+  font-family:'IBM Plex Mono';border-top:1px dashed var(--line2);padding-top:5px;
+}
+
 .ochat-empty{color:var(--muted);font-size:12px;text-align:center;padding:6px 0;}
+
+.ochat-price-box{
+  display:flex;gap:8px;align-items:center;flex-wrap:wrap;
+  background:var(--yellow-dim);border:1px solid rgba(245,196,0,0.25);border-radius:3px;
+  padding:9px 12px;
+}
+.ochat-price-box label{font-size:10.5px;color:var(--muted);white-space:nowrap;}
+.ochat-price-box input{
+  background:var(--bg3);border:1px solid var(--line2);border-radius:3px;color:var(--yellow);
+  font-family:'IBM Plex Mono';font-size:11.5px;padding:5px 8px;outline:none;
+}
+.ochat-price-box input[type="number"]{width:64px;}
+.ochat-price-box button{
+  background:var(--yellow);color:var(--bg);border:none;border-radius:3px;padding:6px 12px;
+  font-weight:600;font-size:11px;cursor:pointer;white-space:nowrap;
+}
+.ochat-price-box button:hover{background:#FFD740;}
+.ochat-price-error{color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';}
+
+.ochat-text-row{display:flex;gap:8px;}
+.ochat-text-row input{
+  flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;
+  color:var(--text);padding:7px 10px;font-size:12px;outline:none;
+}
+.ochat-text-row input:focus{border-color:var(--yellow);}
+.ochat-text-row button{
+  background:var(--bg3);border:1px solid var(--line2);color:var(--text);border-radius:3px;
+  padding:0 14px;cursor:pointer;font-size:11.5px;white-space:nowrap;
+}
+.ochat-text-row button:hover{border-color:var(--yellow);color:var(--yellow);}
 
 .ocard-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center;}
 .action-btn{
@@ -756,34 +795,91 @@ function toggleChatThread(id){
   }
   expandedOrderId = id;
   renderOrders();
-  loadChatThread(id);
+  loadChatThread(id, true);
 }
 
-async function loadChatThread(id){
+function chatInputBarHtml(id){
+  const o = ordersCache.find(x=>x.id===id);
+  const canQuote = o && (o.status === 'new' || o.status === 'pending');
+  return `
+    ${canQuote ? `
+    <div class="ochat-price-box">
+      <label>Jūsų kaina/laikas šiai užklausai:</label>
+      <input type="number" id="ochat-price-${id}" placeholder="Kaina €">
+      <input type="datetime-local" id="ochat-time-${id}">
+      <button onclick="submitChatQuote(${id})">Atnaujinti pasiūlymą</button>
+    </div>
+    <div id="ochat-price-error-${id}" class="ochat-price-error" style="display:none;"></div>` : ''}
+    <div class="ochat-text-row">
+      <input type="text" id="ochat-text-${id}" placeholder="Rašykite žinutę klientui..." onkeydown="if(event.key==='Enter') sendChatText(${id})">
+      <button onclick="sendChatText(${id})">Siųsti →</button>
+    </div>`;
+}
+
+async function loadChatThread(id, force){
   const container = document.getElementById(`ochat-${id}`);
   if(!container) return;
+  if(!force){
+    const activeInThread = document.activeElement && container.contains(document.activeElement);
+    if(activeInThread) return; // nepertraukiam vartotojo, kol jis rašo kainą/žinutę
+  }
   try{
     const messages = await apiGet(`/orders/${id}/messages`);
     if(expandedOrderId !== id) return;
-    if(messages.length === 0){
-      container.innerHTML = `<div class="ochat-empty">Pokalbio dar nėra.</div>`;
-      return;
-    }
-    container.innerHTML = messages.map(m => {
-      const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
-      const who = m.sender_type === 'client' ? 'Klientas' : (mine ? 'Jūs' : 'Kitas servisas');
-      const offerBits = [];
-      if(m.price_quote != null) offerBits.push(fmtEUR(m.price_quote));
-      if(m.available_time) offerBits.push('🕒 '+formatSchedule(m.available_time));
-      return `
-        <div class="ochat-msg ${mine?'mine':''}">
-          <div class="who">${who} · ${timeAgo(m.created_at)}</div>
-          ${m.message ? `<div class="bubble">${escapeHtml(m.message)}</div>` : ''}
-          ${offerBits.length ? `<div class="ochat-offer">${offerBits.join(' · ')}</div>` : ''}
-        </div>`;
-    }).join('');
+    const bubbles = messages.length === 0
+      ? `<div class="ochat-empty">Pokalbio dar nėra.</div>`
+      : messages.map(m => {
+          const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
+          const other = m.sender_type === 'service' && !mine;
+          const who = m.sender_type === 'client' ? (m.sender_name || 'Klientas') : (mine ? 'Jūs' : (m.sender_name || 'Kitas servisas'));
+          let offerHtml = '';
+          if(mine && m.price_quote != null){
+            const timeLabel = m.available_time ? formatSchedule(m.available_time) : '';
+            offerHtml = `<span class="offer-line">💰 Jūsų pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel ? ' · Laikas: '+timeLabel : ''}</span>`;
+          }
+          const privateNote = other ? `<div class="price-hidden">🔒 Kaina/laikas privatu (matys tik klientas)</div>` : '';
+          return `
+            <div class="ochat-msg ${mine?'mine':(other?'other':'')}">
+              <div class="who">${escapeHtml(who)} · ${timeAgo(m.created_at)}</div>
+              ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
+            </div>`;
+        }).join('');
+    container.innerHTML = bubbles + chatInputBarHtml(id);
   } catch(err){
-    container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>`;
+    container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>` + chatInputBarHtml(id);
+  }
+}
+
+async function submitChatQuote(id){
+  const priceInput = document.getElementById(`ochat-price-${id}`);
+  const timeInput = document.getElementById(`ochat-time-${id}`);
+  const errEl = document.getElementById(`ochat-price-error-${id}`);
+  const price = parseFloat(priceInput.value);
+  if(!price || price <= 0){
+    priceInput.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Įveskite kainą (didesnę už 0)'; errEl.style.display = 'block'; }
+    priceInput.focus();
+    return;
+  }
+  priceInput.style.borderColor = '';
+  if(errEl) errEl.style.display = 'none';
+  try{
+    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput.value || null });
+    await loadOrders();
+  } catch(err){
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+  }
+}
+
+async function sendChatText(id){
+  const input = document.getElementById(`ochat-text-${id}`);
+  const txt = input.value.trim();
+  if(!txt) return;
+  try{
+    await apiPost(`/orders/${id}/messages`, { message: txt });
+    await loadOrders();
+  } catch(err){
+    alert(err.message);
   }
 }
 
@@ -960,9 +1056,12 @@ async function pollOrders(){
     renderTabs();
     renderWeekBars();
     renderTimeline();
-    // Kol servisas kažką redaguoja (kainos/laiko laukelis atidarytas), sąrašo neperpiešiame,
-    // kad neprarastume jo įvedamų duomenų — kiti elementai (badge'ai, tabai) vis tiek atsinaujina.
-    if(quotingOrderId === null){
+    // Kol servisas kažką redaguoja (kainos/laiko laukelis atidarytas arba rašo pokalbio
+    // gijoje), sąrašo neperpiešiame, kad neprarastume jo įvedamų duomenų — renderOrders()
+    // visada perkuria VISĄ order-list HTML iš naujo (taigi ir atviro pokalbio įvesties
+    // laukus), tad šio patikrinimo nepakanka atlikti tik loadChatThread() viduje.
+    const typingInChat = document.activeElement && document.activeElement.closest('.ochat');
+    if(quotingOrderId === null && !typingInChat){
       renderOrders();
     }
 

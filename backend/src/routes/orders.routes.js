@@ -100,6 +100,22 @@ router.get('/:id/messages', authRequired, (req, res) => {
 
   let messages = db.prepare('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC').all(order.id);
 
+  // sender_name — vien informaciniam atvaizdavimui (kas parašė), ne privatumo sprendimas:
+  // servisų pavadinimai jau vieši per GET /api/services, tad tai nieko naujo neatskleidžia.
+  const client = db.prepare('SELECT first_name, last_name FROM clients WHERE id = ?').get(order.client_id);
+  const clientName = client ? `${client.first_name || ''} ${client.last_name || ''}`.trim() : null;
+  const serviceIds = [...new Set(messages.filter((m) => m.sender_type === 'service').map((m) => m.sender_id))];
+  const serviceNames = {};
+  if (serviceIds.length) {
+    const placeholders = serviceIds.map(() => '?').join(',');
+    db.prepare(`SELECT id, name FROM services WHERE id IN (${placeholders})`).all(...serviceIds)
+      .forEach((s) => { serviceNames[s.id] = s.name; });
+  }
+  messages = messages.map((m) => ({
+    ...m,
+    sender_name: m.sender_type === 'client' ? clientName : (serviceNames[m.sender_id] || null),
+  }));
+
   // Daugiavendorinis modelis — kelis servisai gali siūlyti kainą tai pačiai (dar
   // neuždarytai) užklausai. Pokalbio TEKSTAS matomas visiems tinkamiems servisams
   // (bendras, atviras pokalbis), bet KAINA ir SIŪLOMAS LAIKAS — konkurencinė
