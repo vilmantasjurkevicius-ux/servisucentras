@@ -605,6 +605,20 @@ Ankstesnės užduoties metu (a952543) "Užklausos" skiltyje atsirado veikiantis,
 
 ---
 
+## Servisai iškart aktyvūs registracijos metu (be admin patvirtinimo) (2026-07-22)
+
+**Radinys:** vartotojas gyvai patvirtino 3 realius servisus (registracijos formą) Ukmergėje, bet viešoje paieškoje jie nepasirodė — "Rasta 0 servisai". Patikrinus per API (read-only) paaiškėjo, kad tai NE bug'as, o veikianti, bet vartotojo nenorima logika: `POST /auth/service/register` visada nustatydavo `status: 'pending'`, o vieša paieška (`GET /api/services`) pagal nutylėjimą rodo tik `status: 'active'`. Reikėjo atskiro admin "✓ Tvirtinti" veiksmo Admin → Servisai skiltyje, kad servisas apskritai taptų matomas.
+
+**Sprendimas (vartotojo pasirinktas):** servisai dabar registracijos metu IŠKART gauna `status: 'active'`, be jokio tarpinio patvirtinimo žingsnio. Admin bet kada gali išjungti (banned) BET KURĮ servisą, aktyvų ar ne, per jau anksčiau veikusį "🚫" mygtuką Admin → Servisai skiltyje (`banService`/`unbanService`) — šis mechanizmas jau egzistavo ir nekeistas.
+
+**Techninė detalė:** ankstesnis "bot servisas automatiškai išsijungia, kai realus servisas užsiregistruoja tame pačiame mieste/kategorijoje" veiksmas buvo susietas su admin "approve" endpoint'u (`PATCH /admin/services/:id/approve`). Kadangi registracija dabar PATI prilygsta "approve" žingsniui, ši logika (`disableOverlappingBots`) iškelta į bendrą pagalbinę funkciją (`backend/src/utils/bots.js`) ir kviečiama TIESIOG registracijos metu (`auth.routes.js`), o `approve` endpoint'as (paliktas suderinamumui, jei kada nors prireiktų) ją naudoja per tą pačią funkciją.
+
+**Automatinis testas atnaujintas** ("servisas registruojasi iškart aktyvus -> bot dingsta -> ..."), patikrina: registracija iškart grąžina `status:'active'`, atitinkamas bot iškart dingsta iš viešo sąrašo (be atskiro approve), admin gali banned→unban bet kurį servisą. 7/7 testų praeina.
+
+**Svarbu vartotojui:** šis pakeitimas galioja tik NAUJOMS registracijoms po deploy'aus. 3 jau užregistruoti "pending" testiniai servisai Ukmergėje liks `pending`, kol admin juos rankiniu būdu patvirtins (Admin → Servisai → "✓ Tvirtinti") arba jie užsiregistruos iš naujo po šio fix'o deploy'aus.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -3,6 +3,7 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
+const { disableOverlappingBots } = require('../utils/bots');
 
 const router = express.Router();
 
@@ -36,7 +37,7 @@ router.post('/service/register', authLimiter, (req, res) => {
   const passwordHash = bcrypt.hashSync(password, 10);
   const insert = db.prepare(`
     INSERT INTO services (name, owner_first_name, owner_last_name, email, password_hash, phone, city, address, service_type, mechanic_count, description, work_start, work_end, status, is_bot)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0)
   `);
   const info = insert.run(
     name, ownerFirstName || null, ownerLastName || null, email, passwordHash, phone || null,
@@ -48,6 +49,12 @@ router.post('/service/register', authLimiter, (req, res) => {
     const insertCat = db.prepare('INSERT OR IGNORE INTO service_categories (service_id, category_id) VALUES (?, ?)');
     categoryIds.forEach((catId) => insertCat.run(info.lastInsertRowid, catId));
   }
+
+  // Servisas iškart aktyvus registracijos metu (be admin patvirtinimo žingsnio) —
+  // admin bet kada gali jį išjungti (banService) Admin skydelyje. Kadangi
+  // registracija pati prilygsta anksčiau buvusiam "approve" žingsniui, iškart
+  // išjungiami ir tos pačios kategorijos/miesto bot placeholder'iai.
+  disableOverlappingBots(info.lastInsertRowid);
 
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(info.lastInsertRowid);
   const token = signToken({ id: service.id, role: 'service' });

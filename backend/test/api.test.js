@@ -51,7 +51,7 @@ test('klientas negali kviesti serviso-only endpoint (403)', async () => {
 });
 
 test(
-  'pilnas srautas: servisas patvirtinamas -> bot dingsta -> užklausa -> komisinis -> atsiliepimas',
+  'pilnas srautas: servisas registruojasi iškart aktyvus -> bot dingsta -> užklausa -> komisinis -> atsiliepimas',
   async () => {
     // --- Admin prisijungia ---
     const adminLogin = await api('POST', '/api/admin/login', { body: { username: 'admin', password: server.adminPassword } });
@@ -65,33 +65,41 @@ test(
     assert.equal(clientReg.status, 201);
     const clientToken = clientReg.data.token;
 
+    // --- Prieš registraciją seed bot'as tame mieste/kategorijoje turi būti aktyvus ---
+    const beforeReg = await api('GET', '/api/services?city=Vilnius');
+    const botBefore = beforeReg.data.find((s) => s.name === 'Sostinės Padangų Centras');
+    assert.ok(botBefore, 'seed bot servisas turėtų egzistuoti Vilniuje');
+    assert.equal(botBefore.status, 'active');
+
     // --- Servisas registruojasi tame pačiame mieste/kategorijoje kaip seed bot'as ---
+    // Servisas turi būti IŠKART aktyvus (be atskiro admin "approve" žingsnio), o
+    // atitinkamas bot'as turi automatiškai išsijungti tą pačią akimirką.
     const svcReg = await api('POST', '/api/auth/service/register', {
       body: { name: 'Test Servisas Automatinis', email: `servisas-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Vilnius', categoryIds: ['padangos'] },
     });
     assert.equal(svcReg.status, 201);
-    assert.equal(svcReg.data.service.status, 'pending');
+    assert.equal(svcReg.data.service.status, 'active', 'servisas turi būti iškart aktyvus registracijos metu');
     const serviceToken = svcReg.data.token;
     const serviceId = svcReg.data.service.id;
 
-    const beforeApprove = await api('GET', '/api/services?city=Vilnius');
-    const botBefore = beforeApprove.data.find((s) => s.name === 'Sostinės Padangų Centras');
-    assert.ok(botBefore, 'seed bot servisas turėtų egzistuoti Vilniuje');
-    assert.equal(botBefore.status, 'active');
-
-    // --- Admin patvirtina servisą — atitinkamas bot turi automatiškai išsijungti ---
-    const approve = await api('PATCH', `/api/admin/services/${serviceId}/approve`, { token: adminToken });
-    assert.equal(approve.status, 200);
-    assert.ok(approve.data.botsDisabled >= 1, 'bent vienas bot servisas turėjo būti automatiškai išjungtas');
-
     // Viešas sąrašas pagal nutylėjimą rodo tik status=active, tad išjungtas bot'as turi visai dingti iš jo
-    const afterApprove = await api('GET', '/api/services?city=Vilnius');
-    const botAfter = afterApprove.data.find((s) => s.name === 'Sostinės Padangų Centras');
-    assert.equal(botAfter, undefined, 'automatiškai išjungtas bot servisas nebeturi rodytis viešame aktyviame sąraše');
+    const afterReg = await api('GET', '/api/services?city=Vilnius');
+    const botAfter = afterReg.data.find((s) => s.name === 'Sostinės Padangų Centras');
+    assert.equal(botAfter, undefined, 'automatiškai išjungtas bot servisas nebeturi rodytis viešame aktyviame sąraše iškart po registracijos');
 
     const adminBots = await api('GET', '/api/admin/bots', { token: adminToken });
     const botStatusRow = adminBots.data.find((b) => b.name === 'Sostinės Padangų Centras');
     assert.equal(botStatusRow.status, 'inactive');
+
+    // --- Admin bet kada gali išjungti (banned) net aktyvų servisą, ir vėl atblokuoti ---
+    const ban = await api('PATCH', `/api/admin/services/${serviceId}/ban`, { token: adminToken });
+    assert.equal(ban.status, 200);
+    const afterBan = await api('GET', `/api/services/${serviceId}`);
+    assert.equal(afterBan.data.status, 'banned');
+    const unban = await api('PATCH', `/api/admin/services/${serviceId}/unban`, { token: adminToken });
+    assert.equal(unban.status, 200);
+    const afterUnban = await api('GET', `/api/services/${serviceId}`);
+    assert.equal(afterUnban.data.status, 'active');
 
     // --- Klientas sukuria užklausą ---
     const orderCreate = await api('POST', '/api/orders', {

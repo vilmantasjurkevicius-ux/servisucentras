@@ -5,6 +5,7 @@ const { authRequired, requireRole, signToken } = require('../middleware/auth');
 const { trialEndDate } = require('../utils/commission');
 const { authLimiter } = require('../middleware/rateLimit');
 const { refreshInvoices, currentPeriod, periodLabelLt } = require('../utils/invoices');
+const { disableOverlappingBots } = require('../utils/bots');
 
 const router = express.Router();
 
@@ -79,28 +80,12 @@ router.get('/services', (req, res) => {
   res.json(withStats);
 });
 
+// Registracija dabar iškart nustato 'active' (žr. auth.routes.js), tad šis
+// endpoint'as realiai naudojamas retai (pvz. jei kada nors atsirastų servisas
+// su 'pending' statusu iš kito šaltinio) — paliktas dėl suderinamumo/saugumo.
 router.patch('/services/:id/approve', (req, res) => {
   db.prepare("UPDATE services SET status = 'active' WHERE id = ?").run(req.params.id);
-
-  // Realiam servisui pradėjus veikti, atitinkami bot servisai tame pačiame
-  // mieste ir kategorijose nebereikalingi — automatiškai išjungiami.
-  const real = db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
-  const realCats = db.prepare(
-    'SELECT category_id FROM service_categories WHERE service_id = ? AND active = 1'
-  ).all(real.id).map((r) => r.category_id);
-
-  let botsDisabled = 0;
-  if (real.city && realCats.length) {
-    const placeholders = realCats.map(() => '?').join(',');
-    const matchingBots = db.prepare(`
-      SELECT DISTINCT s.id FROM services s
-      JOIN service_categories sc ON sc.service_id = s.id
-      WHERE s.is_bot = 1 AND s.status = 'active' AND s.city = ? AND sc.category_id IN (${placeholders})
-    `).all(real.city, ...realCats);
-    matchingBots.forEach((b) => db.prepare("UPDATE services SET status = 'inactive' WHERE id = ?").run(b.id));
-    botsDisabled = matchingBots.length;
-  }
-
+  const botsDisabled = disableOverlappingBots(req.params.id);
   res.json({ ok: true, botsDisabled });
 });
 
