@@ -9,6 +9,7 @@ const clientsRoutes = require('./routes/clients.routes');
 const ordersRoutes = require('./routes/orders.routes');
 const adminRoutes = require('./routes/admin.routes');
 const categoriesRoutes = require('./routes/categories.routes');
+const diagnostikaRoutes = require('./routes/diagnostika.routes');
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://localhost:3000')
   .split(',')
@@ -16,6 +17,9 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,ht
   .filter(Boolean);
 
 const app = express();
+// Railway (ir dauguma hostingų) veikia už reverse proxy — be šito req.ip visada
+// rodytų proxy adresą, ne realų kliento IP, ir per-IP rate limiting neveiktų teisingai.
+app.set('trust proxy', 1);
 app.use(cors({
   origin(origin, callback) {
     // origin nebūna nustatytas ne-naršyklės kvietimams (curl, serveris-serveriui) — juos leidžiame,
@@ -37,6 +41,7 @@ app.use('/api/clients', clientsRoutes);
 app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
+app.use('/api/diagnostika', diagnostikaRoutes);
 
 // Statiniai HTML/CSS/JS failai projekto šaknyje (vienas viešas adresas — ir API, ir frontend'as)
 const STATIC_ROOT = path.join(__dirname, '..', '..');

@@ -687,6 +687,18 @@ let categories = [];       // [{id,label}] iš GET /api/categories
 let cityServices = [];     // aktyvaus miesto servisai iš GET /api/services?city=
 let activeCat = 'diagnostika', activeCity = 'Ukmergė';
 
+// Atvykus iš AI diagnostikos puslapio (servisucentras-diagnostika.html) su pasiūlyta
+// kategorija/aprašymu — perimama vieną kartą per sessionStorage, iškart išvaloma,
+// kad puslapio perkrovimas jos nebekartotų.
+let diagnostikaPrefillText = null;
+if(new URLSearchParams(location.search).get('fromDiagnostika')){
+  const prefillCat = sessionStorage.getItem('sc_prefill_category');
+  diagnostikaPrefillText = sessionStorage.getItem('sc_prefill_description') || null;
+  if(prefillCat) activeCat = prefillCat;
+  sessionStorage.removeItem('sc_prefill_category');
+  sessionStorage.removeItem('sc_prefill_description');
+}
+
 function categoryName(label){ return (label || '').replace(/^\S+\s*/, '').trim(); }
 
 function isOpenNow(svc){
@@ -808,6 +820,7 @@ document.querySelectorAll('.sort-tab').forEach(t=>{
   renderBoard();
   renderCards();
   loadNetworkStats();
+  if(diagnostikaPrefillText) openChat();
 })();
 
 /* ══ CHAT ══ */
@@ -838,7 +851,13 @@ function openChat(){
 function closeChat(){ document.getElementById('chat-panel').classList.remove('show'); document.getElementById('chat-overlay').classList.remove('show'); }
 function showChat(){
   if(guestName){ document.getElementById('chat-sub').innerHTML = chatSubHtml(guestName); }
-  document.getElementById('chat-panel').classList.add('show'); document.getElementById('chat-overlay').classList.add('show'); setTimeout(()=>document.getElementById('chat-input').focus(),300);
+  document.getElementById('chat-panel').classList.add('show'); document.getElementById('chat-overlay').classList.add('show');
+  if(diagnostikaPrefillText){
+    document.getElementById('chat-input').value = diagnostikaPrefillText;
+    autoH(document.getElementById('chat-input'));
+    diagnostikaPrefillText = null;
+  }
+  setTimeout(()=>document.getElementById('chat-input').focus(),300);
 }
 
 function showGuestOverlay(mode){
