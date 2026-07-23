@@ -154,15 +154,24 @@ h1 em{font-style:normal;color:var(--y);}
 .cta-meta b{color:var(--text);}
 .cta-meta span{color:var(--y);}
 
-/* Diagnostika mygtuk */
+/* Diagnostika mygtukas — Variantas B (juosta su pulsuojančiu tašku), patvirtintas maketas
+   diagnostikos-nuoroda-variantai.html. Naudoja tas pačias projekto spalvas (--y/--ydim),
+   ne makete esančius --yellow/--yellow-dim pavadinimus. */
 .diag-btn{
-  display:inline-flex;align-items:center;gap:8px;
-  background:transparent;border:1px solid var(--line2);
-  color:var(--text);font-family:'IBM Plex Sans';font-weight:600;font-size:13.5px;
-  padding:10px 18px;border-radius:var(--radius);cursor:pointer;
-  transition:all .15s;margin-top:12px;text-decoration:none;
+  display:inline-flex;align-items:center;gap:14px;
+  background:var(--ydim);border:1px solid rgba(245,196,0,0.35);
+  color:var(--text);font-family:'IBM Plex Sans';font-weight:600;font-size:16px;
+  padding:16px 20px;border-radius:var(--radius);cursor:pointer;
+  transition:border-color .15s;margin-top:12px;text-decoration:none;
 }
-.diag-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.diag-btn:hover{border-color:var(--y);}
+.diag-btn em{color:var(--y);font-style:normal;}
+.diag-pulse{width:10px;height:10px;border-radius:50%;background:var(--y);position:relative;flex-shrink:0;}
+.diag-pulse::after{
+  content:"";position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--y);
+  animation:diag-pulse-ring 1.8s infinite;
+}
+@keyframes diag-pulse-ring{0%{transform:scale(0.6);opacity:1;}100%{transform:scale(1.8);opacity:0;}}
 
 /* ══════════════════════════════════
    MIESTO PAIEŠKA + KATEGORIJOS
@@ -475,7 +484,8 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     </div>
 
     <a class="diag-btn" href="servisucentras-diagnostika.html">
-      🔍 Nežinai kas sugedo? Pabandyk nemokamą diagnostiką
+      <span class="diag-pulse"></span>
+      <span>🔍 Nežinai kas sugedo? <em>Pabandyk nemokamą diagnostiką →</em></span>
     </a>
   </div>
 </section>

@@ -647,6 +647,35 @@ Nauja funkcija: klientas gali laisvu tekstu aprašyti automobilio problemą, o G
 
 ---
 
+## GALUTINIS "0 klientų" + "Serverio klaida" sprendimas — Railway Volume (2026-07-23)
+
+Šis reiškinys buvo minimas kelis kartus per šią sesiją kaip neaiškus/neišspręstas (pirmą kartą pastebėtas dar 2026-07-13 tikrinant DB schemą, vėliau kartojosi kaip pasikartojanti "⚠ Serverio klaida" klaida "Greita užklausa servisams" chat'e). **Dabar rastas ir ištaisytas TIKRAS šaknis, ne tik simptomas.**
+
+**Šakninė priežastis:** Railway servisas neturėjo pastovaus (persistent) Volume, prijungto SQLite duomenų bazės failui. `backend/data/servisucentras.db` gyveno konteinerio laikinoje (ephemeral) failų sistemoje — kiekvienas redeploy'us IŠTRINDAVO visus realius duomenis (klientus, užklausas, rankiniu būdu registruotus servisus). Tik `seed()` sukuriami bot servisai/kategorijos išlikdavo, nes jie automatiškai atkuriami kaskart iš naujo paleidus serverį. Patvirtinta: 3 tos pačios dienos "pending" testiniai servisai (Dainava, Elektronika, Dainava111), rasti anksčiau per read-only API tikrinimą, buvo VISIŠKAI dingę po kito deploy'aus.
+
+Tai taip pat paaiškino "⚠ Serverio klaida" ant `POST /orders` — jei DB nulūžta/persikuria TARP kliento registracijos ir užklausos sukūrimo (arba naršyklė turi seną `sc_client_token` iš PRIEŠ Volume sukonfigūravimą), `client_id` nuoroda tampa negaliojanti (FOREIGN KEY constraint), ir serveris grąžina bendrą 500 klaidą.
+
+**Sprendimas:** Railway skydelyje pridėtas **Persistent Volume, prijungtas prie `/data`**, ir nustatytas environment kintamasis **`DB_PATH=/data/servisucentras.db`** (kodas šį kintamąjį jau palaikė nuo pat pradžių — `backend/src/db.js`, `process.env.DB_PATH || ...` — jokių kodo pakeitimų nereikėjo, tik Railway konfigūracija). Tai atliko pats vartotojas per Railway integruotą AI agentą.
+
+**Svarbi pamoka ateičiai:** po Volume prijungimo/bet kokio DB failo persikėlimo, naršyklėse su SENAIS `sc_client_token`/`sc_service_token` (localStorage) šie tapo negaliojantys (nurodo į nebeegzistuojančius įrašus naujoje, tuščioje DB) — reikėjo išvalyti naršyklės duomenis (arba Incognito langą) prieš testuojant iš naujo. Tai NE bug'as, tik natūrali pasekmė po DB "persikūrimo".
+
+**Patikrinta gyvai, galutinis įrodymas:** švariame (Incognito) naršyklės lange sukurta reali užklausa production'e → `GET /api/admin/dashboard` patvirtino `totalClients:1`, 2 realios užklausos su teisingu kliento vardu — pirmą kartą per visą šią sesiją production DB realiai išsaugojo vartotojo sukurtus duomenis.
+
+---
+
+## Diagnostikos nuorodos dizainas padidintas — Variantas B (2026-07-23)
+
+Pagrindiniame puslapyje mažas, sunkiai pastebimas tekstas "🔍 Nežinai kas sugedo? Pabandyk nemokamą diagnostiką" pakeistas pagal vartotojo patvirtintą Variantą B (`diagnostikos-nuoroda-variantai.html`) — juosta su pulsuojančiu tašku:
+- Fonas: `var(--ydim)` (geltona dėmė), apvadas `rgba(245,196,0,0.35)`
+- Kairėje — mažas pulsuojantis geltonas taškas (`::after` su `@keyframes diag-pulse-ring`, unikaliu pavadinimu, kad nesusidurtų su jau esančiu `pulse-ring`)
+- Tekstas padidintas iki 16px, pusjuodis (600), akcentuota dalis ("Pabandyk nemokamą diagnostiką →") paryškinta geltonai per `<em>`
+- Naudotos TIK esamos projekto CSS kintamosios (`--y`, `--ydim`), ne makete esantys `--yellow`/`--yellow-dim` pavadinimai
+- `href` į `servisucentras-diagnostika.html` nepakitęs
+
+**Patikrinta gyvai:** fonas/apvadas/šriftas/pulso animacija — visos apskaičiuotos CSS reikšmės tiksliai atitinka maketą; 390px (mobilus) ir 1280px (desktop) — jokio horizontalaus persipildymo, elementas telpa į vieną eilutę abiem atvejais, `margin-top` aplink elementą nepakitęs.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
