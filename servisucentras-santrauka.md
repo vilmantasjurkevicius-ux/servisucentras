@@ -703,6 +703,16 @@ Pridėti automatiniai el. laiškai naudojant [Resend](https://resend.com) (nemok
 
 ---
 
+## Admin: kliento ištrynimas (DELETE /admin/clients/:id) (2026-07-24)
+
+Vartotojas paprašė ištrinti testinį klientą production'e (registruotasi su typo el. paštu `servisucetras.lt@gmail.com`, trūko raidės "n"), kad galėtų iš naujo testuoti registraciją tuo pačiu adresu. Anksčiau egzistavo tik `ban`/`unban` (užblokavimas), ne tikras ištrynimas — užblokuotas klientas VIS TIEK užima el. pašto UNIQUE lauką, tad negalima užsiregistruoti iš naujo tuo pačiu adresu.
+
+**Pridėtas `DELETE /api/admin/clients/:id`** (`backend/src/routes/admin.routes.js`) — saugumo sumetimais ATSISAKO trinti, jei klientas jau turi bent vieną užklausą (grąžina 409, patariama naudoti `ban` vietoj to), kad admin per klaidą neprarastų realių verslo duomenų. Patikrinta gyvai lokaliai: (1) klientas be užklausų — ištrinamas sėkmingai; (2) klientas SU užklausa — atsisakoma trinti (409). Automatiniai testai (7/7) nepakitę.
+
+**Reikės Railway redeploy'aus prieš faktiškai ištrinant production kliento įrašą** — endpoint'as dar nepasiekiamas production'e šio commit'o metu.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
