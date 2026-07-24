@@ -2,11 +2,27 @@ const express = require('express');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { calculateCommission } = require('../utils/commission');
+const { sendNewOrderEmail, sendQuoteEmail } = require('../email');
 
 const router = express.Router();
 
 function getOrder(id) {
   return db.prepare('SELECT * FROM orders WHERE id = ?').get(id);
+}
+
+// Realūs (ne bot), aktyvūs servisai su el. paštu, tinkantys šiai užklausai —
+// naudojama tik el. pašto pranešimams, ne pačiam užklausų sąrašui.
+function findMatchingServices(city, categoryId) {
+  if (categoryId) {
+    return db.prepare(`
+      SELECT DISTINCT s.* FROM services s
+      JOIN service_categories sc ON sc.service_id = s.id AND sc.category_id = ? AND sc.active = 1
+      WHERE s.is_bot = 0 AND s.status = 'active' AND s.city = ? AND s.email IS NOT NULL
+    `).all(categoryId, city);
+  }
+  return db.prepare(`
+    SELECT * FROM services WHERE is_bot = 0 AND status = 'active' AND city = ? AND email IS NOT NULL
+  `).all(city);
 }
 
 // ── SUKURTI UŽKLAUSĄ (klientas aprašo bėdą) ──
@@ -19,7 +35,11 @@ router.post('/', authRequired, requireRole('client'), (req, res) => {
     VALUES (?, ?, ?, ?, ?, 'new')
   `).run(req.user.id, categoryId || null, city, description, carInfo || null);
 
-  res.status(201).json(getOrder(info.lastInsertRowid));
+  const order = getOrder(info.lastInsertRowid);
+  res.status(201).json(order);
+
+  // Fire-and-forget — pranešimai atitinkamiems servisams, niekada neblokuoja atsakymo.
+  findMatchingServices(order.city, order.category_id).forEach((svc) => sendNewOrderEmail(svc, order));
 });
 
 // ── SERVISO SĄRAŠAS: naujos užklausos jo mieste/kategorijose + jam priskirtos ──
@@ -63,6 +83,14 @@ router.post('/:id/quote', authRequired, requireRole('service'), (req, res) => {
     db.prepare("UPDATE orders SET status = 'pending' WHERE id = ?").run(order.id);
   }
   res.status(201).json(getOrder(order.id));
+
+  // Fire-and-forget — pranešimas klientui apie naują kainos pasiūlymą, jei turi
+  // el. paštą (šiuo metu dažniausiai tik registruoti klientai, ne svečiai — žr.
+  // santrauka.md dėl svečių el. pašto lauko trūkumo).
+  if (price) {
+    const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(order.client_id);
+    if (client) sendQuoteEmail(client, price);
+  }
 });
 
 // ── KLIENTAS PRIIMA SERVISO PASIŪLYMĄ ──

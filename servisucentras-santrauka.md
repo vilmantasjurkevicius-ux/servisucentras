@@ -676,6 +676,33 @@ Pagrindiniame puslapyje mažas, sunkiai pastebimas tekstas "🔍 Nežinai kas su
 
 ---
 
+## El. pašto pranešimai per Resend (2026-07-24)
+
+Pridėti automatiniai el. laiškai naudojant [Resend](https://resend.com) (nemokamas planas — 3000 laiškų/mėn).
+
+### Ką reikia padaryti JUMS (Resend paskyra + Railway)
+
+1. **Resend paskyra:** eikite į [resend.com](https://resend.com) → "Sign up" (nemokama). Galima registruotis su Google/GitHub arba el. paštu.
+2. **API raktas:** prisijungę į Resend dashboard'ą → kairėje "API Keys" → "Create API Key" → pavadinkite (pvz. "servisucentras-production") → nukopijuokite sugeneruotą raktą (pradedantį `re_...`). **Šis raktas jau įrašytas** į jūsų lokalų `backend/.env` kaip `RESEND_API_KEY` — daugiau nieko lokaliai daryti nereikia.
+3. **Railway:** eikite į Railway dashboard → `servisucentras` servisas → **Variables** skiltis → pridėkite:
+   ```
+   RESEND_API_KEY=<jūsų Resend raktas>
+   ```
+   Be šio žingsnio, laiškai production'e nebus siunčiami (kodas tyliai tai apdoros — žr. žemiau — bet laiškų tiesiog negausite).
+4. **(Neprivaloma, bet rekomenduojama vėliau) Savo domeno patvirtinimas:** kol domenas nepatvirtintas, laiškai siunčiami iš `onboarding@resend.dev` — veikia be jokio papildomo nustatymo, bet gavėjas mato Resend adresą kaip siuntėją, ne `@servisucentras.lt`. Kai būsite pasiruošę: Resend dashboard'e → "Domains" → "Add Domain" → įrašykite `servisucentras.lt` → Resend duos DNS įrašus (TXT/MX/CNAME), kuriuos reikės pridėti pas jūsų domeno registratorių → po patvirtinimo pakeisti `FROM` konstantą `backend/src/email.js` faile į `ServisuCentras <pranesimai@servisucentras.lt>` (arba paprašyti manęs tai padaryti).
+
+### Kas įgyvendinta kode
+
+- **`backend/src/email.js`** (naujas modulis) — bendra `sendEmail()` funkcija + trys konkretūs pranešimai. **Niekada nemeta klaidos aukštyn** — jei Resend API neveikia (bloga rakto reikšmė, tinklo klaida ir pan.), klaida tik užsiloguojama serverio konsolėje, o pagrindinė operacija (registracija/užklausa/pasiūlymas) VISADA sėkmingai užbaigiama. Patikrinta gyvai su SĄMONINGAI sugadintu API raktu — registracija vis tiek grąžino `201 Created`, klaida atsirado tik serverio loguose.
+- **Servisas užsiregistruoja** (`auth.routes.js`) → patvirtinimo laiškas į serviso el. paštą.
+- **Klientas/svečias sukuria užklausą** (`orders.routes.js` `POST /`) → pranešimas VISIEMS tinkantiems servisams (tas pats miestas + kategorija, aktyvūs, ne bot'ai, su el. paštu).
+- **Servisas pasiūlo kainą** (`orders.routes.js` `POST /:id/quote`) → pranešimas klientui, **JEI klientas turi el. paštą**. **Svarbi pastaba:** patikrinau — realūs registruoti klientai (`POST /auth/client/register`) el. paštą TURI (privalomas laukas), bet **svečiai** (`POST /auth/guest`, naudojamas pagrindinio puslapio "Greita užklausa servisams" chat'e) šiuo metu renkame TIK vardą ir telefoną, el. pašto NEPRAŠOME. Tai reiškia: šis konkretus pranešimas šiuo metu realiai pasieks tik registruotus klientus, ne svečius (dauguma esamo srauto). Nekeičiau svečio formos (nebuvo aiškiai paprašyta) — jei norėtumėte, kad ir svečiai gautų šį pranešimą, reikėtų arba pridėti neprivalomą el. pašto lauką svečio formoje, arba palikti kaip yra (svečiai vis tiek mato pasiūlymą realiu laiku pačiame chat'e).
+- Visi trys siuntimai — **fire-and-forget** (neatidedami/nelaukiami prieš grąžinant API atsakymą), kad laiško siuntimo greitis/klaidos niekada nesulėtintų/nesugriautų pagrindinės operacijos.
+
+**Patikrinta gyvai** naudojant Resend oficialų testinį adresą `delivered@resend.dev` (saugu naudoti pakartotinai — jokių tikrų laiškų niekam neišsiunčiama, Resend tiesiog patvirtina sėkmę): visi 3 scenarijai (registracija, nauja užklausa, kainos pasiūlymas) sėkmingai iškvietė Resend API be klaidų. Automatiniai testai (7/7) nepakitę — testinė aplinka neturi `RESEND_API_KEY`, tad laiškai tose testuose tyliai praleidžiami (tas pats "niekad nemeta klaidos" elgesys).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

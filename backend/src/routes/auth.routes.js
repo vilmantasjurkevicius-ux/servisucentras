@@ -4,6 +4,7 @@ const db = require('../db');
 const { signToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const { disableOverlappingBots } = require('../utils/bots');
+const { sendServiceRegistrationEmail } = require('../email');
 
 const router = express.Router();
 
@@ -59,6 +60,9 @@ router.post('/service/register', authLimiter, (req, res) => {
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(info.lastInsertRowid);
   const token = signToken({ id: service.id, role: 'service' });
   res.status(201).json({ token, service: publicService(service) });
+
+  // Fire-and-forget — laiško siuntimas niekada neturi vėlinti/sugriauti registracijos atsakymo.
+  sendServiceRegistrationEmail(service);
 });
 
 // ── SERVISO PRISIJUNGIMAS ──
