@@ -709,7 +709,17 @@ Vartotojas paprašė ištrinti testinį klientą production'e (registruotasi su 
 
 **Pridėtas `DELETE /api/admin/clients/:id`** (`backend/src/routes/admin.routes.js`) — saugumo sumetimais ATSISAKO trinti, jei klientas jau turi bent vieną užklausą (grąžina 409, patariama naudoti `ban` vietoj to), kad admin per klaidą neprarastų realių verslo duomenų. Patikrinta gyvai lokaliai: (1) klientas be užklausų — ištrinamas sėkmingai; (2) klientas SU užklausa — atsisakoma trinti (409). Automatiniai testai (7/7) nepakitę.
 
-**Reikės Railway redeploy'aus prieš faktiškai ištrinant production kliento įrašą** — endpoint'as dar nepasiekiamas production'e šio commit'o metu.
+**Reikės Railway redeploy'aus prieš faktiškai ištrinant production kliento įrašą** — endpoint'as dar nepasiekiamas production'e šio commit'o metu. *(Atlikta tą pačią sesiją — po redeploy'aus ištrintas klientas su typo el. paštu `servisucetras.lt@gmail.com`, production'e patvirtinta.)*
+
+**Taip pat tą pačią sesiją:** rastas realus servisas "DainavaAuto", jau užregistruotas su `servisucentras.lt@gmail.com` — registracijos laiškas atėjo, bet pateko į Spam (žinoma Resend elgsena siunčiant iš bendro `onboarding@resend.dev` adreso). Ilgalaikis sprendimas — patvirtinti savo domeną Resend'e (žingsniai jau aprašyti aukščiau, "El. pašto pranešimai per Resend" skiltyje) — vartotojui dar reikia atlikti DNS pusę.
+
+---
+
+## Plevėsuojanti LT vėliava puslapio pradžioje (2026-07-24)
+
+Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio pradžia) pridėtas mažas animuotas Lietuvos vėliavos ženkliukas (`.lt-flag-wave`, 20×14px, geltona/žalia/raudona juostos iš tų pačių projekto CSS kintamųjų `--y`/`--g`/`--r`). Visas stačiakampis sukamas kaip vienas vienetas (`skewY`+`scaleY` per `@keyframes lt-flag-wave-anim`, 2.6s ciklas) — sąmoningai NE atskiros juostelės, kad tarp jų neatsirastų tarpų/persidengimų animacijos metu.
+
+**Patikrinta gyvai:** spalvos/matmenys/animacijos pavadinimas-trukmė visi teisingi; 375px pločiu jokio persipildymo. Pačios animacijos progreso per `getComputedStyle().transform` patikrinti nepavyko (žinoma šios sesijos testavimo įrankio riba — patvirtinta izoliuotu kontroliniu testu su nesusijusiu elementu, kuris parodė TĄ PATĮ "įstrigimą"), bet CSS pati savaime teisinga ir turėtų veikti realiam vartotojui.
 
 ---
 

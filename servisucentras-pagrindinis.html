@@ -124,6 +124,27 @@ nav{
 .hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:2;}
 .hero-eyebrow{font-family:'IBM Plex Mono';font-size:11px;color:var(--y);letter-spacing:0.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .hero-eyebrow::before{content:"";width:18px;height:1px;background:var(--y);}
+
+/* Plevėsuojanti LT vėliava — mažas animuotas ženkliukas prie "Lietuva" teksto pačioje
+   puslapio pradžioje. Visas vėliavos stačiakampis sukamas kaip vienas vienetas
+   (ne atskiros juostelės), kad tarp geltonos/žalios/raudonos juostų neatsirastų
+   tarpų/persidengimų animacijos metu. */
+.lt-flag-wave{
+  display:inline-flex;flex-direction:column;width:20px;height:14px;border-radius:2px;overflow:hidden;
+  border:1px solid rgba(255,255,255,0.15);flex-shrink:0;
+  transform-origin:left center;
+  animation:lt-flag-wave-anim 2.6s ease-in-out infinite;
+}
+.lt-flag-wave span{flex:1;}
+.lt-flag-wave .fy{background:var(--y);}
+.lt-flag-wave .fg{background:var(--g);}
+.lt-flag-wave .fr{background:var(--r);}
+@keyframes lt-flag-wave-anim{
+  0%,100%{transform:skewY(0deg) scaleY(1);}
+  25%{transform:skewY(-5deg) scaleY(0.95);}
+  50%{transform:skewY(0deg) scaleY(1);}
+  75%{transform:skewY(5deg) scaleY(0.95);}
+}
 .hero-triline{display:flex;gap:5px;margin-bottom:12px;}
 .hero-triline span{width:32px;height:3px;border-radius:1px;}
 h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;}
@@ -457,7 +478,10 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
 <section class="hero">
   <div class="hero-flag-bg"><div class="fy"></div><div class="fg"></div><div class="fr"></div></div>
   <div class="hero-inner">
-    <div class="hero-eyebrow">Lietuva · 340+ servisų tinkle</div>
+    <div class="hero-eyebrow">
+      <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
+      Lietuva · 340+ servisų tinkle
+    </div>
     <div class="hero-triline">
       <span style="background:var(--y)"></span>
       <span style="background:var(--g)"></span>
