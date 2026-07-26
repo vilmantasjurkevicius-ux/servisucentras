@@ -723,6 +723,22 @@ Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio prad
 
 ---
 
+## Didysis fono vėliavos efektas — patvirtintas galutinis dizainas (2026-07-24)
+
+Šis papildo (ne pakeičia) aukščiau aprašytą mažą vėliavos ženkliuką — čia kalbama apie DIDĮJĮ, jau seniai egzistavusį fono trispalvį bloką hero sekcijos dešinėje (`.hero-flag-bg`, 440×294px, labai pritemdytas `opacity:0.1`). Vartotojas patvirtino galutinį dizainą per atskirą maketo failą (`lietuvos-veliava-stacia.html`, SVG prototipas) ir paprašė įdiegti TIKSLIAI tą patį efektą.
+
+**Techninis principas (kodėl kraštai lieka švarūs):** makete naudojamas gudrumas — SVG `clip-path` PIRMA iškerpa tobulą stačiakampį, o TIK TADA `skewY` transform pritaikomas VISAI jau iškirptai grupei kaip vienam standžiam vienetui. Kadangi transformacija veikia PO iškirpimo, pati iškirpimo riba juda kartu su transformacija — rezultatas visada išlieka lygiagretainis su tiesiomis kraštinėmis (be organinio banguotumo/audinio turbulencijos), niekada netampa netvarkingas.
+
+**Realizacija HTML/CSS (be SVG, nes originalus elementas — paprasti div'ai):** ta pati logika pasiekta su `overflow:hidden` vietoj `clip-path`. Restruktūrizuota:
+- **`.hero-flag-bg`** (išorinis) — IŠLAIKYTAS TIKSLIAI toks pat, koks buvo: `position:absolute;right:-40px;top:50%;transform:translateY(-50%);width:440px;height:294px`. Jokių dydžio/pozicijos pakeitimų.
+- **`.hero-flag-sway`** (naujas vidinis) — perima `overflow:hidden;border-radius:4px;opacity:0.1` nuo išorinio, plius `transform-origin:0% 50%` ir `animation:hero-flag-sway-anim 3.5s ease-in-out infinite` (`skewY(0deg)` → `skewY(0.8deg)` → atgal — tiksliai kaip makete).
+- **`.fy`/`.fg`/`.fr`** juostos — nepakitusios, tos pačios `var(--y)`/`var(--g)`/`var(--r)` spalvos.
+- **`.hero-flag-shine`** (naujas) — subtilus `linear-gradient(90deg, ...)` švytėjimo sluoksnis virš juostų, tiksliai pagal makete nurodytus gradiento taškus.
+
+**Patikrinta gyvai:** `.hero-flag-bg` dydis (440×294), pozicija (`right:-40px`, `translateY(-147px)` = -50% iš 294px) — identiški kaip prieš pakeitimą. Spalvos/opacity/animacijos pavadinimas-trukmė-transform-origin visi teisingi. 375px ir 1280px pločiais — jokio horizontalaus persipildymo (šis elementas visada buvo apribotas `.hero{overflow:hidden}`, tai nepakito). Pačios animacijos progreso vizualiai patvirtinti per šį testavimo įrankį nepavyko dėl tos pačios anksčiau užfiksuotos `getComputedStyle().transform` ribos — CSS mechanizmas (overflow:hidden PRIEŠ transform ant to paties elemento) yra geometriškai korektiškas ir atitinka makete patvirtintą principą tiksliai.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
