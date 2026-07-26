@@ -717,7 +717,7 @@ Vartotojas paprašė ištrinti testinį klientą production'e (registruotasi su 
 
 ## Plevėsuojanti LT vėliava puslapio pradžioje (2026-07-24)
 
-Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio pradžia) pridėtas mažas animuotas Lietuvos vėliavos ženkliukas (`.lt-flag-wave`, 20×14px, geltona/žalia/raudona juostos iš tų pačių projekto CSS kintamųjų `--y`/`--g`/`--r`). Visas stačiakampis sukamas kaip vienas vienetas (`skewY`+`scaleY` per `@keyframes lt-flag-wave-anim`, 2.6s ciklas) — sąmoningai NE atskiros juostelės, kad tarp jų neatsirastų tarpų/persidengimų animacijos metu.
+Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio pradžia) pridėtas mažas animuotas Lietuvos vėliavos ženkliukas (`.lt-flag-wave`, 34×14px — prailgintas iš pradinių 20px pločio pagal vartotojo prašymą, geltona/žalia/raudona juostos iš tų pačių projekto CSS kintamųjų `--y`/`--g`/`--r`). Visas stačiakampis sukamas kaip vienas vienetas (`skewY`+`scaleY` per `@keyframes lt-flag-wave-anim`, 2.6s ciklas) — sąmoningai NE atskiros juostelės, kad tarp jų neatsirastų tarpų/persidengimų animacijos metu.
 
 **Patikrinta gyvai:** spalvos/matmenys/animacijos pavadinimas-trukmė visi teisingi; 375px pločiu jokio persipildymo. Pačios animacijos progreso per `getComputedStyle().transform` patikrinti nepavyko (žinoma šios sesijos testavimo įrankio riba — patvirtinta izoliuotu kontroliniu testu su nesusijusiu elementu, kuris parodė TĄ PATĮ "įstrigimą"), bet CSS pati savaime teisinga ir turėtų veikti realiam vartotojui.
 
