@@ -252,7 +252,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 
   <div class="sb-section">Finansai</div>
   <button class="sb-item" onclick="showPage('money',this)"><span class="ic">💰</span> Pajamos</button>
-  <button class="sb-item" onclick="showPage('commissions',this)"><span class="ic">📈</span> Komisiniai</button>
+  <button class="sb-item" onclick="showPage('commissions',this)"><span class="ic">📈</span> Mokesčiai</button>
 
   <div class="sb-section">Sistema</div>
   <button class="sb-item" onclick="showPage('botservices',this)"><span class="ic">🤖</span> Bot servisai <span class="badge green" id="bot-active-badge">10</span></button>
@@ -297,7 +297,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
       </div>
       <!-- Savaitės pajamų grafikas -->
       <div class="table-wrap">
-        <div class="table-head"><div class="table-title">💰 Savaitės pajamos (realūs komisiniai)</div></div>
+        <div class="table-head"><div class="table-title">💰 Savaitės pajamos (realūs mokesčiai)</div></div>
         <div style="padding:16px 20px;display:flex;align-items:flex-end;gap:6px;height:100px;" id="week-chart"></div>
       </div>
     </div>
@@ -348,10 +348,10 @@ tr:hover td{background:rgba(255,255,255,0.015);}
           <button class="tab" data-filter="banned">Sustabdyti <span class="n">0</span></button>
         </div>
         <table>
-          <tr><th>Pavadinimas</th><th>Miestas</th><th>Tipas</th><th>Užklausos</th><th>Nemokama iki</th><th>Komisiniai</th><th>Įvertinimas</th><th>Statusas</th><th>Veiksmai</th></tr>
+          <tr><th>Pavadinimas</th><th>Miestas</th><th>Tipas</th><th>Užklausos</th><th>Nemokama iki</th><th>Mokestis</th><th>Įvertinimas</th><th>Statusas</th><th>Veiksmai</th></tr>
           <tbody id="services-table-body"></tbody>
         </table>
-        <div style="padding:12px 20px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);">ℹ️ "Nemokama iki" = 6 mėn. nuo TO serviso registracijos datos (individualiai kiekvienam). Po šios datos, jei God Mode komisinis įjungtas (Nustatymai), servisas moka % nuo kiekvieno patvirtinto darbo.</div>
+        <div style="padding:12px 20px;font-size:11.5px;color:var(--muted);border-top:1px solid var(--line);">ℹ️ "Nemokama iki" = 6 mėn. nuo TO serviso registracijos datos (individualiai kiekvienam). Po šios datos, jei God Mode mokestis įjungtas (Nustatymai), servisas moka fiksuotą mokestį už kiekvieną priimtą klientą.</div>
       </div>
     </div>
   </div>
@@ -371,7 +371,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
           <button class="tab" data-filter="done">Atliktos <span class="n">0</span></button>
         </div>
         <table>
-          <tr><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Komis.</th><th>Statusas</th></tr>
+          <tr><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Mokestis</th><th>Statusas</th></tr>
           <tbody id="orders-table-body"></tbody>
         </table>
       </div>
@@ -381,7 +381,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <!-- ════ PINIGAI ════ -->
   <div class="page" id="p-money">
     <div class="page-head">
-      <div><div class="page-title">💰 Pajamos</div><div class="page-sub">Komisiniai — % nuo darbo kainos (po 6 mėn. nemokamo laikotarpio, jei God Mode įjungtas)</div></div>
+      <div><div class="page-title">💰 Pajamos</div><div class="page-sub">Fiksuotas mokestis už kiekvieną priimtą klientą (po 6 mėn. nemokamo laikotarpio, jei God Mode įjungtas)</div></div>
       <div class="head-actions"><button class="btn">⬇ Atsisiųsti ataskaitą</button></div>
     </div>
     <div class="content">
@@ -398,7 +398,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
         <div class="table-wrap">
           <div class="table-head"><div class="table-title">Pelningiausi servisai</div></div>
           <table>
-            <tr><th>Servisas</th><th>Užsakymai</th><th>Komisiniai</th></tr>
+            <tr><th>Servisas</th><th>Užsakymai</th><th>Mokesčiai</th></tr>
             <tbody id="top-services-body"></tbody>
           </table>
         </div>
@@ -407,7 +407,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
       <div class="table-wrap">
         <div class="table-head"><div class="table-title">Mėnesių istorija</div></div>
         <table>
-          <tr><th>Mėnuo</th><th>Užklausų</th><th>Užsakymų</th><th>Komisiniai</th></tr>
+          <tr><th>Mėnuo</th><th>Užklausų</th><th>Užsakymų</th><th>Mokesčiai</th></tr>
           <tbody id="month-history-body"></tbody>
         </table>
       </div>
@@ -449,8 +449,8 @@ tr:hover td{background:rgba(255,255,255,0.015);}
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="background:var(--ydim);border:1px solid rgba(245,196,0,0.25);border-radius:5px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
             <div>
-              <div class="stat-lbl" style="margin-bottom:4px;color:var(--y);">⚡ God Mode — komisinio surinkimas</div>
-              <div style="font-size:12px;color:var(--muted);max-width:420px;">Kai ĮJUNGTA: servisai, kurių 6 mėn. nemokamas laikotarpis pasibaigęs, moka komisinį už kiekvieną patvirtintą darbą. Kai IŠJUNGTA: visiems servisams laikinai nemokama, nepriklausomai nuo registracijos datos.</div>
+              <div class="stat-lbl" style="margin-bottom:4px;color:var(--y);">⚡ God Mode — mokesčio surinkimas</div>
+              <div style="font-size:12px;color:var(--muted);max-width:420px;">Kai ĮJUNGTA: servisai, kurių 6 mėn. nemokamas laikotarpis pasibaigęs, moka fiksuotą mokestį už kiekvieną priimtą klientą. Kai IŠJUNGTA: visiems servisams laikinai nemokama, nepriklausomai nuo registracijos datos.</div>
             </div>
             <label class="sw">
               <input type="checkbox" id="commission-master" checked onchange="toggleCommissionMaster()">
@@ -458,20 +458,20 @@ tr:hover td{background:rgba(255,255,255,0.015);}
             </label>
           </div>
           <div>
-            <div class="stat-lbl" style="margin-bottom:8px;">Komisinio surinkimo būdas</div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Mokesčio surinkimo būdas</div>
             <div style="display:flex;flex-direction:column;gap:8px;">
               <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;padding:10px 12px;border:1px solid var(--line2);border-radius:3px;background:var(--bg3);">
                 <input type="radio" name="collection-mode" value="manual" checked style="margin-top:2px;accent-color:var(--y);">
                 <div>
                   <div style="font-size:13px;font-weight:600;">Rankinis</div>
-                  <div style="font-size:11.5px;color:var(--muted);">Sistema tik skaičiuoja ir rodo, kiek kas skolingas ("Komisiniai" skiltyje). Jokio automatinio nuskaitymo — patys susisiekiate ir surenkate (pvz. banko pavedimu).</div>
+                  <div style="font-size:11.5px;color:var(--muted);">Sistema tik skaičiuoja ir rodo, kiek kas skolingas ("Mokesčiai" skiltyje). Jokio automatinio nuskaitymo — patys susisiekiate ir surenkate (pvz. banko pavedimu).</div>
                 </div>
               </label>
               <label style="display:flex;align-items:flex-start;gap:10px;cursor:not-allowed;padding:10px 12px;border:1px solid var(--line);border-radius:3px;opacity:0.5;">
                 <input type="radio" name="collection-mode" value="stripe" disabled style="margin-top:2px;">
                 <div>
                   <div style="font-size:13px;font-weight:600;">Automatinis (Stripe) — netrukus</div>
-                  <div style="font-size:11.5px;color:var(--muted);">Automatinis komisinio nuskaitymas per Stripe Connect. Dar neįdiegta.</div>
+                  <div style="font-size:11.5px;color:var(--muted);">Automatinis mokesčio nuskaitymas per Stripe Connect. Dar neįdiegta.</div>
                 </div>
               </label>
             </div>
@@ -517,14 +517,14 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="page" id="p-reviews"><div class="page-head"><div class="page-title">⭐ Atsiliepimai</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Visi klientų atsiliepimai apie servisus.</div></div></div>
   <div class="page" id="p-commissions">
     <div class="page-head">
-      <div><div class="page-title">📈 Komisiniai / Sąskaitos</div><div class="page-sub" id="invoices-period-label"></div></div>
+      <div><div class="page-title">📈 Mokesčiai / Sąskaitos</div><div class="page-sub" id="invoices-period-label"></div></div>
       <div class="head-actions"><button class="btn btn-y" onclick="generateInvoiceMessages()">✉️ Generuoti pranešimus visiems</button></div>
     </div>
     <div class="content">
       <div class="table-wrap">
-        <div class="table-head"><div class="table-title">Šio mėnesio komisiniai (servisai po trial, kurie skolingi)</div></div>
+        <div class="table-head"><div class="table-title">Šio mėnesio mokesčiai (servisai po trial, kurie skolingi)</div></div>
         <table>
-          <tr><th>Servisas</th><th>Patvirtintų darbų suma</th><th>Komisinis</th><th>Statusas</th><th>Veiksmas</th></tr>
+          <tr><th>Servisas</th><th>Priimtų klientų sk.</th><th>Mokestis</th><th>Statusas</th><th>Veiksmas</th></tr>
           <tbody id="invoices-table-body"></tbody>
         </table>
       </div>
@@ -716,7 +716,7 @@ function renderServices(){
       <td>${s.service_type||'—'}</td>
       <td>${s.orderCount}</td>
       <td><span class="badge badge-active">iki ${(s.trialEndsAt||'').slice(0,10)}</span></td>
-      <td style="color:${s.commissionTotal>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${s.commissionTotal>0?fmtEUR(s.commissionTotal):'0€ (trial)'}</td>
+      <td style="color:${s.contactFeeTotal>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${s.contactFeeTotal>0?fmtEUR(s.contactFeeTotal):'0€ (trial)'}</td>
       <td>${s.rating!=null?'★ '+s.rating:'—'}</td>
       <td>${serviceStatusBadge(s.status)}</td>
       <td><div class="action-btns">${serviceActionButtons(s)}</div></td>
@@ -755,7 +755,7 @@ function renderOrders(){
       <td>${o.service_name||'—'}</td>
       <td>${o.price!=null?fmtEUR(o.price):'—'}</td>
       <td>${(o.created_at||'').slice(0,10)}</td>
-      <td style="color:${o.commission_amount>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${o.commission_amount!=null?fmtEUR(o.commission_amount):'—'}</td>
+      <td style="color:${o.contact_fee_amount>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${o.client_accepted_at?fmtEUR(o.contact_fee_amount):'—'}</td>
       <td>${orderStatusBadge(o.status)}</td>
     </tr>`).join('') || emptyRow(8);
 
@@ -773,17 +773,17 @@ function renderMoney(){
   const now = new Date();
   const todayStr = now.toISOString().slice(0,10);
   const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate()-7);
-  const doneOrders = ordersCache.filter(o=>o.status==='done' && o.completed_at);
-  const todayIncome = doneOrders.filter(o=>o.completed_at.slice(0,10)===todayStr).reduce((a,o)=>a+(o.commission_amount||0),0);
-  const weekIncome = doneOrders.filter(o=>new Date(o.completed_at.replace(' ','T')+'Z')>=weekAgo).reduce((a,o)=>a+(o.commission_amount||0),0);
+  const acceptedOrders = ordersCache.filter(o=>o.client_accepted_at);
+  const todayIncome = acceptedOrders.filter(o=>o.client_accepted_at.slice(0,10)===todayStr).reduce((a,o)=>a+(o.contact_fee_amount||0),0);
+  const weekIncome = acceptedOrders.filter(o=>new Date(o.client_accepted_at.replace(' ','T')+'Z')>=weekAgo).reduce((a,o)=>a+(o.contact_fee_amount||0),0);
   document.getElementById('income-today').textContent = fmtEUR(todayIncome);
   document.getElementById('income-week').textContent = fmtEUR(weekIncome);
   document.getElementById('income-month').textContent = fmtEUR(dashboardCache?.monthIncome);
   document.getElementById('income-total').textContent = fmtEUR(dashboardCache?.totalIncome);
 
-  const topServices = servicesCache.filter(s=>!s.is_bot).slice().sort((a,b)=>b.commissionTotal-a.commissionTotal).slice(0,4);
+  const topServices = servicesCache.filter(s=>!s.is_bot).slice().sort((a,b)=>b.contactFeeTotal-a.contactFeeTotal).slice(0,4);
   document.getElementById('top-services-body').innerHTML = topServices.map(s=>`
-    <tr><td><b>${s.name}</b></td><td>${s.orderCount}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(s.commissionTotal)}</td></tr>
+    <tr><td><b>${s.name}</b></td><td>${s.orderCount}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(s.contactFeeTotal)}</td></tr>
   `).join('') || emptyRow(3);
 
   renderMonthHistory();
@@ -795,16 +795,17 @@ function renderMonthHistory(){
   ordersCache.forEach(o=>{
     const month = (o.created_at||'').slice(0,7);
     if(!month) return;
-    byMonth[month] = byMonth[month] || { requests:0, done:0, commission:0 };
+    byMonth[month] = byMonth[month] || { requests:0, done:0, fee:0 };
     byMonth[month].requests++;
-    if(o.status==='done'){ byMonth[month].done++; byMonth[month].commission += (o.commission_amount||0); }
+    if(o.status==='done') byMonth[month].done++;
+    if(o.client_accepted_at) byMonth[month].fee += (o.contact_fee_amount||0);
   });
   const LT_MONTHS = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
   const months = Object.keys(byMonth).sort().reverse().slice(0,6);
   document.getElementById('month-history-body').innerHTML = months.map(m=>{
     const [y,mm] = m.split('-');
     const d = byMonth[m];
-    return `<tr><td><b>${y} ${LT_MONTHS[parseInt(mm,10)-1]}</b></td><td>${d.requests}</td><td>${d.done}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(d.commission)}</td></tr>`;
+    return `<tr><td><b>${y} ${LT_MONTHS[parseInt(mm,10)-1]}</b></td><td>${d.requests}</td><td>${d.done}</td><td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(d.fee)}</td></tr>`;
   }).join('') || emptyRow(4);
 }
 
@@ -814,9 +815,9 @@ function renderWeekChart(){
   const sums = [0,0,0,0,0,0,0];
   const startOfWeek = new Date(now); startOfWeek.setDate(now.getDate()-now.getDay()); startOfWeek.setHours(0,0,0,0);
   ordersCache.forEach(o=>{
-    if(o.status!=='done' || !o.completed_at) return;
-    const d = new Date(o.completed_at.replace(' ','T')+'Z');
-    if(d>=startOfWeek) sums[d.getDay()] += (o.commission_amount||0);
+    if(!o.client_accepted_at) return;
+    const d = new Date(o.client_accepted_at.replace(' ','T')+'Z');
+    if(d>=startOfWeek) sums[d.getDay()] += (o.contact_fee_amount||0);
   });
   const max = Math.max(...sums, 1);
   const order = [1,2,3,4,5,6,0]; // Pir..Sek rodymo tvarka
@@ -922,7 +923,7 @@ function renderInvoicesTable(){
   document.getElementById('invoices-table-body').innerHTML = invoicesCache.map(inv => `
     <tr>
       <td><b>${inv.service_name}</b></td>
-      <td>${fmtEUR(inv.work_total)}</td>
+      <td>${inv.work_total}</td>
       <td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(inv.amount_due)}</td>
       <td>${inv.status==='paid'
         ? `<span class="badge badge-active">✓ Apmokėta${inv.paid_at?' '+inv.paid_at.slice(0,10):''}</span>`

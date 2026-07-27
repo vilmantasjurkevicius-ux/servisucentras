@@ -233,7 +233,7 @@ select.field{cursor:pointer;}
     <div class="left-note" id="left-note">
       ✓ Servisų registracija nemokama.<br>
       Pirmieji 6 mėnesiai be jokių mokesčių.<br>
-      Vėliau — tik nedidelis % nuo patvirtintų darbų.
+      Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.
     </div>
   </div>
 
@@ -505,7 +505,7 @@ function switchType(type){
   document.getElementById('panel-service').classList.toggle('show', type==='service');
   document.getElementById('panel-client').classList.toggle('show', type==='client');
   document.getElementById('left-note').innerHTML = type === 'service'
-    ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis % nuo patvirtintų darbų.'
+    ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.'
     : '✓ Klientams registracija neprivaloma.<br>Galite rezervuoti kaip svečias<br>be jokios paskyros.';
 }
 

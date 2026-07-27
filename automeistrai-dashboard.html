@@ -1231,9 +1231,16 @@ function renderStatsPage(){
   ordersCache.forEach(o=>{ if(statusCounts[o.status]!=null) statusCounts[o.status]++; });
 
   const monthStr = new Date().toISOString().slice(0,7);
-  const netMonthIncome = mine
+  // Fiksuoto mokesčio modelyje kaina nebeatskaitoma % — servisas gauna PILNĄ sutartą kainą.
+  // "Grynosios pajamos" = šio mėn. atliktų darbų kainų suma MINUS šio mėn. sumokėti mokesčiai
+  // už priimtus klientus (žr. Žingsnis 5/6 santrauka.md).
+  const grossMonthIncome = mine
     .filter(o=>o.status==='done' && o.completed_at && o.completed_at.slice(0,7)===monthStr)
-    .reduce((sum,o)=> sum + ((o.price||0) - (o.commission_amount||0)), 0);
+    .reduce((sum,o)=> sum + (o.price||0), 0);
+  const monthFees = mine
+    .filter(o=>o.client_accepted_at && o.client_accepted_at.slice(0,7)===monthStr)
+    .reduce((sum,o)=> sum + (o.contact_fee_amount||0), 0);
+  const netMonthIncome = grossMonthIncome - monthFees;
 
   const catCounts = {};
   mine.forEach(o=>{ if(o.category_id) catCounts[o.category_id] = (catCounts[o.category_id]||0)+1; });
@@ -1248,7 +1255,7 @@ function renderStatsPage(){
     </div>
     <div class="content-grid" style="grid-template-columns:1fr 1fr;">
       <div class="orders-panel">
-        <div class="panel-header"><div class="panel-title">Šio mėnesio pajamos (po komisinio)</div></div>
+        <div class="panel-header"><div class="panel-title">Šio mėnesio pajamos (atskaičius mokestį)</div></div>
         <div style="padding:24px;">
           <div class="stat-val yellow" style="font-size:32px;">${fmtEUR(netMonthIncome)}</div>
           <div class="stat-change" style="margin-top:10px;">Vidutinis įvertinimas: ${serviceProfile.rating!=null ? serviceProfile.rating.toFixed(1)+' ★' : 'dar nėra įvertinimų'}</div>

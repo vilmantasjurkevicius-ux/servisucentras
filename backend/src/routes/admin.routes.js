@@ -28,10 +28,10 @@ router.get('/dashboard', (req, res) => {
   const activeServices = db.prepare("SELECT COUNT(*) AS n FROM services WHERE status = 'active'").get().n;
   const ordersToday = db.prepare("SELECT COUNT(*) AS n FROM orders WHERE date(created_at) = date('now')").get().n;
   const monthIncome = db.prepare(`
-    SELECT COALESCE(SUM(commission_amount), 0) AS total FROM orders
-    WHERE status = 'done' AND strftime('%Y-%m', completed_at) = strftime('%Y-%m', 'now')
+    SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders
+    WHERE client_accepted_at IS NOT NULL AND strftime('%Y-%m', client_accepted_at) = strftime('%Y-%m', 'now')
   `).get().total;
-  const totalIncome = db.prepare("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM orders WHERE status = 'done'").get().total;
+  const totalIncome = db.prepare("SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders WHERE client_accepted_at IS NOT NULL").get().total;
   const newOrders = db.prepare(`
     SELECT o.*, c.first_name, c.last_name FROM orders o
     JOIN clients c ON c.id = o.client_id
@@ -86,11 +86,11 @@ router.get('/services', (req, res) => {
   const withStats = services.map((s) => {
     const { password_hash, ...rest } = s;
     const orderCount = db.prepare('SELECT COUNT(*) AS n FROM orders WHERE service_id = ?').get(s.id).n;
-    const commissionTotal = db.prepare("SELECT COALESCE(SUM(commission_amount), 0) AS total FROM orders WHERE service_id = ? AND status = 'done'").get(s.id).total;
+    const contactFeeTotal = db.prepare("SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders WHERE service_id = ? AND client_accepted_at IS NOT NULL").get(s.id).total;
     return {
       ...rest,
       orderCount,
-      commissionTotal,
+      contactFeeTotal,
       trialEndsAt: trialEndDate(s.registered_at, settings.trial_months).toISOString(),
     };
   });
@@ -184,12 +184,12 @@ router.post('/invoices/generate-messages', (req, res) => {
     serviceName: inv.service_name,
     message: `Sveiki, ${inv.service_name}!
 
-Informuojame, kad ${label} mėn. patvirtintų darbų suma ServisuCentras.lt platformoje sudarė ${inv.work_total.toFixed(2)}€, o priskaičiuotas komisinis mokestis (${settings.commission_percent}% tarifu) sudaro ${inv.amount_due.toFixed(2)}€.
+Informuojame, kad ${label} mėn. priėmėte ${inv.work_total} kliento užklausą(-as) ServisuCentras.lt platformoje, o priskaičiuotas mokestis (${settings.contact_fee}€ už kiekvieną priimtą klientą) sudaro ${inv.amount_due.toFixed(2)}€.
 
 Prašome pervesti sumą:
 Gavėjas: ${receiver}
 IBAN: ${iban}
-Mokėjimo paskirtis: ServisuCentras komisinis — ${inv.service_name}, ${period}
+Mokėjimo paskirtis: ServisuCentras mokestis — ${inv.service_name}, ${period}
 
 Klausimų atveju — susisiekite su mumis.
 
