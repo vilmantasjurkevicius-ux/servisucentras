@@ -2,6 +2,7 @@ const express = require('express');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { calculateCommission, calculateContactFee } = require('../utils/commission');
+const { redactContacts } = require('../utils/contactFilter');
 const { sendNewOrderEmail, sendQuoteEmail } = require('../email');
 
 const router = express.Router();
@@ -180,11 +181,19 @@ router.get('/:id/messages', authRequired, (req, res) => {
   // informacija — lieka privatūs: servisas mato tik savo pačio kainą/laiką,
   // konkuruojančio serviso žinutėse šie laukai redaguojami (null). Klientas mato viską.
   if (req.user.role === 'service') {
+    // Kontaktų (telefono/el.pašto) filtras LAISVAME kliento žinutės tekste — apsauga nuo
+    // platformos apėjimo (žr. Žingsnis 4/6 santrauka.md). Taikoma tik servisui, kuris DAR
+    // NEPRIĖMĖ šio kliento; priėmus (client_accepted_at) tekstas rodomas pilnas, nefiltruotas.
+    const hasAcceptedClient = order.service_id === req.user.id && !!order.client_accepted_at;
     messages = messages.map((m) => {
+      let result = m;
       if (m.sender_type === 'service' && m.sender_id !== req.user.id) {
-        return { ...m, price_quote: null, available_time: null };
+        result = { ...result, price_quote: null, available_time: null };
       }
-      return m;
+      if (!hasAcceptedClient && m.sender_type === 'client') {
+        result = { ...result, message: redactContacts(result.message) };
+      }
+      return result;
     });
   }
 
