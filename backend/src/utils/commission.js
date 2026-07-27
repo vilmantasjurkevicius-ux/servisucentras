@@ -23,4 +23,14 @@ function calculateCommission({ price, service, settings, now = new Date() }) {
   return Math.round(price * settings.commission_percent * 100) / 10000;
 }
 
-module.exports = { trialEndDate, isInTrial, calculateCommission };
+// Fiksuotas mokestis už kliento kontakto atskleidimą — naujas modelis, pakeičiantis
+// calculateCommission (% nuo užbaigto darbo kainos). Dar nenaudojamas jokiame
+// endpoint'e (bus prijungtas vėlesniu žingsniu) — tik apibrėžtas čia nuosekliai.
+// Naudoja tą patį trial/God Mode apribojimą, kad liktų nuoseklu su likusiu produktu.
+function calculateContactFee({ service, settings, now = new Date() }) {
+  if (!settings.commission_master_enabled) return 0;
+  if (isInTrial(service.registered_at, settings.trial_months, now)) return 0;
+  return settings.contact_fee || 0;
+}
+
+module.exports = { trialEndDate, isInTrial, calculateCommission, calculateContactFee };

@@ -31,6 +31,8 @@ function migrate() {
   const orderCols = db.prepare("PRAGMA table_info(orders)").all().map((c) => c.name);
   if (!orderCols.includes('scheduled_time')) db.exec('ALTER TABLE orders ADD COLUMN scheduled_time TEXT');
   if (!orderCols.includes('car_info')) db.exec('ALTER TABLE orders ADD COLUMN car_info TEXT');
+  if (!orderCols.includes('order_type')) db.exec("ALTER TABLE orders ADD COLUMN order_type TEXT NOT NULL DEFAULT 'broadcast'");
+  if (!orderCols.includes('reservation_fee_amount')) db.exec('ALTER TABLE orders ADD COLUMN reservation_fee_amount REAL');
 
   const msgCols = db.prepare("PRAGMA table_info(order_messages)").all().map((c) => c.name);
   if (!msgCols.includes('available_time')) db.exec('ALTER TABLE order_messages ADD COLUMN available_time TEXT');
@@ -42,6 +44,7 @@ function migrate() {
   if (!settingsCols.includes('collection_mode')) db.exec("ALTER TABLE admin_settings ADD COLUMN collection_mode TEXT NOT NULL DEFAULT 'manual'");
   if (!settingsCols.includes('bank_receiver')) db.exec('ALTER TABLE admin_settings ADD COLUMN bank_receiver TEXT');
   if (!settingsCols.includes('bank_iban')) db.exec('ALTER TABLE admin_settings ADD COLUMN bank_iban TEXT');
+  if (!settingsCols.includes('contact_fee')) db.exec('ALTER TABLE admin_settings ADD COLUMN contact_fee REAL NOT NULL DEFAULT 2.0');
   // service_invoices — visai nauja lentelė, CREATE TABLE IF NOT EXISTS aukščiau (schema.sql) jau ją sukuria.
 }
 migrate();

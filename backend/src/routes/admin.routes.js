@@ -136,7 +136,7 @@ router.get('/settings', (req, res) => {
 router.patch('/settings', (req, res) => {
   const {
     platformName, commissionMasterEnabled, commissionPercent, trialMonths, adminPassword,
-    collectionMode, bankReceiver, bankIban,
+    collectionMode, bankReceiver, bankIban, contactFee,
   } = req.body;
   const fields = [];
   const params = [];
@@ -147,6 +147,7 @@ router.patch('/settings', (req, res) => {
   if (collectionMode !== undefined) { fields.push('collection_mode = ?'); params.push(collectionMode); }
   if (bankReceiver !== undefined) { fields.push('bank_receiver = ?'); params.push(bankReceiver); }
   if (bankIban !== undefined) { fields.push('bank_iban = ?'); params.push(bankIban); }
+  if (contactFee !== undefined) { fields.push('contact_fee = ?'); params.push(contactFee); }
   if (adminPassword) { fields.push('admin_password_hash = ?'); params.push(bcrypt.hashSync(adminPassword, 10)); }
 
   if (fields.length) {

@@ -739,6 +739,30 @@ Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio prad
 
 ---
 
+## PRADEDAMA: fiksuoto mokesčio komisinio modelis + tiesioginis rezervavimas (2026-07-25)
+
+**GALUTINIS, aktyvus planas — pakeičia bet kokias ankstesnes užuominas apie atskirą "tiesioginės rezervacijos" funkciją ar mokesčio mechanizmą.** Verslo modelis keičiasi iš % nuo užbaigto darbo kainos į **fiksuotą mokestį už kliento kontakto atskleidimą**, mokamą TADA, kai servisas "priima" konkretų klientą (ne kai darbas užbaigiamas). Įgyvendinama 6 atskirais žingsniais, kad kiekvienas būtų atskirai patikrinamas prieš pereinant prie kito.
+
+**Patvirtintas pilnas srautas (dar neįgyvendintas, tik suplanuotas):**
+1. Klientas rašo bėdą → keli servisai mato problemą/automobilį/miestą (BE kliento kontaktų) → siūlo kainas NEMOKAMAI (esamas mechanizmas, nekeičiamas).
+2. Klientas mato visų kainas, renkasi vieną servisą (esamas `POST /orders/:id/accept`, nekeičiamas).
+3. TAM pasirinktam servisui atsiranda NAUJAS, ATSKIRAS veiksmas "✓ Priimti klientą" — paspaudus, nuskaitomas fiksuotas mokestis (admin nustatytas, numatyta 2€) IR atsiskleidžia kliento vardas/telefonas. Kiti servisai, kurie siūlė kainą, bet kurių klientas nepasirinko, nieko nemoka — užklausa jiems tiesiog užsidaro.
+4. Ta pati TIKSLIAI mokėjimo/atskleidimo logika (ne naujas mechanizmas) naudojama ir NAUJAM tiesioginio rezervavimo srautui: TIK registruotas (ne svečias) klientas gali pasirinkti konkretų servisą, pamatyti jo kalendorių (laisva/užimta, be jokių kitų klientų duomenų), rezervuoti laisvą laiką — servisas mato rezervaciją be kontaktų, "Priėmus" — tas pats mokestis + kontaktai + laikas pažymimas užimtu kalendoriuje.
+5. 6 mėn. trial ir God Mode master jungiklis toliau galioja fiksuotam mokesčiui identiškai, kaip anksčiau galiojo % komisiniui.
+
+**Kodėl "gating" laukas, ne vien suma:** kad trial/God-Mode-off atvejis (mokestis=0€) nebūtų supainiotas su "dar nepriimta" būsena, naudosime atskirą laiko žymos lauką kontaktų atskleidimui žymėti, o pačią sumą — tik apskaitai/ataskaitoms.
+
+### Žingsnis 1/6 — ATLIKTA: admin nustatymų laukas
+- `admin_settings` naujas stulpelis `contact_fee REAL NOT NULL DEFAULT 2.0` (senas `commission_percent` stulpelis PALIKTAS DB lygyje nepaliestas, tiesiog nebenaudojamas UI — jokių senų duomenų nesugriauta).
+- `PATCH /api/admin/settings` priima `contactFee`.
+- `servisucentras-admin.html` → Nustatymai: "Komisinio procentas" laukas pakeistas į "Mokestis už užklausą (€)" (`#contact-fee`), numatyta reikšmė 2.
+- `backend/src/utils/commission.js`: pridėta `calculateContactFee({service,settings,now})` — tas pats trial/God Mode apribojimas kaip `calculateCommission`, bet grąžina fiksuotą `settings.contact_fee` — **dar NIEKUR nekviečiama**, tik apibrėžta (kito žingsnio darbas).
+- **Patikrinta gyvai:** pakeista reikšmė į 3€ Admin skydelyje, išsaugota, puslapis perkrautas, reikšmė išliko (patvirtinta ir per API tiesiogiai). Automatiniai testai (7/7) nepakitę.
+
+**Kito žingsnio laukiama** (2/6+) — dar neįgyvendinta: patį "Priimti klientą" veiksmą, kontaktų/laisvo teksto redagavimą (regex telefonams/el.paštams), tiesioginio rezervavimo kalendorių ir jo integraciją į pagrindinį puslapį.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

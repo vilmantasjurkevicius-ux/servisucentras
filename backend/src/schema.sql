@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   collection_mode TEXT NOT NULL DEFAULT 'manual', -- manual | stripe (stripe dar neįgyvendintas)
   bank_receiver TEXT, -- rankinio surinkimo pranešimuose naudojami rekvizitai
   bank_iban TEXT,
+  contact_fee REAL NOT NULL DEFAULT 2.0, -- fiksuotas mokestis servisui už kliento kontakto atskleidimą (pakeičia % komisinį modelį, žr. santrauka.md)
   admin_username TEXT NOT NULL DEFAULT 'admin',
   admin_password_hash TEXT NOT NULL
 );
@@ -74,6 +75,8 @@ CREATE TABLE IF NOT EXISTS orders (
   commission_amount REAL,
   status TEXT NOT NULL DEFAULT 'new', -- new | pending | in_progress | done | cancelled
   scheduled_time TEXT, -- suplanuoto vizito data/laikas (ISO), nustato servisas po priėmimo
+  order_type TEXT NOT NULL DEFAULT 'broadcast', -- broadcast (transliuojama visiems) | direct (klientas pasirinko konkretų servisą+laiką)
+  reservation_fee_amount REAL, -- fiksuotas mokestis, nuskaičiuotas patvirtinus 'direct' rezervaciją (žr. calculateReservationFee)
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   completed_at TEXT
 );

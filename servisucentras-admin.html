@@ -477,12 +477,11 @@ tr:hover td{background:rgba(255,255,255,0.015);}
             </div>
           </div>
           <div>
-            <div class="stat-lbl" style="margin-bottom:8px;">Komisinio procentas</div>
+            <div class="stat-lbl" style="margin-bottom:8px;">Mokestis už užklausą (€)</div>
             <div style="display:flex;align-items:center;gap:10px;">
-              <input id="commission-pct" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--y);font-family:'IBM Plex Mono';font-size:16px;width:80px;outline:none;text-align:center;" value="2.5" oninput="updateCommissionExample()">
-              <span style="color:var(--muted);font-size:13px;">% nuo patvirtinto darbo kainos (ne fiksuota suma)</span>
+              <input id="contact-fee" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 12px;color:var(--y);font-family:'IBM Plex Mono';font-size:16px;width:80px;outline:none;text-align:center;" value="2">
+              <span style="color:var(--muted);font-size:13px;">€ — fiksuota suma, nuskaitoma servisui priėmus konkretų klientą (ne procentas nuo darbo kainos)</span>
             </div>
-            <div style="margin-top:8px;font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);" id="commission-example">Pvz.: 40€ darbas → 1.00€ komisinis · 120€ darbas → 3.00€ komisinis</div>
           </div>
           <div>
             <div class="stat-lbl" style="margin-bottom:8px;">Nemokamas laikotarpis</div>
@@ -858,24 +857,16 @@ async function toggleBot(id){ await apiPatch(`/admin/bots/${id}/toggle`); await 
 async function toggleAllBots(){ await apiPost('/admin/bots/toggle-all'); await loadBots(); }
 
 // ── NUSTATYMAI (God Mode) ──
-function updateCommissionExample(){
-  const pct = parseFloat(document.getElementById('commission-pct').value) || 0;
-  const ex1 = (40 * pct / 100).toFixed(2);
-  const ex2 = (120 * pct / 100).toFixed(2);
-  document.getElementById('commission-example').textContent =
-    `Pvz.: 40€ darbas → ${ex1}€ komisinis · 120€ darbas → ${ex2}€ komisinis`;
-}
 async function loadSettings(){
   const s = await apiGet('/admin/settings');
   document.getElementById('commission-master').checked = !!s.commission_master_enabled;
-  document.getElementById('commission-pct').value = s.commission_percent;
+  document.getElementById('contact-fee').value = s.contact_fee;
   document.getElementById('trial-months').value = s.trial_months;
   document.getElementById('platform-name').value = s.platform_name;
   document.getElementById('bank-receiver').value = s.bank_receiver || '';
   document.getElementById('bank-iban').value = s.bank_iban || '';
   const modeRadio = document.querySelector(`input[name="collection-mode"][value="${s.collection_mode}"]`);
   if(modeRadio && !modeRadio.disabled) modeRadio.checked = true;
-  updateCommissionExample();
 }
 async function toggleCommissionMaster(){
   const on = document.getElementById('commission-master').checked;
@@ -889,8 +880,8 @@ async function saveSettings(){
   };
   // Skaitinius laukus siunčiame TIK jei jie realiai teisingi — apsauga, kad tuščias/blogas
   // laukelis netyčia neišsaugotų 0 vietoj esamos reikšmės.
-  const pct = parseFloat(document.getElementById('commission-pct').value);
-  if(!isNaN(pct)) payload.commissionPercent = pct;
+  const fee = parseFloat(document.getElementById('contact-fee').value);
+  if(!isNaN(fee)) payload.contactFee = fee;
   const trial = parseInt(document.getElementById('trial-months').value, 10);
   if(!isNaN(trial)) payload.trialMonths = trial;
 
