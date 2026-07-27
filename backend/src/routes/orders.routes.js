@@ -46,14 +46,21 @@ router.post('/', authRequired, requireRole('client'), (req, res) => {
 router.get('/', authRequired, requireRole('service'), (req, res) => {
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
   const orders = db.prepare(`
-    SELECT DISTINCT o.*, c.first_name, c.last_name, c.phone FROM orders o
+    SELECT DISTINCT o.*, c.first_name, c.last_name, c.phone, c.email FROM orders o
     JOIN clients c ON c.id = o.client_id
     LEFT JOIN service_categories sc ON sc.category_id = o.category_id AND sc.service_id = ?
     WHERE o.service_id = ?
        OR (o.status IN ('new', 'pending') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
     ORDER BY o.created_at DESC
   `).all(req.user.id, req.user.id, service.city);
-  res.json(orders);
+
+  // Telefonas/el.paštas — KONTAKTAI, atskleidžiami tik priėmus klientą (client_accepted_at,
+  // žr. POST /:id/accept-client). Vardas kontaktu nelaikomas — lieka matomas visada, visiems.
+  const withHiddenContacts = orders.map((o) => {
+    if (o.service_id === req.user.id && o.client_accepted_at) return o;
+    return { ...o, phone: null, email: null };
+  });
+  res.json(withHiddenContacts);
 });
 
 router.get('/:id', authRequired, (req, res) => {

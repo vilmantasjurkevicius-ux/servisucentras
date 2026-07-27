@@ -767,7 +767,14 @@ Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio prad
 - **KOL KAS NEPALIESTA (sąmoningai):** kontaktų (telefono/el.pašto) slėpimas iki priėmimo, laisvo teksto regex filtravimas, admin UI (Servisai/Užklausos/Pajamos) rodymas vietoj %.
 - **Patikrinta gyvai** (testinė užklausa, du servisai pasiūlo kainą, klientas renkasi vieną): (1) nepasirinktas servisas B bandė `accept-client` → `403 "Ši užklausa nepriskirta jūsų servisui"`; (2) pasirinktas servisas A paspaudė → `200`, `client_accepted_at` užpildytas, `contact_fee_amount:0` (abu testiniai servisai naujai užregistruoti, tad trial periode — 0€ yra TEISINGAS rezultatas); (3) servisas A bandė priimti antrą kartą → `409 "Šis klientas jau priimtas"`. Automatiniai testai (7/7) nepakitę.
 
-**Kito žingsnio laukiama** (3/6+) — dar neįgyvendinta: kliento telefono/el.pašto slėpimas iki priėmimo (regex ir struktūriniuose, ir laisvo teksto laukuose), admin UI atnaujinimas (Servisai/Užklausos/Pajamos rodys fiksuotą sumą vietoj %), tiesioginio rezervavimo kalendorius registruotiems klientams.
+### Žingsnis 3/6 — ATLIKTA: telefono/el.pašto (struktūrinių laukų) slėpimas iki priėmimo
+- **Kliento VARDAS lieka matomas VISADA** visiems servisams (nelaikomas "kontaktu") — pakeista tik telefonas ir el. paštas.
+- `backend/src/routes/orders.routes.js`, `GET /` (serviso sąrašas): SQL užklausa dabar traukia ir `c.email` (anksčiau netraukė iš viso). Po užklausos rezultatai perfiltruojami: jei NE (`o.service_id === req.user.id AND o.client_accepted_at`), `phone`/`email` pakeičiami į `null` prieš grąžinant. Vardas (`first_name`/`last_name`) niekada nefiltruojamas.
+- `GET /:id/messages` (chat'as) jau anksčiau naudojo tik vardą (`sender_name`) — kontaktų ten ir nebuvo, nieko keisti nereikėjo.
+- **KOL KAS NEPALIESTA (sąmoningai):** laisvo teksto (chat žinučių) regex filtravimas, jei klientas pats parašo telefoną/el.paštą žinutėje — tai kito žingsnio darbas. Taip pat nekeista admin UI (Servisai/Užklausos/Pajamos).
+- **Patikrinta gyvai** (nauja testinė užklausa #27, du servisai A/B pasiūlo kainą, klientas renkasi A): (1) PRIEŠ priėmimą — API grąžina `"first_name":"Petras","last_name":"Kontaktinis","phone":null,"email":null` servisui A (net jau būnant pasirinktam, bet dar nepriėmus); (2) servisas A paspaudžia "Priimti klientą" → `phone:"+37060012345"`, `email:"petras-kontaktas-...@test.lt"` tampa matomi; (3) servisas B (nepasirinktas) — užklausos apskritai nebemato (esama architektūra), tad kontaktų nutekėjimo nėra. Vizualiai patikrinta ir `automeistrai-dashboard.html`: ta pačia akimirka ekrane matėsi DVI užklausos — #0028 (dar nepriimta: "Petras Kontaktinis" + "📞 —") ir #0027 (priimta: "Petras Kontaktinis" + "📞 +37060012345"). Automatiniai testai (7/7) nepakitę.
+
+**Kito žingsnio laukiama** (4/6+) — dar neįgyvendinta: laisvo teksto regex filtravimas (telefonai/el.paštai chat žinutėse), admin UI atnaujinimas (Servisai/Užklausos/Pajamos rodys fiksuotą sumą vietoj %), tiesioginio rezervavimo kalendorius registruotiems klientams.
 
 ---
 
