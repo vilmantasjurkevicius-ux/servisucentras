@@ -759,7 +759,15 @@ Prie "Lietuva · 340+ servisų tinkle" teksto hero sekcijoje (pati puslapio prad
 - `backend/src/utils/commission.js`: pridėta `calculateContactFee({service,settings,now})` — tas pats trial/God Mode apribojimas kaip `calculateCommission`, bet grąžina fiksuotą `settings.contact_fee` — **dar NIEKUR nekviečiama**, tik apibrėžta (kito žingsnio darbas).
 - **Patikrinta gyvai:** pakeista reikšmė į 3€ Admin skydelyje, išsaugota, puslapis perkrautas, reikšmė išliko (patvirtinta ir per API tiesiogiai). Automatiniai testai (7/7) nepakitę.
 
-**Kito žingsnio laukiama** (2/6+) — dar neįgyvendinta: patį "Priimti klientą" veiksmą, kontaktų/laisvo teksto redagavimą (regex telefonams/el.paštams), tiesioginio rezervavimo kalendorių ir jo integraciją į pagrindinį puslapį.
+### Žingsnis 2/6 — ATLIKTA: mokesčio momentas perkeltas į "Priimti klientą"
+- `orders` du nauji stulpeliai: `client_accepted_at TEXT` (gating laikas — kada servisas paspaudė "Priimti klientą") ir `contact_fee_amount REAL` (faktiškai nuskaičiuota suma tą akimirką, gali būti 0 trial/God-Mode-off atveju).
+- Naujas endpoint'as `POST /api/orders/:id/accept-client` (`backend/src/routes/orders.routes.js`): tik TAS servisas, kurį klientas jau pasirinko (`order.service_id === req.user.id`), gali jį kviesti — kitiems grąžina `403`. Jei jau priimta anksčiau — `409`. Priešingu atveju paskaičiuoja `calculateContactFee()` ir įrašo `client_accepted_at` + `contact_fee_amount`.
+- Išskirtinumas (tik pasirinktas servisas gali "priimti", kiti nieko nemoka) veikia SAVAIME iš esamos architektūros — `order.service_id` nustatomas tik vieną kartą per esamą `POST /orders/:id/accept`, todėl naujam veiksmui atskiro rakinimo/lenktynių apsaugos kodo nereikėjo.
+- `automeistrai-dashboard.html`: kol `client_accepted_at` nėra, prie "in_progress" užklausos rodomas naujas mygtukas "✓ Priimti klientą" (`acceptClient()`); priėmus — vietoj jo ženkliukas "✓ Priimta · X€". Kliento vardas kol kas rodomas VISADA (telefono/el.pašto slėpimas — kito žingsnio darbas).
+- **KOL KAS NEPALIESTA (sąmoningai):** kontaktų (telefono/el.pašto) slėpimas iki priėmimo, laisvo teksto regex filtravimas, admin UI (Servisai/Užklausos/Pajamos) rodymas vietoj %.
+- **Patikrinta gyvai** (testinė užklausa, du servisai pasiūlo kainą, klientas renkasi vieną): (1) nepasirinktas servisas B bandė `accept-client` → `403 "Ši užklausa nepriskirta jūsų servisui"`; (2) pasirinktas servisas A paspaudė → `200`, `client_accepted_at` užpildytas, `contact_fee_amount:0` (abu testiniai servisai naujai užregistruoti, tad trial periode — 0€ yra TEISINGAS rezultatas); (3) servisas A bandė priimti antrą kartą → `409 "Šis klientas jau priimtas"`. Automatiniai testai (7/7) nepakitę.
+
+**Kito žingsnio laukiama** (3/6+) — dar neįgyvendinta: kliento telefono/el.pašto slėpimas iki priėmimo (regex ir struktūriniuose, ir laisvo teksto laukuose), admin UI atnaujinimas (Servisai/Užklausos/Pajamos rodys fiksuotą sumą vietoj %), tiesioginio rezervavimo kalendorius registruotiems klientams.
 
 ---
 

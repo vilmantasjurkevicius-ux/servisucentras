@@ -32,7 +32,8 @@ function migrate() {
   if (!orderCols.includes('scheduled_time')) db.exec('ALTER TABLE orders ADD COLUMN scheduled_time TEXT');
   if (!orderCols.includes('car_info')) db.exec('ALTER TABLE orders ADD COLUMN car_info TEXT');
   if (!orderCols.includes('order_type')) db.exec("ALTER TABLE orders ADD COLUMN order_type TEXT NOT NULL DEFAULT 'broadcast'");
-  if (!orderCols.includes('reservation_fee_amount')) db.exec('ALTER TABLE orders ADD COLUMN reservation_fee_amount REAL');
+  if (!orderCols.includes('client_accepted_at')) db.exec('ALTER TABLE orders ADD COLUMN client_accepted_at TEXT');
+  if (!orderCols.includes('contact_fee_amount')) db.exec('ALTER TABLE orders ADD COLUMN contact_fee_amount REAL');
 
   const msgCols = db.prepare("PRAGMA table_info(order_messages)").all().map((c) => c.name);
   if (!msgCols.includes('available_time')) db.exec('ALTER TABLE order_messages ADD COLUMN available_time TEXT');

@@ -76,7 +76,8 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL DEFAULT 'new', -- new | pending | in_progress | done | cancelled
   scheduled_time TEXT, -- suplanuoto vizito data/laikas (ISO), nustato servisas po priėmimo
   order_type TEXT NOT NULL DEFAULT 'broadcast', -- broadcast (transliuojama visiems) | direct (klientas pasirinko konkretų servisą+laiką)
-  reservation_fee_amount REAL, -- fiksuotas mokestis, nuskaičiuotas patvirtinus 'direct' rezervaciją (žr. calculateReservationFee)
+  client_accepted_at TEXT, -- laiko žyma, kada servisas paspaudė "Priimti klientą" — GATING laukas kontaktų atskleidimui (ne pati suma, kad trial/God-Mode-off 0€ atvejis nebūtų supainiotas su "dar nepriimta")
+  contact_fee_amount REAL, -- faktiškai nuskaičiuota suma "Priimti klientą" metu (gali būti 0, jei trial/God Mode išjungtas)
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   completed_at TEXT
 );

@@ -1,7 +1,7 @@
 const express = require('express');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
-const { calculateCommission } = require('../utils/commission');
+const { calculateCommission, calculateContactFee } = require('../utils/commission');
 const { sendNewOrderEmail, sendQuoteEmail } = require('../email');
 
 const router = express.Router();
@@ -104,6 +104,29 @@ router.post('/:id/accept', authRequired, requireRole('client'), (req, res) => {
   if (!service) return res.status(404).json({ error: 'Servisas nerastas' });
 
   db.prepare("UPDATE orders SET service_id = ?, status = 'in_progress' WHERE id = ?").run(serviceId, order.id);
+  res.json(getOrder(order.id));
+});
+
+// ── SERVISAS "PRIIMA KLIENTĄ" — čia (NE kainos pasiūlyme, NE darbo užbaigime)
+// nuskaitomas fiksuotas mokestis (žr. calculateContactFee). Tik TAS servisas, kurį
+// klientas jau pasirinko (order.service_id), gali tai padaryti — tai automatiškai
+// užtikrina išskirtinumą: kitiems servisams, kurie siūlė kainą, bet nebuvo pasirinkti,
+// šis veiksmas apskritai nepasiekiamas, tad jie niekada negali "nupirkti" tos pačios
+// užklausos. Kontaktų atskleidimas — kito žingsnio darbas, čia tik pati mokesčio logika.
+router.post('/:id/accept-client', authRequired, requireRole('service'), (req, res) => {
+  const order = getOrder(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
+  if (order.service_id !== req.user.id) return res.status(403).json({ error: 'Ši užklausa nepriskirta jūsų servisui' });
+  if (order.client_accepted_at) return res.status(409).json({ error: 'Šis klientas jau priimtas' });
+
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
+  const settings = db.prepare('SELECT * FROM admin_settings WHERE id = 1').get();
+  const fee = calculateContactFee({ service, settings });
+
+  db.prepare(`
+    UPDATE orders SET client_accepted_at = datetime('now'), contact_fee_amount = ? WHERE id = ?
+  `).run(fee, order.id);
+
   res.json(getOrder(order.id));
 });
 

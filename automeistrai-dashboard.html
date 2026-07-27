@@ -739,7 +739,15 @@ function actionsForOrder(o){
       <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>`;
   }
   if(o.status === 'in_progress'){
+    // "Priimti klientą" — NAUJAS, ATSKIRAS veiksmas nuo kainos pasiūlymo (žr. Žingsnis 2/6
+    // santrauka.md). Būtent ČIA (ne kainos pasiūlyme, ne užbaigime) nuskaitomas fiksuotas
+    // mokestis. Kol nepriimta, likę veiksmai (skambinti/planuoti/užbaigti) toliau prieinami —
+    // kontaktų slėpimas dar neįgyvendintas (kito žingsnio darbas).
+    const acceptBlock = !o.client_accepted_at
+      ? `<button class="action-btn accept" onclick="acceptClient(${o.id})">✓ Priimti klientą</button>`
+      : `<span class="status-badge sb-done">✓ Priimta${o.contact_fee_amount!=null?' · '+fmtEUR(o.contact_fee_amount):''}</span>`;
     return `
+      ${acceptBlock}
       <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>
       <button class="action-btn call" onclick="startScheduling(${o.id})">📅 ${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'Priskirti laiką'}</button>
       <button class="action-btn done" onclick="startQuoting(${o.id},'complete')">✓ Pažymėti atlikta</button>`;
@@ -935,6 +943,16 @@ async function submitSchedule(id){
   try{
     await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime: input.value });
     quotingOrderId = null; quotingMode = null;
+    await loadOrders();
+  } catch(err){
+    alert(err.message);
+  }
+}
+
+async function acceptClient(id){
+  if(!confirm('Priimti šį klientą? Bus nuskaičiuotas fiksuotas mokestis už užklausą.')) return;
+  try{
+    await apiPost(`/orders/${id}/accept-client`, {});
     await loadOrders();
   } catch(err){
     alert(err.message);
