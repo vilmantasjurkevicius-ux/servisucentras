@@ -212,12 +212,12 @@ let clientToken = localStorage.getItem('sc_client_token');
 // Apsauga: neprisijungęs arba svečio tokenas — iškart nukreipiama į prisijungimą,
 // dar prieš bandant kviesti API (žr. "Serviso knyga — Žingsnis 1/7" santrauka.md).
 if(!clientToken){
-  window.location.href = 'automeistrai-login.html?type=client&tab=login-c';
+  window.location.href = 'automeistrai-login.html?type=client&action=login';
 }
 
 function redirectToLogin(){
   localStorage.removeItem('sc_client_token');
-  window.location.href = 'automeistrai-login.html?type=client&tab=login-c';
+  window.location.href = 'automeistrai-login.html?type=client&action=login';
 }
 
 async function init(){

@@ -495,8 +495,8 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     <a class="nav-link" href="servisucentras-admin.html" style="color:var(--y);">⚙️ Admin</a>
   </div>
   <div class="nav-right" id="nav-right">
-    <button class="nav-btn nav-btn-out" onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</button>
-    <button class="nav-btn nav-btn-pri" onclick="location.href='automeistrai-login.html?type=client&tab=reg-c'">Registruotis</button>
+    <button class="nav-btn nav-btn-out" onclick="location.href='automeistrai-login.html?action=login'">Prisijungti</button>
+    <button class="nav-btn nav-btn-pri" onclick="location.href='automeistrai-login.html?action=register'">Registruotis</button>
   </div>
   <button class="nav-hamburger" id="nav-hamburger-btn" onclick="toggleMobileMenu()" aria-label="Meniu">☰</button>
 </nav>
@@ -647,7 +647,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
         <h2>Turi servisą ar garažiuką?</h2>
         <p>Pridėk specializacijas, darbo laiką ir gauk užklausas iš klientų visoje Lietuvoje — be tarpininkų, be skambučių centro.</p>
       </div>
-      <button class="cta-box-btn" onclick="location.href='automeistrai-login.html?type=service'">Registruoti nemokamai →</button>
+      <button class="cta-box-btn" onclick="location.href='automeistrai-login.html?type=service&action=register'">Registruoti nemokamai →</button>
     </div>
   </div>
 </section>
@@ -728,7 +728,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
       </div>
     </div>
     <button class="gm-btn" id="gm-submit-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
-    <div class="gm-note" id="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
+    <div class="gm-note" id="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&action=login'">Prisijungti</a></div>
   </div>
 </div>
 
@@ -1370,7 +1370,7 @@ async function resolveCarPickerSelection(prefix){
 async function openBooking(serviceId){
   if(!clientToken || !isRegisteredClient){
     alert('Ši funkcija skirta tik registruotiems klientams. Užsiregistruokite (nemokama) — tada galėsite rezervuoti laiką tiesiogiai iš serviso kalendoriaus.');
-    location.href = 'automeistrai-login.html?type=client&tab=reg-c';
+    location.href = 'automeistrai-login.html?type=client&action=register';
     return;
   }
   const svc = cityServices.find(s=>s.id===serviceId);

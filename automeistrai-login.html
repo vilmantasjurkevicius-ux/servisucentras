@@ -211,29 +211,9 @@ select.field{cursor:pointer;}
     <h2>Prisijunk<br>prie <em>ServisuCentras</em></h2>
     <p class="left-sub">Pasirink kas esi — servisas ar klientas. Klientams registracija neprivaloma, servisams — būtina.</p>
 
-    <div class="type-switch">
-      <div class="type-card active" data-type="service" onclick="switchType('service')">
-        <div class="type-icon">🔧</div>
-        <div class="type-text">
-          <div class="type-name">Servisas / Garažiukas</div>
-          <div class="type-desc">Priimu užklausas, valdau kalendorių</div>
-        </div>
-        <div class="type-check">✓</div>
-      </div>
-      <div class="type-card" data-type="client" onclick="switchType('client')">
-        <div class="type-icon">🚗</div>
-        <div class="type-text">
-          <div class="type-name">Klientas</div>
-          <div class="type-desc">Ieškau serviso, rezervuoju laiką</div>
-        </div>
-        <div class="type-check"></div>
-      </div>
-    </div>
-
-    <div class="left-note" id="left-note">
-      ✓ Servisų registracija nemokama.<br>
-      Pirmieji 6 mėnesiai be jokių mokesčių.<br>
-      Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.
+    <div class="left-note" id="left-note" style="margin-top:auto;">
+      ✓ Servisams — nemokama registracija, pirmieji 6 mėnesiai be jokių mokesčių.<br>
+      ✓ Klientams — paskyra neprivaloma, galima rezervuoti kaip svečias.
     </div>
   </div>
 
@@ -242,8 +222,35 @@ select.field{cursor:pointer;}
     <div class="form-box">
       <div id="form-err" style="display:none;background:rgba(192,57,43,0.12);border:1px solid rgba(192,57,43,0.3);color:#e07070;padding:10px 14px;border-radius:4px;font-size:12.5px;margin-bottom:14px;"></div>
 
+      <!-- TIPO PASIRINKIMAS (2 žingsnis — po to, kai veiksmas (Prisijungti/Registruotis)
+           jau žinomas iš ankstesnio puslapio) -->
+      <div id="panel-picker" class="panel show">
+        <div class="form-title">Ar esi servisas ar klientas?</div>
+        <div class="form-sub">Pasirink, kad matytum tau skirtą formą.</div>
+        <div class="type-switch" style="margin-bottom:0;">
+          <div class="type-card" data-type="service" onclick="switchType('service')">
+            <div class="type-icon">🔧</div>
+            <div class="type-text">
+              <div class="type-name">Servisas / Garažiukas</div>
+              <div class="type-desc">Priimu užklausas, valdau kalendorių</div>
+            </div>
+            <div class="type-check"></div>
+          </div>
+          <div class="type-card" data-type="client" onclick="switchType('client')">
+            <div class="type-icon">🚗</div>
+            <div class="type-text">
+              <div class="type-name">Klientas</div>
+              <div class="type-desc">Ieškau serviso, rezervuoju laiką</div>
+            </div>
+            <div class="type-check"></div>
+          </div>
+        </div>
+        <div class="form-footer" style="margin-top:18px;">arba <a onclick="goGuestDirect()">tęsk kaip svečias, be registracijos →</a></div>
+      </div>
+
       <!-- SERVICE FORMS -->
-      <div id="panel-service" class="panel show">
+      <div id="panel-service" class="panel">
+        <button class="nav-back" style="margin-bottom:14px;" onclick="backToPicker()">← Kitas tipas</button>
         <div class="form-tabs">
           <button class="ftab active" onclick="switchTab('login-s', this)">Prisijungti</button>
           <button class="ftab" onclick="switchTab('reg-s', this)">Registruotis</button>
@@ -378,6 +385,7 @@ select.field{cursor:pointer;}
 
       <!-- CLIENT FORMS -->
       <div id="panel-client" class="panel">
+        <button class="nav-back" style="margin-bottom:14px;" onclick="backToPicker()">← Kitas tipas</button>
         <div class="form-tabs">
           <button class="ftab active" onclick="switchTab('guest-c', this)">Svečias</button>
           <button class="ftab" onclick="switchTab('login-c', this)">Prisijungti</button>
@@ -493,8 +501,12 @@ function clearError(){
   document.getElementById('form-err').style.display = 'none';
 }
 
-// TYPE SWITCH
-let currentType = 'service';
+// TIPO PASIRINKIMAS — dabar 2-as žingsnis (po veiksmo, kuris jau žinomas iš
+// ankstesnio puslapio per ?action=). switchType() pereina iš picker'io tiesiai
+// į atitinkamos formos skydelį, iškart pritaikydamas jau žinomą veiksmą.
+let currentType = null;
+const NEUTRAL_NOTE = '✓ Servisams — nemokama registracija, pirmieji 6 mėnesiai be jokių mokesčių.<br>✓ Klientams — paskyra neprivaloma, galima rezervuoti kaip svečias.';
+
 function switchType(type){
   currentType = type;
   document.querySelectorAll('.type-card').forEach(c=>{
@@ -502,11 +514,38 @@ function switchType(type){
     c.classList.toggle('active', isActive);
     c.querySelector('.type-check').textContent = isActive ? '✓' : '';
   });
+  document.getElementById('panel-picker').classList.remove('show');
   document.getElementById('panel-service').classList.toggle('show', type==='service');
   document.getElementById('panel-client').classList.toggle('show', type==='client');
   document.getElementById('left-note').innerHTML = type === 'service'
     ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.'
     : '✓ Klientams registracija neprivaloma.<br>Galite rezervuoti kaip svečias<br>be jokios paskyros.';
+
+  // Iškart pritaikome jau žinomą veiksmą (login/register) atitinkamai formai.
+  const tabId = type === 'service'
+    ? (pendingAction === 'register' ? 'reg-s' : 'login-s')
+    : (pendingAction === 'register' ? 'reg-c' : 'login-c');
+  switchTab(tabId);
+}
+
+// Grįžimas iš konkrečios formos atgal į tipo pasirinkimo žingsnį (naudinga, jei
+// vartotojas pasirinko ne tą tipą arba atėjo su neteisingu URL parametru).
+function backToPicker(){
+  document.getElementById('panel-service').classList.remove('show');
+  document.getElementById('panel-client').classList.remove('show');
+  document.getElementById('panel-picker').classList.add('show');
+  document.getElementById('left-note').innerHTML = NEUTRAL_NOTE;
+  document.querySelectorAll('.type-card').forEach(c=>{
+    c.classList.remove('active');
+    c.querySelector('.type-check').textContent = '';
+  });
+}
+
+// Svečio kelias — pasiekiamas tiesiai iš tipo pasirinkimo žingsnio, be login/
+// registruotis sprendimo (žr. "Serviso knyga" ir prisijungimo tvarkos užduotį).
+function goGuestDirect(){
+  switchType('client');
+  switchTab('guest-c');
 }
 
 // TAB SWITCH — btn gali būti null (kviečiant programiškai, pvz. iš URL parametro)
@@ -777,13 +816,32 @@ async function showSuccess(type, data){
   }
 }
 
-// Palaiko nuorodas iš kitų puslapių, pvz. automeistrai-login.html?type=client&tab=login
+// Palaiko nuorodas iš kitų puslapių. Nauja schema: ?action=login|register (veiksmas,
+// pasirinktas AR pasiekiamas dar ankstesniame puslapyje) + neprivalomas ?type=client|
+// service (jei jau žinomas — praleidžiamas tipo pasirinkimo žingsnis, iškart rodoma
+// atitinkama forma). Senas ?tab= parametras (prieš šios tvarkos pakeitimą) taip pat
+// palaikomas suderinamumui — verčiamas į naują action/type reikšmę.
+let pendingAction = 'login';
+
 function initFromQuery(){
   const params = new URLSearchParams(location.search);
   const type = params.get('type');
-  const tab = params.get('tab');
+  const action = params.get('action');
+  const legacyTab = params.get('tab');
+
+  if(action === 'login' || action === 'register'){
+    pendingAction = action;
+  } else if(legacyTab){
+    if(legacyTab === 'guest-c'){
+      switchType('client');
+      switchTab('guest-c');
+      return;
+    }
+    pendingAction = legacyTab.startsWith('reg') ? 'register' : 'login';
+  }
+
   if(type === 'client' || type === 'service') switchType(type);
-  if(tab) switchTab(tab);
+  // jei tipas nenurodytas — liekame ant tipo pasirinkimo žingsnio (panel-picker)
 }
 
 loadCategories();

@@ -426,7 +426,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
     <div class="sidenav-bottom">
       <button class="sidenav-item danger" onclick="switchDashPage('settings', this)"><span class="icon">⚙️</span> Nustatymai</button>
-      <button class="sidenav-item danger" onclick="location.href='automeistrai-login.html'"><span class="icon">🚪</span> Atsijungti</button>
+      <button class="sidenav-item danger" onclick="location.href='automeistrai-login.html?type=service&action=login'"><span class="icon">🚪</span> Atsijungti</button>
     </div>
   </nav>
 
@@ -640,7 +640,7 @@ let quotingMode = null;
 let expandedOrderId = null;
 
 if(!serviceToken){
-  window.location.href = 'automeistrai-login.html?type=service';
+  window.location.href = 'automeistrai-login.html?type=service&action=login';
 }
 
 function fmtEUR(n){ return (Number(n)||0).toFixed(2)+'€'; }
@@ -667,7 +667,7 @@ async function apiRequest(method, path, body){
   });
   if(res.status === 401){
     localStorage.removeItem('sc_service_token');
-    window.location.href = 'automeistrai-login.html?type=service';
+    window.location.href = 'automeistrai-login.html?type=service&action=login';
     throw new Error('Sesija baigėsi');
   }
   const data = await res.json().catch(()=>({}));
@@ -1565,7 +1565,7 @@ async function init(){
     serviceProfile = await apiGet('/services/me');
   } catch(err){
     localStorage.removeItem('sc_service_token');
-    window.location.href = 'automeistrai-login.html?type=service';
+    window.location.href = 'automeistrai-login.html?type=service&action=login';
     return;
   }
   document.getElementById('nav-service-name').textContent = serviceProfile.name;
