@@ -48,6 +48,9 @@ function migrate() {
   if (!settingsCols.includes('bank_iban')) db.exec('ALTER TABLE admin_settings ADD COLUMN bank_iban TEXT');
   if (!settingsCols.includes('contact_fee')) db.exec('ALTER TABLE admin_settings ADD COLUMN contact_fee REAL NOT NULL DEFAULT 2.0');
   // service_invoices — visai nauja lentelė, CREATE TABLE IF NOT EXISTS aukščiau (schema.sql) jau ją sukuria.
+
+  const bookCols = db.prepare("PRAGMA table_info(service_book)").all().map((c) => c.name);
+  if (!bookCols.includes('next_service_date')) db.exec('ALTER TABLE service_book ADD COLUMN next_service_date TEXT');
 }
 migrate();
 

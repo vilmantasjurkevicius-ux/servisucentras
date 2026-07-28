@@ -887,6 +887,20 @@ Susieja jau esantį "Pažymėti atlikta" veiksmą su realiu, struktūrizuotu ser
 
 ---
 
+## Serviso knyga — Žingsnis 6/7: Architektūra ateities funkcijoms (2026-07-28)
+Šis žingsnis NEKŪRĖ naujų funkcijų — tik peržiūra + vienas nerizikingas DB stulpelis, kad ateities plėtra nereikalautų didelės migracijos.
+
+- **`service_book` lentelė peržiūrėta** — `car_id`+`order_id` struktūra jau leidžia lengvai pridėti tiek priminimus, tiek PDF eksportą ateityje be papildomų architektūrinių pakeitimų.
+- **Pridėtas `next_service_date TEXT` stulpelis** (nullable, `backend/src/schema.sql` + `backend/src/db.js` `migrate()` ALTER TABLE) — jokia logika jo NEPILDO, jokia UI jo NERODO. Tik rezervuota vieta ateities priminimų funkcijai. Patikrinta gyvai — po serverio perkrovimo `PRAGMA table_info(service_book)` rodo naują stulpelį, esami duomenys nepaliesti.
+- **PDF eksportas** — jokio DB pakeitimo nereikia; tai bus grynai read-only funkcija, surenkanti esamus `service_book` įrašus vienam automobiliui ir generuojanti dokumentą.
+
+### Ateities plėtra (dar NEĮGYVENDINTA — grįžti, kai bus realus poreikis)
+- **Priminimai apie kitą aptarnavimą**: `service_book.next_service_date` stulpelis jau paruoštas (šiuo metu visada NULL). Trūksta: (1) UI serviso pusėje, kad servisas galėtų nurodyti šią datą užbaigiant darbą (šalia esamo garantijos lauko); (2) UI kliento paskyroje, rodantį artėjantį/pravėlintą aptarnavimą; (3) galimai el. laiško priminimo logika (jau yra `email.js` infrastruktūra iš ankstesnių žingsnių).
+- **PDF serviso knygos eksportas**: naujas endpoint'as (pvz. `GET /api/cars/:id/service-book/pdf`), kuris paimtų `GET /cars/:id/service-book` duomenis ir sugeneruotų atsisiunčiamą PDF dokumentą (reikės PDF generavimo bibliotekos — dar nepasirinkta). Naudinga funkcija, kai klientas nori parduoti automobilį ir įrodyti serviso istoriją.
+- **Nuotraukų/dokumentų įkėlimas prie serviso knygos įrašo** (buvęs žingsnis 6, SĄMONINGAI atidėtas) — reikalauja naujos failų saugojimo infrastruktūros (S3/Railway Volume ar pan.), atidėta kol bus realus vartotojų poreikis.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

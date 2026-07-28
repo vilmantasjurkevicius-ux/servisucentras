@@ -148,6 +148,7 @@ CREATE TABLE IF NOT EXISTS service_book (
   mileage INTEGER,
   price REAL,
   warranty_until TEXT,
+  next_service_date TEXT, -- rezervuota ateities priminimų funkcijai (dar NEĮGYVENDINTA — žr. santrauka.md "Ateities plėtra"); niekur nepildoma šiuo metu
   service_date TEXT NOT NULL DEFAULT (datetime('now')),
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
