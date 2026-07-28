@@ -103,6 +103,25 @@ nav{
 .os-cancelled{background:rgba(139,26,26,0.15);color:#e07070;}
 .order-decline-note{margin-top:10px;background:rgba(139,26,26,0.1);border:1px solid rgba(139,26,26,0.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#e0a0a0;line-height:1.5;}
 
+/* ══ UŽSAKYMO POKALBIS (Serviso knyga, Žingsnis 4/7) — TAS PATS backend mechanizmas
+   (GET/POST /orders/:id/messages), kurį jau naudoja serviso dashboard, tik nauja
+   kliento pusės UI. ══ */
+.order-chat-toggle{margin-top:12px;background:transparent;border:1px solid var(--line2);color:var(--muted);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:var(--radius);cursor:pointer;}
+.order-chat-toggle:hover{border-color:rgba(245,196,0,0.4);color:var(--y);}
+.order-chat{margin-top:12px;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
+.order-chat-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:12px 0;}
+.order-chat-msg{max-width:80%;display:flex;flex-direction:column;}
+.order-chat-msg.mine{align-self:flex-end;align-items:flex-end;}
+.order-chat-msg.other{align-self:flex-start;align-items:flex-start;}
+.order-chat-msg .who{font-size:10.5px;color:var(--muted);margin-bottom:3px;}
+.order-chat-msg .bubble{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.4;}
+.order-chat-msg.mine .bubble{background:var(--ydim);border-color:rgba(245,196,0,0.25);}
+.order-chat-offer{margin-top:4px;font-size:12px;color:var(--y);}
+.order-chat-input-row{display:flex;gap:8px;}
+.order-chat-input-row input{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;outline:none;}
+.order-chat-input-row input:focus{border-color:rgba(245,196,0,0.4);}
+.order-chat-input-row button{background:var(--y);color:var(--bg);border:none;font-weight:700;font-size:12.5px;padding:8px 16px;border-radius:var(--radius);cursor:pointer;white-space:nowrap;}
+
 /* ══ MOBILE HAMBURGER ══ */
 .acc-hamburger{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;}
 .acc-sidebar-backdrop{display:none;}
@@ -418,6 +437,30 @@ function renderCars(){
 /* ══ UŽSAKYMŲ ISTORIJA (Serviso knyga, Žingsnis 3/7) ══ */
 let categoriesCache = [];
 let orderHistoryCache = [];
+let expandedOrderId = null; // kurio užsakymo pokalbis šiuo metu išskleistas (Žingsnis 4/7)
+
+function fmtEUR(n){ return (Number(n)||0).toFixed(2)+'€'; }
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function timeAgoShort(dateStr){
+  if(!dateStr) return '';
+  const then = new Date(dateStr.replace(' ','T')+'Z');
+  const mins = Math.floor((Date.now() - then.getTime())/60000);
+  if(mins < 1) return 'ką tik';
+  if(mins < 60) return `prieš ${mins} min`;
+  const hours = Math.floor(mins/60);
+  if(hours < 24) return `prieš ${hours} val`;
+  return `prieš ${Math.floor(hours/24)} d.`;
+}
+function formatOrderTime(v){
+  if(!v) return '';
+  const [datePart, timePart] = v.split('T');
+  if(!datePart) return v;
+  const [, m, d] = datePart.split('-');
+  const MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+  return `${d} ${MONTHS_SHORT[parseInt(m,10)-1]} ${timePart||''}`;
+}
 
 function categoryLabel(id){
   const cat = categoriesCache.find(c=>c.id===id);
@@ -479,8 +522,83 @@ function renderOrderHistory(){
         </div>
         <div class="order-card-desc">${o.description||''}</div>
         ${declineHtml}
+        <button class="order-chat-toggle" onclick="toggleOrderChat(${o.id})">${expandedOrderId===o.id ? '▲ Slėpti pokalbį' : '💬 Pokalbis'}</button>
+        ${expandedOrderId===o.id ? `<div class="order-chat" id="ochat-${o.id}"><div class="order-chat-empty">Kraunama...</div></div>` : ''}
       </div>`;
   }).join('');
+  if(expandedOrderId !== null) loadOrderChat(expandedOrderId, true);
+}
+
+/* ══ UŽSAKYMO POKALBIS (Serviso knyga, Žingsnis 4/7) — TAS PATS GET/POST
+   /orders/:id/messages mechanizmas, kurį jau naudoja serviso dashboard. Klientas mato
+   VISŲ tinkamų servisų žinutes (bendras pokalbis) + kiekvieno kainos pasiūlymą (jei
+   yra) — tai jau užtikrina backend'as, papildomo filtravimo čia nereikia. Kainos
+   pasiūlymo PRIĖMIMAS šiame vaizde sąmoningai NEĮGYVENDINTAS — tas mechanizmas jau
+   veikia pagrindinio puslapio aktyviame pokalbyje (POST /:id/accept), čia tik
+   istorijos peržiūra + tolesnis susirašinėjimas tekstu. ══ */
+function toggleOrderChat(id){
+  if(expandedOrderId === id){
+    expandedOrderId = null;
+    renderOrderHistory();
+    return;
+  }
+  expandedOrderId = id;
+  renderOrderHistory();
+  loadOrderChat(id, true);
+}
+
+function orderChatInputHtml(id){
+  return `
+    <div class="order-chat-input-row">
+      <input type="text" id="ochat-text-${id}" placeholder="Rašykite žinutę..." onkeydown="if(event.key==='Enter') sendOrderChatText(${id})">
+      <button onclick="sendOrderChatText(${id})">Siųsti →</button>
+    </div>`;
+}
+
+async function loadOrderChat(id, force){
+  const container = document.getElementById(`ochat-${id}`);
+  if(!container) return;
+  if(!force){
+    const activeInThread = document.activeElement && container.contains(document.activeElement);
+    if(activeInThread) return; // nepertraukiam, kol vartotojas rašo žinutę
+  }
+  try{
+    const messages = await apiGet(`/orders/${id}/messages`);
+    if(expandedOrderId !== id) return;
+    const bubbles = messages.length === 0
+      ? `<div class="order-chat-empty">Pokalbio dar nėra.</div>`
+      : messages.map(m => {
+          const mine = m.sender_type === 'client';
+          const who = mine ? 'Jūs' : (m.sender_name || 'Servisas');
+          let offerHtml = '';
+          if(!mine && m.price_quote != null){
+            const timeLabel = m.available_time ? formatOrderTime(m.available_time) : '';
+            offerHtml = `<div class="order-chat-offer">💰 Pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel?' · '+timeLabel:''}</div>`;
+          }
+          return `
+            <div class="order-chat-msg ${mine?'mine':'other'}">
+              <div class="who">${escapeHtml(who)} · ${timeAgoShort(m.created_at)}</div>
+              ${m.message ? `<div class="bubble">${escapeHtml(m.message)}</div>` : ''}
+              ${offerHtml}
+            </div>`;
+        }).join('');
+    container.innerHTML = bubbles + orderChatInputHtml(id);
+  } catch(err){
+    container.innerHTML = `<div class="order-chat-empty">Nepavyko įkelti pokalbio.</div>` + orderChatInputHtml(id);
+  }
+}
+
+async function sendOrderChatText(id){
+  const input = document.getElementById(`ochat-text-${id}`);
+  const txt = input.value.trim();
+  if(!txt) return;
+  try{
+    await apiPost(`/orders/${id}/messages`, { message: txt });
+    input.value = '';
+    await loadOrderChat(id, true);
+  } catch(err){
+    alert(err.message);
+  }
 }
 
 function showAccPage(id, el){

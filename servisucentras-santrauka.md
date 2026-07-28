@@ -862,6 +862,18 @@ Pirmas iš trijų 1-žingsnyje sukurtų skyrių gauna realų turinį — pilnas 
 
 ---
 
+## Serviso knyga — Žingsnis 4/7: Pokalbis kiekvienam užsakymui kliento paskyroje (2026-07-28)
+Chat mechanizmas (`GET`/`POST /api/orders/:id/messages`) jau veikė serviso pusėje — šis žingsnis pridėjo TIK kliento pusės UI, backend'o NEKEIČIANT (kaip prašyta).
+
+- **`mano-paskyra.html`, "Užsakymų istorija"**: prie kiekvieno užsakymo pridėtas "💬 Pokalbis" mygtukas (toggle, tas pats principas kaip serviso dashboard'o `toggleChatThread`/`ocard-chat-toggle`) — paspaudus, kortelėje išsiskleidžia pokalbio giją: visos žinutės (kliento IR bet kurio siūliusio serviso, su vardu), kainos pasiūlymai rodomi READ-ONLY ("💰 Pasiūlymas: X€ · laikas"), apačioje laukelis naujai žinutei rašyti (`POST /orders/:id/messages`, identiškai serviso dashboard'ui). Vienu metu išskleista tik VIENA giją (`expandedOrderId`), kaip ir serviso pusėje.
+- **Sąmoningai NEĮGYVENDINTA**: kainos pasiūlymo "Priimti" mygtukas šiame vaizde — tas mechanizmas jau veikia pagrindinio puslapio AKTYVIAME pokalbyje (`POST /:id/accept`, iškarto po užklausos sukūrimo); čia tik istorijos peržiūra + tolesnis susirašinėjimas tekstu, kaip aiškiai prašyta užduotyje ("klientas gali toliau RAŠYTI žinutes").
+- **Pastebėta, bet NEKEISTA (per daug šiam žingsniui)**: `POST /orders/:id/messages` backend'e neturi nuosavybės tikrinimo (bet kuris prisijungęs klientas/servisas galėtų teoriškai parašyti į BET KURIO užsakymo giją) — `GET` versija TOKĮ tikrinimą jau turi. Kadangi užduotis aiškiai prašė "naudok TĄ PATĮ backend mechanizmą... nekeisk", šis pre-egzistuojantis spragos taisymas paliktas ATSKIRAI užduočiai (pažymėta `spawn_task`).
+- **Patikrinta gyvai** (abi kryptys, dvi atskiros naršyklės sesijos): (1) klientas parašė žinutę per "Mano paskyra" → servisas IŠKARTO pamatė ją savo dashboard'e (teisingas siuntėjo vardas "Direktas Klientas", laikas); (2) servisas atsakė iš dashboard'o → klientas pamatė atsakymą per "Mano paskyra" (teisingas siuntėjo vardas "Kontaktu Testas Servisas B"). Jokių console klaidų. Automatiniai testai (7/7) nepakitę (backend'as nekeistas).
+
+**Kito žingsnio laukiama** (5/7+) — dar neįgyvendinta: "Profilis" skyriaus turinys, bei tolimesnė "Serviso knygos" funkcionalumo dalis.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
