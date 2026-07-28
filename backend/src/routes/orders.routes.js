@@ -3,7 +3,7 @@ const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { calculateCommission, calculateContactFee } = require('../utils/commission');
 const { redactContacts } = require('../utils/contactFilter');
-const { sendNewOrderEmail, sendQuoteEmail } = require('../email');
+const { sendNewOrderEmail, sendQuoteEmail, sendServiceDeclinedEmail, sendOrderReopenedEmail } = require('../email');
 
 const router = express.Router();
 
@@ -81,7 +81,7 @@ router.get('/', authRequired, requireRole('service'), (req, res) => {
     JOIN clients c ON c.id = o.client_id
     LEFT JOIN service_categories sc ON sc.category_id = o.category_id AND sc.service_id = ?
     WHERE o.service_id = ?
-       OR (o.service_id IS NULL AND o.status IN ('new', 'pending') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
+       OR (o.service_id IS NULL AND o.status IN ('new', 'pending', 'declined') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
     ORDER BY o.created_at DESC
   `).all(req.user.id, req.user.id, service.city);
 
@@ -108,7 +108,7 @@ router.post('/:id/quote', authRequired, requireRole('service'), (req, res) => {
   const { price, message, availableTime } = req.body;
   const order = getOrder(req.params.id);
   if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
-  if (order.status !== 'new' && order.status !== 'pending') {
+  if (order.status !== 'new' && order.status !== 'pending' && order.status !== 'declined') {
     return res.status(400).json({ error: 'Ši užklausa jau nebepriima pasiūlymų' });
   }
 
@@ -117,7 +117,7 @@ router.post('/:id/quote', authRequired, requireRole('service'), (req, res) => {
     VALUES (?, 'service', ?, ?, ?, ?)
   `).run(order.id, req.user.id, message || null, price || null, availableTime || null);
 
-  if (order.status === 'new') {
+  if (order.status === 'new' || order.status === 'declined') {
     db.prepare("UPDATE orders SET status = 'pending' WHERE id = ?").run(order.id);
   }
   res.status(201).json(getOrder(order.id));
@@ -170,6 +170,46 @@ router.post('/:id/accept-client', authRequired, requireRole('service'), (req, re
   `).run(fee, order.id);
 
   res.json(getOrder(order.id));
+});
+
+// ── SERVISAS ATSISAKO JAU PRIIMTO KLIENTO — mokestis NEGRĄŽINAMAS (kontaktai jau
+// perduoti, tai buvo "prekė", už kurią sumokėta). Prieš išvalant orders eilutę,
+// atsisakymo faktas (kas, kada, kodėl, kiek sumokėjo) PERMANENTLY įrašomas į
+// order_declines — kitaip šis servisas prarastų savo mokesčio įrašą, kai KITAS
+// servisas vėliau priims tą pačią (grąžintą) užklausą (žr. schema.sql komentarą).
+// status='declined' (NE 'new' tiesiogiai) — atskiras, savo verte identifikuojamas
+// statusas admin matomumui, bet funkciškai ELGIASI kaip 'new'/'pending' visur, kur
+// servisai mato/siūlo kainą atviroms užklausoms (žr. GET /, POST /:id/quote aukščiau).
+router.post('/:id/decline', authRequired, requireRole('service'), (req, res) => {
+  const { reason } = req.body;
+  if (!reason || !reason.trim()) return res.status(400).json({ error: 'Būtina nurodyti atsisakymo priežastį' });
+
+  const order = getOrder(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
+  if (order.service_id !== req.user.id) return res.status(403).json({ error: 'Ši užklausa nepriskirta jūsų servisui' });
+  if (order.status !== 'in_progress') return res.status(400).json({ error: 'Šią užklausą galima atsisakyti tik kol ji vykdoma' });
+  if (!order.client_accepted_at) return res.status(400).json({ error: 'Atsisakyti galima tik jau priimto kliento' });
+
+  db.prepare(`
+    INSERT INTO order_declines (order_id, service_id, fee_amount, reason)
+    VALUES (?, ?, ?, ?)
+  `).run(order.id, req.user.id, order.contact_fee_amount || 0, reason.trim());
+
+  db.prepare(`
+    UPDATE orders SET status = 'declined', service_id = NULL, client_accepted_at = NULL,
+      contact_fee_amount = NULL, scheduled_time = NULL, order_type = 'broadcast'
+    WHERE id = ?
+  `).run(order.id);
+
+  const updated = getOrder(order.id);
+  res.json(updated);
+
+  // Fire-and-forget — klientui pranešimas apie atsisakymą + priežastį, ir visiems
+  // tinkamiems to miesto/kategorijos servisams pranešimas, kad užklausa vėl laisva.
+  const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(order.client_id);
+  const decliningService = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
+  if (client && decliningService) sendServiceDeclinedEmail(client, decliningService, reason.trim());
+  findMatchingServices(updated.city, updated.category_id).forEach((svc) => sendOrderReopenedEmail(svc, updated));
 });
 
 // ── SERVISAS PRISKIRIA/KEIČIA VIZITO LAIKĄ (Kalendorius) ──

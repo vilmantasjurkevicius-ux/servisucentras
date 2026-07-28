@@ -21,17 +21,28 @@ function periodLabelLt(period) {
 // PRIĖMIMO (client_accepted_at), ne darbo užbaigimo, datą — mokestis juk atsiranda priėmimo
 // momentu, nepriklausomai nuo to, ar/kada darbas bus užbaigtas. work_total čia — priimtų
 // klientų SKAIČIUS (ne pinigų suma), nes fiksuoto mokesčio modelyje nebėra "darbų sumos".
+// PASTABA: sumuojami ir order_declines įrašai (servisai, kurie priėmė, bet VĖLIAU atsisakė) —
+// tas mokestis NEGRĄŽINAMAS, tad be šio sudėjimo jis niekada nepatektų į sąskaitą ir liktų
+// nesurinktas (žr. "Serviso atsisakymas PO priėmimo" santrauka.md).
 function refreshInvoices(period) {
   const rows = db.prepare(`
     SELECT s.id AS service_id,
-      COUNT(o.id) AS work_total,
-      COALESCE(SUM(o.contact_fee_amount), 0) AS amount_due
+      COALESCE(active.cnt, 0) + COALESCE(declined.cnt, 0) AS work_total,
+      COALESCE(active.fee, 0) + COALESCE(declined.fee, 0) AS amount_due
     FROM services s
-    JOIN orders o ON o.service_id = s.id AND o.client_accepted_at IS NOT NULL AND strftime('%Y-%m', o.client_accepted_at) = ?
-    WHERE s.is_bot = 0
-    GROUP BY s.id
-    HAVING amount_due > 0
-  `).all(period);
+    LEFT JOIN (
+      SELECT service_id, COUNT(id) AS cnt, SUM(contact_fee_amount) AS fee
+      FROM orders WHERE client_accepted_at IS NOT NULL AND strftime('%Y-%m', client_accepted_at) = ?
+      GROUP BY service_id
+    ) active ON active.service_id = s.id
+    LEFT JOIN (
+      SELECT service_id, COUNT(id) AS cnt, SUM(fee_amount) AS fee
+      FROM order_declines WHERE strftime('%Y-%m', declined_at) = ?
+      GROUP BY service_id
+    ) declined ON declined.service_id = s.id
+    WHERE s.is_bot = 0 AND (active.cnt IS NOT NULL OR declined.cnt IS NOT NULL)
+      AND (COALESCE(active.fee, 0) + COALESCE(declined.fee, 0)) > 0
+  `).all(period, period);
 
   const upsert = db.prepare(`
     INSERT INTO service_invoices (service_id, period, work_total, amount_due, status)

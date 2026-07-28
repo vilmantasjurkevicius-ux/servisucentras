@@ -75,4 +75,34 @@ async function sendQuoteEmail(client, price) {
   });
 }
 
-module.exports = { sendServiceRegistrationEmail, sendNewOrderEmail, sendQuoteEmail };
+async function sendServiceDeclinedEmail(client, service, reason) {
+  await sendEmail({
+    to: client.email,
+    subject: 'Servisas atsisakė jūsų užklausos',
+    html: layout('Servisas atsisakė darbo', `
+      <p>Sveiki, ${client.first_name || ''}!</p>
+      <p><b>${service.name}</b> atsisakė jūsų užklausos.</p>
+      <p><b>Nurodyta priežastis:</b> ${reason}</p>
+      <p>Jūsų užklausa automatiškai grąžinta kitiems tinkamiems servisams — netrukus galite sulaukti naujų pasiūlymų.</p>
+    `),
+  });
+}
+
+async function sendOrderReopenedEmail(service, order) {
+  await sendEmail({
+    to: service.email,
+    subject: `Vėl laisva užklausa — ${order.city}`,
+    html: layout('Užklausa vėl laisva', `
+      <p>Sveiki, ${service.name}!</p>
+      <p>Ankstesnis servisas atsisakė šios užklausos — ji vėl laukia atsakymo.</p>
+      <p><b>Miestas:</b> ${order.city}</p>
+      <p><b>Aprašymas:</b> ${order.description}</p>
+      <p>Prisijunkite prie savo valdymo skydelio ir atsakykite klientui, jei galite padėti.</p>
+    `),
+  });
+}
+
+module.exports = {
+  sendServiceRegistrationEmail, sendNewOrderEmail, sendQuoteEmail,
+  sendServiceDeclinedEmail, sendOrderReopenedEmail,
+};

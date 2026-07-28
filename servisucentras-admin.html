@@ -247,6 +247,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 
   <div class="sb-section">Veikla</div>
   <button class="sb-item" onclick="showPage('orders',this)"><span class="ic">📋</span> Užklausos <span class="badge" id="sb-orders-count">—</span></button>
+  <button class="sb-item" onclick="showPage('declines',this)"><span class="ic">🚫</span> Atšaukti užsakymai <span class="badge" id="sb-declines-count">—</span></button>
   <button class="sb-item" onclick="showPage('chat',this)"><span class="ic">💬</span> Chat žinutės</button>
   <button class="sb-item" onclick="showPage('reviews',this)"><span class="ic">⭐</span> Atsiliepimai</button>
 
@@ -373,6 +374,22 @@ tr:hover td{background:rgba(255,255,255,0.015);}
         <table>
           <tr><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Mokestis</th><th>Statusas</th></tr>
           <tbody id="orders-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė) ════ -->
+  <div class="page" id="p-declines">
+    <div class="page-head">
+      <div><div class="page-title">🚫 Atšaukti užsakymai</div><div class="page-sub">Servisai, kurie priėmė klientą (sumokėjo, gavo kontaktus), bet VĖLIAU atsisakė — mokestis NEGRĄŽINAMAS</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Visi atsisakymai</div></div>
+        <table>
+          <tr><th>Data</th><th>Užklausa</th><th>Klientas</th><th>Atsisakė servisas</th><th>Priežastis</th><th>Mokestis (negrąžintas)</th><th>Perimta kito serviso?</th></tr>
+          <tbody id="declines-table-body"></tbody>
         </table>
       </div>
     </div>
@@ -563,6 +580,7 @@ function orderStatusBadge(status){
     new: ['badge-new','Nauja'], pending: ['badge-pending','Siūloma'],
     in_progress: ['badge-active','Vykdoma'], done: ['badge-done','Atlikta'],
     cancelled: ['badge-banned','Atšaukta'],
+    declined: ['badge-pending','Atsisakyta (vėl laisva)'],
   };
   const [cls,label] = map[status] || ['badge-off', status];
   return `<span class="badge ${cls}">${label}</span>`;
@@ -969,6 +987,32 @@ async function copyMessage(i, btn){
   setTimeout(()=>{ btn.textContent = orig; }, 1800);
 }
 
+// ── ATŠAUKTI UŽSAKYMAI (servisas priėmė ir sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
+let declinesCache = [];
+async function loadDeclines(){
+  declinesCache = await apiGet('/admin/order-declines');
+  renderDeclines();
+  document.getElementById('sb-declines-count').textContent = declinesCache.length;
+}
+function renderDeclines(){
+  document.getElementById('declines-table-body').innerHTML = declinesCache.map(d=>{
+    const clientName = `${d.client_first_name||''} ${d.client_last_name||''}`.trim() || 'Klientas';
+    const reassignedHtml = d.reassigned
+      ? `<span class="badge badge-active">✓ Taip${d.current_service_name?' — '+d.current_service_name:''}</span>`
+      : `<span class="badge badge-pending">Ne, vis dar laisva</span>`;
+    return `
+    <tr>
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${(d.declined_at||'').slice(0,16).replace('T',' ')}</td>
+      <td><span style="font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);">#${String(d.order_id).padStart(4,'0')}</span><br>${categoryLabel(d.category_id)} · ${d.city||'—'}</td>
+      <td>${clientName}</td>
+      <td><b>${d.service_name}</b></td>
+      <td style="max-width:220px;font-size:12px;color:var(--muted);">${d.reason}</td>
+      <td style="color:var(--y);font-family:'IBM Plex Mono';">${fmtEUR(d.fee_amount)}</td>
+      <td>${reassignedHtml}</td>
+    </tr>`;
+  }).join('') || emptyRow(7);
+}
+
 // ── VISO KROVIMAS PO PRISIJUNGIMO ──
 async function loadEverything(){
   categoriesCache = await apiGet('/categories');
@@ -981,7 +1025,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;

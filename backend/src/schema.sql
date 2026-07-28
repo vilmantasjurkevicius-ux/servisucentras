@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS orders (
   price REAL,
   car_info TEXT, -- automobilio markė/modelis/metai, laisvas tekstas iš kliento formos
   commission_amount REAL,
-  status TEXT NOT NULL DEFAULT 'new', -- new | pending | in_progress | done | cancelled
+  status TEXT NOT NULL DEFAULT 'new', -- new | pending | in_progress | done | cancelled | declined (servisas atsisakė po priėmimo, žr. order_declines)
   scheduled_time TEXT, -- suplanuoto vizito data/laikas (ISO), nustato servisas po priėmimo
   order_type TEXT NOT NULL DEFAULT 'broadcast', -- broadcast (transliuojama visiems) | direct (klientas pasirinko konkretų servisą+laiką)
   client_accepted_at TEXT, -- laiko žyma, kada servisas paspaudė "Priimti klientą" — GATING laukas kontaktų atskleidimui (ne pati suma, kad trial/God-Mode-off 0€ atvejis nebūtų supainiotas su "dar nepriimta")
@@ -103,6 +103,19 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Serviso atsisakymo PO priėmimo istorija (mokestis NEGRĄŽINAMAS — žr. santrauka.md).
+-- Saugoma ATSKIRAI nuo orders, nes ta pati orders eilutė gali būti priimta/atsisakyta
+-- kelis kartus (kiekvieną kartą kito serviso) — be šios lentelės PIRMO serviso mokesčio
+-- įrašas dingtų, kai orders.contact_fee_amount perrašomas SEKANČIO serviso priėmimo metu.
+CREATE TABLE IF NOT EXISTS order_declines (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  service_id INTEGER NOT NULL REFERENCES services(id),
+  fee_amount REAL NOT NULL DEFAULT 0,
+  reason TEXT NOT NULL,
+  declined_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS service_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   service_id INTEGER NOT NULL REFERENCES services(id),
@@ -120,3 +133,5 @@ CREATE INDEX IF NOT EXISTS idx_invoices_service ON service_invoices(service_id);
 CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);
 CREATE INDEX IF NOT EXISTS idx_orders_service ON orders(service_id);
 CREATE INDEX IF NOT EXISTS idx_order_messages_order ON order_messages(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_declines_order ON order_declines(order_id);
+CREATE INDEX IF NOT EXISTS idx_order_declines_service ON order_declines(service_id);

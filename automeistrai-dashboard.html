@@ -724,6 +724,21 @@ function actionsForOrder(o){
           <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
         </div>`;
     }
+    if(quotingMode === 'decline'){
+      // Serviso atsisakymas PO priėmimo — mokestis NEGRĄŽINAMAS (žr. backend POST
+      // /:id/decline ir santrauka.md "Serviso atsisakymas PO priėmimo"). Priežastis PRIVALOMA.
+      return `
+        <div style="display:flex;flex-direction:column;gap:4px;min-width:220px;">
+          <div style="display:flex;gap:6px;align-items:flex-start;">
+            <textarea id="price-input-${o.id}" rows="2" placeholder="Priežastis (privaloma)..." style="flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:11px;resize:vertical;"></textarea>
+            <div style="display:flex;flex-direction:column;gap:4px;">
+              <button class="action-btn decline" onclick="submitDecline(${o.id})">✕ Patvirtinti</button>
+              <button class="action-btn call" onclick="cancelQuoting()">Atšaukti</button>
+            </div>
+          </div>
+          <div id="price-error-${o.id}" style="display:none;color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';"></div>
+        </div>`;
+    }
     const showTimeField = quotingMode === 'quote';
     return `
       <div style="display:flex;flex-direction:column;gap:4px;">
@@ -749,7 +764,8 @@ function actionsForOrder(o){
     // žr. Žingsnis 6/6 santrauka.md. Kontaktų slėpimas veikia identiškai abiem atvejais.
     const acceptBlock = !o.client_accepted_at
       ? `<button class="action-btn accept" onclick="acceptClient(${o.id})">✓ Priimti klientą</button>`
-      : `<span class="status-badge sb-done">✓ Priimta${o.contact_fee_amount!=null?' · '+fmtEUR(o.contact_fee_amount):''}</span>`;
+      : `<span class="status-badge sb-done">✓ Priimta${o.contact_fee_amount!=null?' · '+fmtEUR(o.contact_fee_amount):''}</span>
+         <button class="action-btn decline" onclick="startQuoting(${o.id},'decline')">✕ Atsisakyti</button>`;
     return `
       ${acceptBlock}
       <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>
@@ -923,6 +939,28 @@ async function submitPrice(id){
     } else {
       await apiPost(`/orders/${id}/complete`, { price });
     }
+    quotingOrderId = null; quotingMode = null;
+    await loadOrders();
+  } catch(err){
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+    else alert(err.message);
+  }
+}
+
+async function submitDecline(id){
+  const input = document.getElementById(`price-input-${id}`);
+  const errEl = document.getElementById(`price-error-${id}`);
+  const reason = input.value.trim();
+  if(!reason){
+    input.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Būtina nurodyti priežastį'; errEl.style.display = 'block'; }
+    input.focus();
+    return;
+  }
+  input.style.borderColor = '';
+  if(errEl) errEl.style.display = 'none';
+  try{
+    await apiPost(`/orders/${id}/decline`, { reason });
     quotingOrderId = null; quotingMode = null;
     await loadOrders();
   } catch(err){

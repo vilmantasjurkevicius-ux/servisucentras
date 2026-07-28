@@ -27,11 +27,21 @@ router.get('/dashboard', (req, res) => {
   const totalClients = db.prepare('SELECT COUNT(*) AS n FROM clients').get().n;
   const activeServices = db.prepare("SELECT COUNT(*) AS n FROM services WHERE status = 'active'").get().n;
   const ordersToday = db.prepare("SELECT COUNT(*) AS n FROM orders WHERE date(created_at) = date('now')").get().n;
+  // Šalia orders.contact_fee_amount pridedama ir order_declines.fee_amount — atsisakytų
+  // (bet nešalinamai apmokestintų) užklausų mokestis NEDINGSTA iš pajamų, tik iš orders
+  // eilutės (kuri persirašo kitam servisui priėmus tą pačią užklausą iš naujo).
   const monthIncome = db.prepare(`
-    SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders
-    WHERE client_accepted_at IS NOT NULL AND strftime('%Y-%m', client_accepted_at) = strftime('%Y-%m', 'now')
+    SELECT
+      (SELECT COALESCE(SUM(contact_fee_amount), 0) FROM orders WHERE client_accepted_at IS NOT NULL AND strftime('%Y-%m', client_accepted_at) = strftime('%Y-%m', 'now'))
+      + (SELECT COALESCE(SUM(fee_amount), 0) FROM order_declines WHERE strftime('%Y-%m', declined_at) = strftime('%Y-%m', 'now'))
+      AS total
   `).get().total;
-  const totalIncome = db.prepare("SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders WHERE client_accepted_at IS NOT NULL").get().total;
+  const totalIncome = db.prepare(`
+    SELECT
+      (SELECT COALESCE(SUM(contact_fee_amount), 0) FROM orders WHERE client_accepted_at IS NOT NULL)
+      + (SELECT COALESCE(SUM(fee_amount), 0) FROM order_declines)
+      AS total
+  `).get().total;
   const newOrders = db.prepare(`
     SELECT o.*, c.first_name, c.last_name FROM orders o
     JOIN clients c ON c.id = o.client_id
@@ -86,7 +96,9 @@ router.get('/services', (req, res) => {
   const withStats = services.map((s) => {
     const { password_hash, ...rest } = s;
     const orderCount = db.prepare('SELECT COUNT(*) AS n FROM orders WHERE service_id = ?').get(s.id).n;
-    const contactFeeTotal = db.prepare("SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders WHERE service_id = ? AND client_accepted_at IS NOT NULL").get(s.id).total;
+    const activeFee = db.prepare("SELECT COALESCE(SUM(contact_fee_amount), 0) AS total FROM orders WHERE service_id = ? AND client_accepted_at IS NOT NULL").get(s.id).total;
+    const declinedFee = db.prepare('SELECT COALESCE(SUM(fee_amount), 0) AS total FROM order_declines WHERE service_id = ?').get(s.id).total;
+    const contactFeeTotal = activeFee + declinedFee;
     return {
       ...rest,
       orderCount,
@@ -125,6 +137,32 @@ router.get('/orders', (req, res) => {
     ORDER BY o.created_at DESC
   `).all();
   res.json(orders);
+});
+
+// ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
+// "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
+// buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).
+router.get('/order-declines', (req, res) => {
+  const declines = db.prepare(`
+    SELECT od.*, s.name AS service_name, o.description, o.city, o.category_id,
+      o.status AS current_status, o.service_id AS current_service_id,
+      cs.name AS current_service_name,
+      c.first_name AS client_first_name, c.last_name AS client_last_name,
+      CASE
+        WHEN o.client_accepted_at IS NOT NULL AND o.client_accepted_at > od.declined_at THEN 1
+        WHEN EXISTS (
+          SELECT 1 FROM order_declines od2 WHERE od2.order_id = od.order_id AND od2.declined_at > od.declined_at
+        ) THEN 1
+        ELSE 0
+      END AS reassigned
+    FROM order_declines od
+    JOIN services s ON s.id = od.service_id
+    JOIN orders o ON o.id = od.order_id
+    JOIN clients c ON c.id = o.client_id
+    LEFT JOIN services cs ON cs.id = o.service_id
+    ORDER BY od.declined_at DESC
+  `).all();
+  res.json(declines);
 });
 
 // ── NUSTATYMAI (God Mode) ──
