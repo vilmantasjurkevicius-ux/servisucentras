@@ -320,11 +320,14 @@ router.post('/:id/messages', authRequired, (req, res) => {
 });
 
 // ── DARBO PATVIRTINIMAS (užbaigimas) — čia skaičiuojamas komisinis ──
+// Paaiškinimas (work_description) PRIVALOMAS — jis tampa serviso knygos įrašo pagrindu
+// (Serviso knyga, Žingsnis 5/7). Kiti nauji laukai (pakeistos dalys/rida/garantija) neprivalomi.
 router.post('/:id/complete', authRequired, requireRole('service'), (req, res) => {
-  const { price } = req.body;
+  const { price, explanation, partsReplaced, mileage, warrantyUntil } = req.body;
   const order = getOrder(req.params.id);
   if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
   if (order.service_id !== req.user.id) return res.status(403).json({ error: 'Ši užklausa nepriskirta jūsų servisui' });
+  if (!explanation || !explanation.trim()) return res.status(400).json({ error: 'Būtina aprašyti atliktus darbus' });
 
   const finalPrice = price != null ? price : order.price;
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
@@ -335,6 +338,21 @@ router.post('/:id/complete', authRequired, requireRole('service'), (req, res) =>
     UPDATE orders SET status = 'done', price = ?, commission_amount = ?, completed_at = datetime('now')
     WHERE id = ?
   `).run(finalPrice, commission, order.id);
+
+  // Serviso knygos įrašas TIK jei užklausa susieta su konkrečiu kliento automobiliu
+  // (car_id) — svečio/laisvo teksto užklausoms nėra prie ko įrašo susieti.
+  if (order.car_id) {
+    db.prepare(`
+      INSERT INTO service_book (car_id, order_id, service_id, category_id, work_description, parts_replaced, mileage, price, warranty_until)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      order.car_id, order.id, req.user.id, order.category_id,
+      explanation.trim(), (partsReplaced && partsReplaced.trim()) || null,
+      mileage != null && mileage !== '' ? Number(mileage) : null,
+      finalPrice != null ? finalPrice : null,
+      warrantyUntil || null
+    );
+  }
 
   res.json(getOrder(order.id));
 });

@@ -62,4 +62,20 @@ router.delete('/:id', authRequired, requireRole('client'), requireRegisteredClie
   res.json({ ok: true });
 });
 
+// Serviso knygos istorija (Žingsnis 5/7) — chronologiškai, naujausi viršuje.
+router.get('/:id/service-book', authRequired, requireRole('client'), requireRegisteredClient, (req, res) => {
+  const car = db.prepare('SELECT * FROM cars WHERE id = ?').get(req.params.id);
+  if (!car) return res.status(404).json({ error: 'Automobilis nerastas' });
+  if (car.client_id !== req.user.id) return res.status(403).json({ error: 'Šis automobilis jums nepriklauso' });
+
+  const entries = db.prepare(`
+    SELECT sb.*, s.name AS service_name
+    FROM service_book sb
+    JOIN services s ON s.id = sb.service_id
+    WHERE sb.car_id = ?
+    ORDER BY sb.service_date DESC
+  `).all(car.id);
+  res.json(entries);
+});
+
 module.exports = router;

@@ -739,6 +739,26 @@ function actionsForOrder(o){
           <div id="price-error-${o.id}" style="display:none;color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';"></div>
         </div>`;
     }
+    if(quotingMode === 'complete'){
+      // Serviso knyga (Žingsnis 5/7) — paaiškinimas PRIVALOMAS, tampa serviso knygos
+      // įrašo pagrindu tam automobiliui (žr. backend POST /:id/complete). Kiti nauji
+      // laukai neprivalomi.
+      return `
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:260px;">
+          <div style="display:flex;gap:6px;flex-wrap:wrap;">
+            <input type="number" id="price-input-${o.id}" placeholder="Kaina €" value="${o.price!=null?o.price:''}" style="width:80px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+            <input type="number" id="mileage-input-${o.id}" placeholder="Rida, km" style="width:90px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+            <input type="date" id="warranty-input-${o.id}" title="Garantijos pabaigos data (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+          </div>
+          <textarea id="explanation-input-${o.id}" rows="2" placeholder="Atliktų darbų aprašymas (privaloma) — įrašoma į kliento serviso knygą" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:11px;resize:vertical;"></textarea>
+          <input type="text" id="parts-input-${o.id}" placeholder="Pakeistos dalys (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:11px;">
+          <div style="display:flex;gap:6px;">
+            <button class="action-btn accept" onclick="submitComplete(${o.id})">✓ Pažymėti atlikta</button>
+            <button class="action-btn decline" onclick="cancelQuoting()">Atšaukti</button>
+          </div>
+          <div id="price-error-${o.id}" style="display:none;color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';"></div>
+        </div>`;
+    }
     const showTimeField = quotingMode === 'quote';
     return `
       <div style="display:flex;flex-direction:column;gap:4px;">
@@ -933,12 +953,48 @@ async function submitPrice(id){
   input.style.borderColor = '';
   if(errEl) errEl.style.display = 'none';
   try{
-    if(quotingMode === 'quote'){
-      const timeInput = document.getElementById(`time-input-${id}`);
-      await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput && timeInput.value ? timeInput.value : null });
-    } else {
-      await apiPost(`/orders/${id}/complete`, { price });
-    }
+    const timeInput = document.getElementById(`time-input-${id}`);
+    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput && timeInput.value ? timeInput.value : null });
+    quotingOrderId = null; quotingMode = null;
+    await loadOrders();
+  } catch(err){
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+    else alert(err.message);
+  }
+}
+
+async function submitComplete(id){
+  const priceInput = document.getElementById(`price-input-${id}`);
+  const explanationInput = document.getElementById(`explanation-input-${id}`);
+  const partsInput = document.getElementById(`parts-input-${id}`);
+  const mileageInput = document.getElementById(`mileage-input-${id}`);
+  const warrantyInput = document.getElementById(`warranty-input-${id}`);
+  const errEl = document.getElementById(`price-error-${id}`);
+  const price = parseFloat(priceInput.value);
+  const explanation = explanationInput.value.trim();
+  if(!price || price <= 0){
+    priceInput.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Įveskite kainą (didesnę už 0)'; errEl.style.display = 'block'; }
+    priceInput.focus();
+    return;
+  }
+  if(!explanation){
+    explanationInput.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Būtina aprašyti atliktus darbus'; errEl.style.display = 'block'; }
+    explanationInput.focus();
+    return;
+  }
+  priceInput.style.borderColor = '';
+  explanationInput.style.borderColor = '';
+  if(errEl) errEl.style.display = 'none';
+  try{
+    await apiPost(`/orders/${id}/complete`, {
+      price,
+      explanation,
+      partsReplaced: partsInput.value.trim() || null,
+      mileage: mileageInput.value ? parseInt(mileageInput.value, 10) : null,
+      warrantyUntil: warrantyInput.value || null
+    });
     quotingOrderId = null; quotingMode = null;
     await loadOrders();
   } catch(err){

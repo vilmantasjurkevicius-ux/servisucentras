@@ -125,7 +125,8 @@ test(
     assert.equal(accept.data.service_id, serviceId);
 
     // --- Servisas užbaigia darbą — naujam servisui galioja trial, komisinis turi būti 0 ---
-    const complete = await api('POST', `/api/orders/${orderId}/complete`, { token: serviceToken, body: { price: 100 } });
+    // (paaiškinimas PRIVALOMAS nuo Serviso knyga Žingsnis 5/7 — tampa serviso knygos įrašu)
+    const complete = await api('POST', `/api/orders/${orderId}/complete`, { token: serviceToken, body: { price: 100, explanation: 'Pakeistos 4 padangos.' } });
     assert.equal(complete.status, 200);
     assert.equal(complete.data.status, 'done');
     assert.equal(complete.data.commission_amount, 0, 'naujam servisui trial periodu komisinis turi būti 0');

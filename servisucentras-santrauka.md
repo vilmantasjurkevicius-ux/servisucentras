@@ -874,6 +874,19 @@ Chat mechanizmas (`GET`/`POST /api/orders/:id/messages`) jau veikė serviso pus�
 
 ---
 
+## Serviso knyga — Žingsnis 5/7: Struktūrizuoti serviso knygos įrašai (2026-07-28)
+Susieja jau esantį "Pažymėti atlikta" veiksmą su realiu, struktūrizuotu serviso knygos įrašu konkrečiam automobiliui.
+
+- **Nauja lentelė `service_book`** (`backend/src/schema.sql`): `car_id` (FK→cars, CASCADE), `order_id` (FK→orders), `service_id` (FK→services), `category_id` (nukopijuota iš užsakymo), `work_description` (PRIVALOMA), `parts_replaced`/`mileage`/`price`/`warranty_until` (visi neprivalomi), `service_date`/`created_at`.
+- **Paaiškinimo laukas NEEGZISTAVO anksčiau** — patikrinta grep'u prieš pradedant: `POST /orders/:id/complete` priimdavo tik `price`. Pagal užduoties nurodymą ("jei tas laukas jau egzistuoja, panaudok jį; jei ne, pridėk čia") — pridėtas naujas PRIVALOMAS `explanation` laukas (400 klaida, jei tuščias) + nauji neprivalomi `partsReplaced`/`mileage`/`warrantyUntil`.
+- **Automatinis įrašo sukūrimas** (`orders.routes.js`, `POST /:id/complete`): iškart po `status='done'` UPDATE, JEI `order.car_id` yra nustatytas — įterpiamas `service_book` įrašas su visais laukais. **Užklausos BE `car_id`** (svečio laisvo teksto atveju arba senesnės užklausos) — įrašo sąmoningai NESUKURIA (nėra prie ko jį susieti kliento automobilių knygoje); patikrinta gyvai, kad toks užbaigimas sėkmingai grąžina `200 done` be klaidų, tiesiog be serviso knygos įrašo.
+- **Naujas endpoint'as `GET /api/cars/:id/service-book`** (`cars.routes.js`) — nuosavybės patikra (automobilis turi priklausyti prisijungusiam klientui), grąžina visus įrašus `ORDER BY service_date DESC` (naujausi viršuje), su prijungtu `service_name`.
+- **Dashboard'o "Pažymėti atlikta" forma** (`automeistrai-dashboard.html`) — atskirtas nuo bendro kainos/laiko bloko į savo `quotingMode==='complete'` šaką: kaina (jau buvusi), rida, garantijos data (datos laukas), paaiškinimo textarea (privaloma, su paaiškinimu UI apie serviso knygą), pakeistų dalių laukas. Naujas `submitComplete()`, senasis `submitPrice()` supaprastintas — dabar tik 'quote' režimui.
+- **`mano-paskyra.html`, "Mano automobiliai"** — prie kiekvieno automobilio pridėtas "📖 Serviso knyga" toggle mygtukas, išskleidžia chronologinę istoriją (naujausi viršuje): data, kategorija (iš esamo `categoryLabel()`/`categoriesCache`, 12 kategorijų sąrašas), serviso pavadinimas, darbų aprašymas, ir neprivalomi laukai (pakeistos dalys/rida/kaina/garantija), rodomi tik jei užpildyti.
+- **Patikrinta gyvai** (ir per tiesiogines API užklausas, IR per tikrą dashboard'o UI): (1) užklausa su `car_id` → be paaiškinimo `POST /complete` grąžina `400 "Būtina aprašyti atliktus darbus"`; (2) su paaiškinimu → `200 done` + automatiškai atsirado `service_book` įrašas, matomas kliento paskyroje po "📖 Serviso knyga"; (3) antras testinis užsakymas užbaigtas TIKRAI per dashboard'o UI (užpildyti visi 5 laukai naršyklėje, paspausta "✓ Pažymėti atlikta") — patvirtintų skaičius sumažėjo 1→0, atliktų padidėjo 1→2, be jokių console klaidų; kliento paskyroje abu įrašai matomi teisinga chronologine tvarka (naujausias viršuje); (4) svečio užklausa BE `car_id` užbaigta su paaiškinimu → `200 done`, jokios klaidos, joks serviso knygos įrašas nesukurtas (patikrinta tiesiogiai per API).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

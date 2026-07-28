@@ -82,6 +82,20 @@ nav{
 .car-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13.5px;outline:none;}
 .car-input:focus{border-color:rgba(245,196,0,0.4);}
 .car-form-actions{display:flex;gap:8px;}
+/* ══ SERVISO KNYGA prie automobilio (Žingsnis 5/7) ══ */
+.car-book-toggle{background:transparent;border:none;color:var(--muted);font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-top:10px;}
+.car-book-toggle:hover{color:var(--y);}
+.car-book{margin-top:12px;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.car-book-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:8px 0;}
+.car-book-entry{border-bottom:1px solid var(--line);padding-bottom:12px;}
+.car-book-entry:last-child{border-bottom:none;padding-bottom:0;}
+.car-book-entry-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px;flex-wrap:wrap;}
+.car-book-date{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.car-book-cat{font-family:'IBM Plex Mono';font-size:10px;color:var(--y);background:rgba(245,196,0,0.12);padding:2px 8px;border-radius:10px;}
+.car-book-service{font-size:12.5px;margin-bottom:4px;color:var(--text);}
+.car-book-desc{font-size:13px;color:var(--text);line-height:1.5;margin-bottom:4px;}
+.car-book-meta{font-size:11.5px;color:var(--muted);}
+.car-book-meta b{color:var(--text);}
 .car-vin-note{font-size:11px;color:var(--muted);margin-top:5px;}
 .car-confirm{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .car-confirm-txt{font-size:13px;color:var(--text);}
@@ -430,8 +444,50 @@ function renderCars(){
             <button class="car-btn danger" onclick="startDeleteCar(${c.id})">🗑 Ištrinti</button>
           </div>
         </div>
+        <button class="car-book-toggle" onclick="toggleCarBook(${c.id})">${expandedCarBookId===c.id ? '▲ Slėpti serviso knygą' : '📖 Serviso knyga'}</button>
+        ${expandedCarBookId===c.id ? renderCarBookHtml(c.id) : ''}
       </div>`;
   }).join('');
+}
+
+/* ══ SERVISO KNYGOS ISTORIJA prie automobilio (Žingsnis 5/7) ══ */
+let expandedCarBookId = null;
+let carBookCache = {}; // carId -> entries[] (undefined = dar nekrauta)
+
+function toggleCarBook(carId){
+  if(expandedCarBookId === carId){ expandedCarBookId = null; renderCars(); return; }
+  expandedCarBookId = carId;
+  renderCars();
+  loadCarBook(carId);
+}
+
+async function loadCarBook(carId){
+  try{
+    carBookCache[carId] = await apiGet(`/cars/${carId}/service-book`);
+  } catch(e){
+    carBookCache[carId] = [];
+  }
+  renderCars();
+}
+
+function renderCarBookHtml(carId){
+  const entries = carBookCache[carId];
+  if(entries === undefined) return `<div class="car-book"><div class="car-book-empty">Kraunama...</div></div>`;
+  if(entries.length === 0) return `<div class="car-book"><div class="car-book-empty">Šiam automobiliui dar nėra serviso knygos įrašų.</div></div>`;
+  return `<div class="car-book">${entries.map(e => `
+    <div class="car-book-entry">
+      <div class="car-book-entry-head">
+        <span class="car-book-date">${(e.service_date||'').slice(0,10)}</span>
+        <span class="car-book-cat">${categoryLabel(e.category_id)}</span>
+      </div>
+      <div class="car-book-service"><b>${escapeHtml(e.service_name)}</b></div>
+      <div class="car-book-desc">${escapeHtml(e.work_description)}</div>
+      ${e.parts_replaced ? `<div class="car-book-meta">Pakeistos dalys: <b>${escapeHtml(e.parts_replaced)}</b></div>` : ''}
+      ${e.mileage!=null ? `<div class="car-book-meta">Rida: <b>${e.mileage} km</b></div>` : ''}
+      ${e.price!=null ? `<div class="car-book-meta">Kaina: <b>${fmtEUR(e.price)}</b></div>` : ''}
+      ${e.warranty_until ? `<div class="car-book-meta">Garantija iki: <b>${e.warranty_until}</b></div>` : ''}
+    </div>
+  `).join('')}</div>`;
 }
 
 /* ══ UŽSAKYMŲ ISTORIJA (Serviso knyga, Žingsnis 3/7) ══ */

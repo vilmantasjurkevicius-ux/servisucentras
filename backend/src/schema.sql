@@ -133,6 +133,25 @@ CREATE TABLE IF NOT EXISTS order_declines (
   declined_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Serviso knyga (Žingsnis 5/7) — struktūrizuotas automobilio serviso įrašas, AUTOMATIŠKAI
+-- sukuriamas POST /orders/:id/complete metu, kai užklausa turi car_id IR servisas pateikia
+-- privalomą work_description ("Pažymėti atlikta" paaiškinimo laukas). Užklausos be car_id
+-- (svečio laisvas tekstas) įrašo negauna — nėra prie ko jį susieti kliento automobilių knygoje.
+CREATE TABLE IF NOT EXISTS service_book (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  car_id INTEGER NOT NULL REFERENCES cars(id) ON DELETE CASCADE,
+  order_id INTEGER NOT NULL REFERENCES orders(id),
+  service_id INTEGER NOT NULL REFERENCES services(id),
+  category_id TEXT REFERENCES categories(id),
+  work_description TEXT NOT NULL,
+  parts_replaced TEXT,
+  mileage INTEGER,
+  price REAL,
+  warranty_until TEXT,
+  service_date TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS service_invoices (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   service_id INTEGER NOT NULL REFERENCES services(id),
@@ -153,3 +172,4 @@ CREATE INDEX IF NOT EXISTS idx_order_messages_order ON order_messages(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_declines_order ON order_declines(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_declines_service ON order_declines(service_id);
 CREATE INDEX IF NOT EXISTS idx_cars_client ON cars(client_id);
+CREATE INDEX IF NOT EXISTS idx_service_book_car ON service_book(car_id);
