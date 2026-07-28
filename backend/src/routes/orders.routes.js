@@ -43,6 +43,36 @@ router.post('/', authRequired, requireRole('client'), (req, res) => {
   findMatchingServices(order.city, order.category_id).forEach((svc) => sendNewOrderEmail(svc, order));
 });
 
+// ── TIESIOGINIS REZERVAVIMAS: registruotas klientas renkasi KONKRETŲ servisą + laisvą laiką ──
+// Skirtingai nuo broadcast srauto (kur service_id lieka null kol klientas išrenka iš kelių
+// pasiūlymų), čia service_id žinomas IŠKART. Statusas paliekamas 'new' (NE 'in_progress') —
+// laikas TAMPA UŽIMTAS tik kai servisas paspaudžia "Priimti klientą" (žr. POST /:id/accept-client),
+// kuris pakeičia statusą į 'in_progress' — tą patį statusą, kurį jau tikrina esamas
+// GET /services/:id/availability busy-skaičiavimas. Jokio naujo mokėjimo/užrakinimo mechanizmo.
+router.post('/direct', authRequired, requireRole('client'), (req, res) => {
+  if (req.user.guest) return res.status(403).json({ error: 'Tiesioginis rezervavimas galimas tik registruotiems klientams' });
+
+  const { serviceId, categoryId, scheduledTime, comment } = req.body;
+  if (!serviceId || !scheduledTime) return res.status(400).json({ error: 'Trūksta serviso arba laiko' });
+
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(serviceId);
+  if (!service || service.status !== 'active' || service.is_bot) {
+    return res.status(404).json({ error: 'Servisas nerastas arba nepriima rezervacijų' });
+  }
+
+  const busy = db.prepare(`
+    SELECT id FROM orders WHERE service_id = ? AND scheduled_time = ? AND status IN ('in_progress', 'done')
+  `).get(serviceId, scheduledTime);
+  if (busy) return res.status(409).json({ error: 'Šis laikas jau užimtas — pasirinkite kitą' });
+
+  const info = db.prepare(`
+    INSERT INTO orders (client_id, service_id, category_id, city, description, status, order_type, scheduled_time)
+    VALUES (?, ?, ?, ?, ?, 'new', 'direct', ?)
+  `).run(req.user.id, serviceId, categoryId || null, service.city, comment || null, scheduledTime);
+
+  res.status(201).json(getOrder(info.lastInsertRowid));
+});
+
 // ── SERVISO SĄRAŠAS: naujos užklausos jo mieste/kategorijose + jam priskirtos ──
 router.get('/', authRequired, requireRole('service'), (req, res) => {
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
@@ -51,7 +81,7 @@ router.get('/', authRequired, requireRole('service'), (req, res) => {
     JOIN clients c ON c.id = o.client_id
     LEFT JOIN service_categories sc ON sc.category_id = o.category_id AND sc.service_id = ?
     WHERE o.service_id = ?
-       OR (o.status IN ('new', 'pending') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
+       OR (o.service_id IS NULL AND o.status IN ('new', 'pending') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
     ORDER BY o.created_at DESC
   `).all(req.user.id, req.user.id, service.city);
 
@@ -131,8 +161,12 @@ router.post('/:id/accept-client', authRequired, requireRole('service'), (req, re
   const settings = db.prepare('SELECT * FROM admin_settings WHERE id = 1').get();
   const fee = calculateContactFee({ service, settings });
 
+  // status='in_progress' čia užtikrina, kad tiesioginės rezervacijos (order_type='direct',
+  // kurios iki šiol buvo status='new') laikas TAMPA UŽIMTAS kalendoriuje — žr.
+  // GET /services/:id/availability busy-tikrinimą ir Žingsnis 6/6 santrauka.md. Broadcast
+  // užklausoms tai jau buvo in_progress (nustatyta per POST /:id/accept), tad čia — no-op.
   db.prepare(`
-    UPDATE orders SET client_accepted_at = datetime('now'), contact_fee_amount = ? WHERE id = ?
+    UPDATE orders SET client_accepted_at = datetime('now'), contact_fee_amount = ?, status = 'in_progress' WHERE id = ?
   `).run(fee, order.id);
 
   res.json(getOrder(order.id));

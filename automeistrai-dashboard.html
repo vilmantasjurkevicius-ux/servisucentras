@@ -683,7 +683,10 @@ const TAB_LABELS = {new:'Naujos', confirmed:'Patvirtintos', done:'Atliktos'};
 function tabFilter(o, tab){
   const myId = serviceProfile.id;
   if(tab==='new') return o.service_id === null;
-  if(tab==='confirmed') return o.service_id === myId && o.status === 'in_progress';
+  // Tiesioginė rezervacija (order_type='direct') gauna service_id IŠKART, bet lieka
+  // status='new' kol servisas nepaspaudžia "Priimti klientą" — žr. Žingsnis 6/6 santrauka.md.
+  // Konceptualiai tai jau "man priskirta" užklausa, tad rodoma "Patvirtintos" skiltyje.
+  if(tab==='confirmed') return o.service_id === myId && (o.status === 'in_progress' || (o.order_type === 'direct' && o.status === 'new'));
   if(tab==='done') return o.service_id === myId && o.status === 'done';
   return false;
 }
@@ -738,11 +741,12 @@ function actionsForOrder(o){
       <button class="action-btn accept" onclick="startQuoting(${o.id},'quote')">✓ Pasiūlyti kainą</button>
       <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>`;
   }
-  if(o.status === 'in_progress'){
+  if(o.status === 'in_progress' || (o.order_type === 'direct' && o.status === 'new')){
     // "Priimti klientą" — NAUJAS, ATSKIRAS veiksmas nuo kainos pasiūlymo (žr. Žingsnis 2/6
     // santrauka.md). Būtent ČIA (ne kainos pasiūlyme, ne užbaigime) nuskaitomas fiksuotas
-    // mokestis. Kol nepriimta, likę veiksmai (skambinti/planuoti/užbaigti) toliau prieinami —
-    // kontaktų slėpimas dar neįgyvendintas (kito žingsnio darbas).
+    // mokestis. Ta pati sąlyga taip pat apima tiesiogines rezervacijas (order_type='direct'),
+    // kurios gauna service_id iškart, bet lieka status='new' kol servisas nepriima —
+    // žr. Žingsnis 6/6 santrauka.md. Kontaktų slėpimas veikia identiškai abiem atvejais.
     const acceptBlock = !o.client_accepted_at
       ? `<button class="action-btn accept" onclick="acceptClient(${o.id})">✓ Priimti klientą</button>`
       : `<span class="status-badge sb-done">✓ Priimta${o.contact_fee_amount!=null?' · '+fmtEUR(o.contact_fee_amount):''}</span>`;
@@ -773,11 +777,13 @@ function renderOrders(){
       <div>
         <div class="ocard-top">
           <span class="ocard-cat ${cat.cls}">${cat.label}</span>
+          ${o.order_type==='direct' ? `<span class="ocard-cat" style="background:rgba(122,176,240,0.15);color:#7ab0f0;">📅 Tiesioginė rezervacija</span>` : ''}
           <span class="ocard-time">${timeAgo(o.created_at)}</span>
         </div>
         <div class="ocard-car">${clientName}</div>
         ${o.car_info ? `<div class="ocard-car" style="color:var(--y,#F5C400);font-weight:500;">🚗 ${o.car_info}</div>` : ''}
         <div class="ocard-desc">${o.description||''}</div>
+        ${o.order_type==='direct' && o.scheduled_time ? `<div class="ocard-car" style="color:#7ab0f0;">📅 Prašomas laikas: ${formatSchedule(o.scheduled_time)}</div>` : ''}
         <div class="ocard-footer">
           <span class="ocard-client">📞 ${o.phone||'—'}</span>
           <span class="ocard-slot">#${String(o.id).padStart(4,'0')}</span>

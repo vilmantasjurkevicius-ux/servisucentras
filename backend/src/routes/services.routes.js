@@ -123,6 +123,54 @@ router.get('/:id/reviews', (req, res) => {
   res.json(reviews);
 });
 
+// ── VIEŠAS LAISVŲ/UŽIMTŲ LAIKŲ TVARKARAŠTIS (tiesioginei rezervacijai) ──
+// Grąžina TIK laisva/užimta — jokių kliento duomenų, saugu rodyti bet kam be prisijungimo.
+router.get('/:id/availability', (req, res) => {
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
+  if (!service) return res.status(404).json({ error: 'Servisas nerastas' });
+
+  const days = Math.min(parseInt(req.query.days, 10) || 14, 30);
+  let workHours = null;
+  if (service.work_hours) {
+    try { workHours = JSON.parse(service.work_hours); } catch (e) { workHours = null; }
+  }
+
+  // Užimta laikoma tik PATVIRTINTA (in_progress/done) užklausa su šiuo laiku —
+  // dar nepatvirtinta 'direct' rezervacija slotą užrakina tik confirm'inimo metu.
+  const busyRows = db.prepare(`
+    SELECT scheduled_time FROM orders
+    WHERE service_id = ? AND scheduled_time IS NOT NULL AND status IN ('in_progress', 'done')
+  `).all(service.id);
+  const busySet = new Set(busyRows.map((r) => r.scheduled_time));
+
+  const now = new Date();
+  const result = [];
+  for (let d = 0; d < days; d++) {
+    const date = new Date(now);
+    date.setDate(date.getDate() + d);
+    date.setHours(0, 0, 0, 0);
+    const dow = (date.getDay() + 6) % 7; // 0=Pirmadienis..6=Sekmadienis, sutampa su work_hours indeksu
+    const dayCfg = (workHours && workHours[dow])
+      ? workHours[dow]
+      : { open: true, start: service.work_start || '08:00', end: service.work_end || '18:00' };
+
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const slots = [];
+    if (dayCfg.open) {
+      const startH = parseInt((dayCfg.start || '08:00').split(':')[0], 10);
+      const endH = parseInt((dayCfg.end || '18:00').split(':')[0], 10);
+      for (let h = startH; h < endH; h++) {
+        const timeStr = `${dateStr}T${String(h).padStart(2, '0')}:00`;
+        if (new Date(`${timeStr}:00`).getTime() < now.getTime()) continue; // praeities valandos praleidžiamos
+        slots.push({ time: timeStr, busy: busySet.has(timeStr) });
+      }
+    }
+    result.push({ date: dateStr, slots });
+  }
+
+  res.json({ serviceId: service.id, serviceName: service.name, days: result });
+});
+
 router.get('/:id', (req, res) => {
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
   if (!service) return res.status(404).json({ error: 'Servisas nerastas' });

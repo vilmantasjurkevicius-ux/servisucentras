@@ -302,11 +302,25 @@ h1 em{font-style:normal;color:var(--y);}
 .tags{display:flex;gap:5px;flex-wrap:wrap;}
 .tag{font-family:'IBM Plex Mono';font-size:9.5px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--line);}
 .tag.hi{color:var(--y);background:var(--ydim);border-color:rgba(245,196,0,0.2);}
-.card-right{text-align:right;}
+.card-right{text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
 .rating{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);margin-bottom:6px;}
 .rating b{color:var(--text);}
 .book-btn{background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:var(--radius);cursor:pointer;transition:background .15s;white-space:nowrap;}
 .book-btn:hover{background:#FFD740;}
+.book-btn-direct{background:transparent;border:1px solid var(--line2);color:var(--muted);}
+.book-btn-direct:hover{background:transparent;border-color:rgba(245,196,0,0.4);color:var(--y);}
+
+/* ══ TIESIOGINIS REZERVAVIMAS (registruotiems klientams) — žr. Žingsnis 6/6 santrauka.md ══ */
+.booking-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
+.booking-day-chip{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 12px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);transition:border-color .15s;}
+.booking-day-chip:hover{border-color:rgba(245,196,0,0.4);}
+.booking-day-chip.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
+.booking-day-chip .bd-num{font-size:15px;font-weight:700;display:block;color:inherit;margin-top:2px;}
+.booking-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;max-height:220px;overflow-y:auto;}
+.booking-slot{background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 4px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:12.5px;color:var(--text);transition:border-color .15s;}
+.booking-slot:hover{border-color:rgba(245,196,0,0.4);}
+.booking-slot.busy{opacity:0.35;cursor:not-allowed;color:var(--muted);text-decoration:line-through;}
+.booking-slot.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
 
 /* ══════════════════════════════════
    KAIP VEIKIA
@@ -666,7 +680,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     </div>
     <button class="chat-head-close" onclick="closeChat()">✕</button>
   </div>
-  <div class="chat-online">
+  <div class="chat-online" id="chat-online">
     <div class="svc-av-wrap"><div class="svc-av">T</div><div class="svc-av-name">Tomas</div></div>
     <div class="svc-av-wrap"><div class="svc-av">A</div><div class="svc-av-name">AutoEl.</div></div>
     <div class="svc-av-wrap"><div class="svc-av busy">V</div><div class="svc-av-name">Voltas</div></div>
@@ -676,7 +690,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
   </div>
   <div class="chat-msgs" id="chat-msgs">
     <div class="sys-msg">Šiandien</div>
-    <div class="sys-msg">Jūsų žinutę matys visi aktyvūs servisai</div>
+    <div class="sys-msg" id="chat-visibility-note">Jūsų žinutę matys visi aktyvūs servisai</div>
   </div>
   <div class="chat-input-area">
     <div class="chat-input-row">
@@ -707,6 +721,23 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     </div>
     <button class="gm-btn" id="gm-submit-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
     <div class="gm-note" id="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
+  </div>
+</div>
+
+<!-- TIESIOGINIS REZERVAVIMAS — TIK registruotiems klientams (žr. Žingsnis 6/6 santrauka.md) -->
+<div class="guest-overlay" id="booking-overlay" onclick="if(event.target===this) closeBooking()">
+  <div class="guest-modal" style="width:420px;">
+    <button class="gm-close" onclick="closeBooking()">✕</button>
+    <div class="gm-icon">📅</div>
+    <div class="gm-title" id="booking-title">Rezervuoti laiką</div>
+    <div class="gm-sub">Pasirinkite laisvą dieną ir valandą — servisas turės patvirtinti rezervaciją.</div>
+    <div class="booking-days" id="booking-days"></div>
+    <div class="booking-slots" id="booking-slots"></div>
+    <div id="booking-comment-step" style="display:none;">
+      <label class="gm-label">Trumpas komentaras servisui</label>
+      <textarea class="gm-field" id="booking-comment" rows="3" placeholder="pvz. VW Golf 2018, keičiu stabdžių kaladėles" style="resize:vertical;"></textarea>
+      <button class="gm-btn" id="booking-submit-btn" onclick="submitBooking()">✓ Patvirtinti rezervaciją →</button>
+    </div>
   </div>
 </div>
 
@@ -844,6 +875,7 @@ function renderCards(){
       </div>
       <div class="card-right">
         <button class="book-btn" onclick="openChat()">Užklausti →</button>
+        ${s.is_bot ? '' : `<button class="book-btn book-btn-direct" onclick="openBooking(${s.id})">📅 Rezervuoti laiką</button>`}
       </div>
     </div>`;
   }).join('');
@@ -875,6 +907,7 @@ document.querySelectorAll('.sort-tab').forEach(t=>{
 (async function init(){
   await loadCategories();
   await loadCityServices(activeCity);
+  await checkClientRegistration();
   renderBoard();
   renderCards();
   loadNetworkStats();
@@ -893,12 +926,21 @@ let currentOrderId = null;
 let guestOverlayMode = 'new'; // 'new' | 'car' | 'edit'
 let renderedMessageIds = new Set();
 let chatPollTimer = null;
+let chatMode = 'broadcast'; // 'broadcast' | 'direct' — žr. Žingsnis 6/6 santrauka.md
+let isRegisteredClient = false; // tik registruoti (ne svečio) klientai gali rezervuoti tiesiogiai
 
 function chatSubHtml(name){
   return '● Sveiki, '+name+'! <a class="chat-edit-link" onclick="editGuestInfo()">✎ Pakeisti duomenis</a>';
 }
 
 function openChat(){
+  // Grįžtama į broadcast chromą — jei prieš tai buvo atidarytas tiesioginės rezervacijos
+  // pokalbis (žr. submitBooking()), jo pakeitimai (paslėptas chat-online, kita antraštė) čia atstatomi.
+  chatMode = 'broadcast';
+  const chatOnlineEl = document.getElementById('chat-online');
+  if(chatOnlineEl) chatOnlineEl.style.display = '';
+  const visNote = document.getElementById('chat-visibility-note');
+  if(visNote) visNote.textContent = 'Jūsų žinutę matys visi aktyvūs servisai';
   if(guestName && clientToken){
     if(!currentOrderId){ showGuestOverlay('car'); }
     else { showChat(); }
@@ -1199,6 +1241,147 @@ async function acceptOffer(el, serviceId, svcName, price, time){
     addSysMsg(`✅ Rezervuota: <b>${svcName}</b> · ${price}€ · ${time}`);
   } catch(err){
     addSysMsg('⚠ '+err.message);
+  }
+}
+
+/* ══ TIESIOGINIS REZERVAVIMAS (TIK registruoti klientai) — žr. Žingsnis 6/6 santrauka.md ══
+   Svečiai (is_guest=1) taip pat gauna clientToken (per POST /auth/guest), tad vien tokeno
+   buvimo nepakanka — tikriname GET /clients/me.is_guest, kad atskirtume tikrai registruotą
+   klientą nuo svečio. Mokesčio/kontaktų atskleidimo mechanizmas — TAS PATS POST
+   /:id/accept-client kaip broadcast sraute (žr. Žingsniai 1-5/6), čia jokio naujo nekuriama. */
+let bookingAvailability = null;
+let bookingServiceId = null;
+let bookingSelectedDay = null;
+let bookingSelectedTime = null;
+
+async function checkClientRegistration(){
+  if(!clientToken){ isRegisteredClient = false; return; }
+  try{
+    const res = await fetch(`${API_BASE}/clients/me`, { headers:{'Authorization':'Bearer '+clientToken} });
+    if(!res.ok){ isRegisteredClient = false; return; }
+    const data = await res.json();
+    isRegisteredClient = !data.is_guest;
+  } catch(e){ isRegisteredClient = false; }
+}
+
+async function openBooking(serviceId){
+  if(!clientToken || !isRegisteredClient){
+    alert('Ši funkcija skirta tik registruotiems klientams. Užsiregistruokite (nemokama) — tada galėsite rezervuoti laiką tiesiogiai iš serviso kalendoriaus.');
+    location.href = 'automeistrai-login.html?type=client&tab=reg-c';
+    return;
+  }
+  const svc = cityServices.find(s=>s.id===serviceId);
+  if(!svc) return;
+
+  bookingServiceId = serviceId;
+  bookingSelectedDay = null;
+  bookingSelectedTime = null;
+  document.getElementById('booking-title').textContent = 'Rezervuoti laiką — '+svc.name;
+  document.getElementById('booking-comment-step').style.display = 'none';
+  document.getElementById('booking-days').innerHTML = '';
+  document.getElementById('booking-slots').innerHTML = '<div style="color:var(--muted);font-size:12.5px;padding:8px 0;">Kraunama...</div>';
+  document.getElementById('booking-overlay').classList.add('show');
+
+  try{
+    const res = await fetch(`${API_BASE}/services/${serviceId}/availability`);
+    bookingAvailability = res.ok ? await res.json() : null;
+  } catch(e){ bookingAvailability = null; }
+
+  if(!bookingAvailability){
+    document.getElementById('booking-slots').innerHTML = '<div style="color:var(--muted);font-size:12.5px;">Nepavyko įkelti kalendoriaus.</div>';
+    return;
+  }
+  renderBookingDays();
+  const firstFreeDay = bookingAvailability.days.find(d=>d.slots.some(s=>!s.busy)) || bookingAvailability.days[0];
+  selectBookingDay(firstFreeDay ? firstFreeDay.date : null);
+}
+
+function renderBookingDays(){
+  const DAY_ABBR = ['Pir','Ant','Tre','Ket','Pen','Šeš','Sek'];
+  document.getElementById('booking-days').innerHTML = bookingAvailability.days.map(d=>{
+    const dt = new Date(d.date+'T00:00:00');
+    const dow = (dt.getDay()+6)%7;
+    const hasFree = d.slots.some(s=>!s.busy);
+    return `<div class="booking-day-chip ${d.date===bookingSelectedDay?'on':''}" style="${hasFree?'':'opacity:0.4;'}" onclick="selectBookingDay('${d.date}')">${DAY_ABBR[dow]}<span class="bd-num">${dt.getDate()}</span></div>`;
+  }).join('');
+}
+
+function selectBookingDay(dateStr){
+  bookingSelectedDay = dateStr;
+  bookingSelectedTime = null;
+  document.getElementById('booking-comment-step').style.display = 'none';
+  renderBookingDays();
+  const slotsEl = document.getElementById('booking-slots');
+  const day = bookingAvailability.days.find(d=>d.date===dateStr);
+  if(!day || day.slots.length === 0){
+    slotsEl.innerHTML = '<div style="color:var(--muted);font-size:12.5px;grid-column:1/-1;">Šią dieną servisas nedirba.</div>';
+    return;
+  }
+  slotsEl.innerHTML = day.slots.map(s=>{
+    const hh = s.time.split('T')[1];
+    return `<div class="booking-slot ${s.busy?'busy':''}" onclick="${s.busy?'':`pickBookingSlot('${s.time}')`}">${hh}</div>`;
+  }).join('');
+}
+
+function pickBookingSlot(timeStr){
+  bookingSelectedTime = timeStr;
+  const slotsEl = document.getElementById('booking-slots');
+  slotsEl.querySelectorAll('.booking-slot').forEach(el=>el.classList.remove('on'));
+  const day = bookingAvailability.days.find(d=>d.date===bookingSelectedDay);
+  const idx = day ? day.slots.findIndex(s=>s.time===timeStr) : -1;
+  if(idx>=0) slotsEl.children[idx].classList.add('on');
+  document.getElementById('booking-comment-step').style.display = 'block';
+  document.getElementById('booking-comment').focus();
+}
+
+function closeBooking(){
+  document.getElementById('booking-overlay').classList.remove('show');
+}
+
+async function submitBooking(){
+  if(!bookingSelectedTime) return;
+  const comment = document.getElementById('booking-comment').value.trim();
+  const btn = document.getElementById('booking-submit-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Rezervuojama...';
+  try{
+    const res = await fetch(`${API_BASE}/orders/direct`, {
+      method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+      body: JSON.stringify({ serviceId: bookingServiceId, categoryId: activeCat, scheduledTime: bookingSelectedTime, comment: comment || null })
+    });
+    const data = await res.json();
+    if(!res.ok){
+      if(res.status === 409){
+        alert(data.error || 'Šis laikas jau užimtas — pasirinkite kitą.');
+        const res2 = await fetch(`${API_BASE}/services/${bookingServiceId}/availability`);
+        bookingAvailability = res2.ok ? await res2.json() : bookingAvailability;
+        selectBookingDay(bookingSelectedDay);
+        return;
+      }
+      throw new Error(data.error || 'Nepavyko sukurti rezervacijos');
+    }
+
+    const svc = cityServices.find(s=>s.id===bookingServiceId);
+    const svcName = svc ? svc.name : 'servisas';
+    closeBooking();
+
+    // Chat po rezervacijos tęsiasi PER PLATFORMĄ — TAS PATS mechanizmas kaip broadcast sraute
+    // (currentOrderId + showChat() + startOrderPolling()), tik chromas pritaikytas 1:1 pokalbiui.
+    currentOrderId = data.id;
+    chatMode = 'direct';
+    renderedMessageIds = new Set();
+    showChat();
+    const chatOnlineEl = document.getElementById('chat-online');
+    if(chatOnlineEl) chatOnlineEl.style.display = 'none';
+    const visNote = document.getElementById('chat-visibility-note');
+    if(visNote) visNote.textContent = 'Privatus pokalbis su šiuo servisu';
+    document.getElementById('chat-sub').textContent = '● Rezervacija pas '+svcName;
+    addSysMsg('✓ Rezervacija #'+currentOrderId+' pateikta — <b>'+svcName+'</b>, '+formatOfferTime(bookingSelectedTime)+'. Laukiama serviso patvirtinimo.');
+    startOrderPolling();
+  } catch(err){
+    alert(err.message);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
   }
 }
 </script>
