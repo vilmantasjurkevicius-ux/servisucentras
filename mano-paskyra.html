@@ -62,6 +62,30 @@ nav{
 .acc-empty-title{font-family:'Oswald';font-size:16px;color:var(--text);margin-bottom:6px;}
 .acc-empty-sub{font-size:13px;line-height:1.5;max-width:360px;margin:0 auto;}
 
+/* ══ MANO AUTOMOBILIAI (Serviso knyga, Žingsnis 2/7) ══ */
+.car-btn{background:transparent;border:1px solid var(--line2);color:var(--text);font-family:'IBM Plex Sans';font-size:12px;font-weight:600;padding:7px 14px;border-radius:var(--radius);cursor:pointer;transition:all .15s;}
+.car-btn:hover{border-color:rgba(245,196,0,0.4);color:var(--y);}
+.car-btn.danger:hover{border-color:rgba(139,26,26,0.5);color:#e07070;}
+.car-btn-pri{background:var(--y);color:var(--bg);border:none;font-weight:700;}
+.car-btn-pri:hover{background:#FFD740;}
+.car-list{display:flex;flex-direction:column;gap:12px;margin-top:20px;}
+.car-card{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:18px 20px;}
+.car-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.car-card-title{font-family:'Oswald';font-size:16.5px;font-weight:600;}
+.car-card-meta{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px;}
+.car-card-meta span b{color:var(--text);font-weight:500;}
+.car-card-actions{display:flex;gap:8px;flex-shrink:0;}
+.car-form{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:20px;}
+.car-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;}
+@media(max-width:560px){.car-form-grid{grid-template-columns:1fr;}}
+.car-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:5px;display:block;}
+.car-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13.5px;outline:none;}
+.car-input:focus{border-color:rgba(245,196,0,0.4);}
+.car-form-actions{display:flex;gap:8px;}
+.car-vin-note{font-size:11px;color:var(--muted);margin-top:5px;}
+.car-confirm{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.car-confirm-txt{font-size:13px;color:var(--text);}
+
 /* ══ MOBILE HAMBURGER ══ */
 .acc-hamburger{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;}
 .acc-sidebar-backdrop{display:none;}
@@ -107,12 +131,10 @@ nav{
   <div class="acc-main">
     <div class="acc-page show" id="acc-page-cars">
       <div class="acc-page-title">🚗 Mano automobiliai</div>
-      <div class="acc-page-sub">Čia matysite savo įrašytus automobilius ir jų aptarnavimo istoriją.</div>
-      <div class="acc-empty">
-        <div class="acc-empty-icon">🚧</div>
-        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
-        <div class="acc-empty-sub">Netrukus čia galėsite pridėti savo automobilius ir sekti jų aptarnavimo istoriją vienoje vietoje.</div>
-      </div>
+      <div class="acc-page-sub">VIN kodas — privatus, matomas tik jums, niekada nerodomas servisams ar kitiems vartotojams.</div>
+      <div id="car-add-form-wrap"></div>
+      <button class="car-btn car-btn-pri" id="car-add-toggle-btn" onclick="toggleAddCarForm()">+ Pridėti automobilį</button>
+      <div class="car-list" id="car-list"></div>
     </div>
 
     <div class="acc-page" id="acc-page-history">
@@ -161,6 +183,7 @@ async function init(){
     // buvimo nepakanka — ši paskyra TIK registruotiems klientams.
     if(client.is_guest){ redirectToLogin(); return; }
     document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(client.first_name||'')+'</b>!';
+    loadCars();
   } catch(err){
     redirectToLogin();
   }
@@ -170,6 +193,212 @@ init();
 function logout(){
   localStorage.removeItem('sc_client_token');
   window.location.href = 'servisucentras-pagrindinis.html';
+}
+
+async function apiRequest(method, path, body){
+  const res = await fetch(`${API_BASE}${path}`, {
+    method,
+    headers: { 'Content-Type':'application/json', 'Authorization':'Bearer '+clientToken },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  if(res.status === 401){ redirectToLogin(); throw new Error('Sesija baigėsi'); }
+  const data = await res.json().catch(()=>({}));
+  if(!res.ok) throw new Error(data.error || 'Klaida');
+  return data;
+}
+const apiGet = (path) => apiRequest('GET', path);
+const apiPost = (path, body) => apiRequest('POST', path, body || {});
+const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
+const apiDelete = (path) => apiRequest('DELETE', path);
+
+/* ══ MANO AUTOMOBILIAI (Serviso knyga, Žingsnis 2/7) ══ */
+const FUEL_LABELS = { benzinas:'Benzinas', dyzelinas:'Dyzelinas', elektra:'Elektra', hibridas:'Hibridas', dujos:'Dujos (SUP)' };
+let carsCache = [];
+let addingCar = false;
+let editingCarId = null;
+let deletingCarId = null;
+
+async function loadCars(){
+  carsCache = await apiGet('/cars/me');
+  renderCars();
+}
+
+function fuelSelectHtml(id, selected){
+  return `<select class="car-input" id="${id}">
+    <option value="">— nepasirinkta —</option>
+    ${Object.entries(FUEL_LABELS).map(([v,l])=>`<option value="${v}" ${selected===v?'selected':''}>${l}</option>`).join('')}
+  </select>`;
+}
+
+function carFormHtml(prefix, car){
+  const c = car || {};
+  return `
+    <div class="car-form-grid">
+      <div><label class="car-label">Markė *</label><input class="car-input" id="${prefix}-make" value="${c.make||''}" placeholder="pvz. Volkswagen"></div>
+      <div><label class="car-label">Modelis *</label><input class="car-input" id="${prefix}-model" value="${c.model||''}" placeholder="pvz. Golf"></div>
+      <div><label class="car-label">Pagaminimo metai</label><input class="car-input" id="${prefix}-year" type="number" value="${c.year||''}" placeholder="pvz. 2018"></div>
+      <div><label class="car-label">Variklis</label><input class="car-input" id="${prefix}-engine" value="${c.engine||''}" placeholder="pvz. 2.0 TDI, 110kW"></div>
+      <div><label class="car-label">Kuras</label>${fuelSelectHtml(prefix+'-fuel', c.fuel_type||'')}</div>
+      <div><label class="car-label">Valstybinis numeris</label><input class="car-input" id="${prefix}-plate" value="${c.plate_number||''}" placeholder="neprivaloma"></div>
+      <div style="grid-column:1/-1;">
+        <label class="car-label">VIN kodas</label>
+        <input class="car-input" id="${prefix}-vin" value="${c.vin||''}" placeholder="neprivaloma">
+        <div class="car-vin-note">🔒 VIN privatus — matote tik jūs, niekada nerodomas servisams ar kitiems.</div>
+      </div>
+    </div>`;
+}
+
+function toggleAddCarForm(){
+  addingCar = !addingCar;
+  editingCarId = null;
+  renderAddForm();
+  renderCars();
+}
+
+function renderAddForm(){
+  const wrap = document.getElementById('car-add-form-wrap');
+  const btn = document.getElementById('car-add-toggle-btn');
+  if(!addingCar){ wrap.innerHTML = ''; btn.style.display = ''; return; }
+  btn.style.display = 'none';
+  wrap.innerHTML = `
+    <div class="car-form" style="margin-bottom:16px;">
+      ${carFormHtml('new-car', null)}
+      <div class="car-form-actions">
+        <button class="car-btn car-btn-pri" onclick="submitNewCar()">💾 Išsaugoti</button>
+        <button class="car-btn" onclick="toggleAddCarForm()">✕ Atšaukti</button>
+      </div>
+      <div id="new-car-error" style="display:none;color:#e07a6b;font-size:12px;margin-top:8px;"></div>
+    </div>`;
+}
+
+function readCarForm(prefix){
+  const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+  return {
+    make: val(`${prefix}-make`),
+    model: val(`${prefix}-model`),
+    year: val(`${prefix}-year`) ? parseInt(val(`${prefix}-year`), 10) : null,
+    engine: val(`${prefix}-engine`) || null,
+    fuelType: val(`${prefix}-fuel`) || null,
+    plateNumber: val(`${prefix}-plate`) || null,
+    vin: val(`${prefix}-vin`) || null,
+  };
+}
+
+async function submitNewCar(){
+  const data = readCarForm('new-car');
+  const errEl = document.getElementById('new-car-error');
+  if(!data.make || !data.model){
+    errEl.textContent = 'Būtina nurodyti markę ir modelį'; errEl.style.display = 'block';
+    return;
+  }
+  try{
+    await apiPost('/cars', data);
+    addingCar = false;
+    renderAddForm();
+    await loadCars();
+  } catch(err){
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  }
+}
+
+function startEditCar(id){
+  editingCarId = id;
+  deletingCarId = null;
+  addingCar = false;
+  renderAddForm();
+  renderCars();
+}
+function cancelEditCar(){
+  editingCarId = null;
+  renderCars();
+}
+async function submitEditCar(id){
+  const data = readCarForm(`edit-car-${id}`);
+  const errEl = document.getElementById(`edit-car-${id}-error`);
+  if(!data.make || !data.model){
+    if(errEl){ errEl.textContent = 'Būtina nurodyti markę ir modelį'; errEl.style.display = 'block'; }
+    return;
+  }
+  try{
+    await apiPatch(`/cars/${id}`, data);
+    editingCarId = null;
+    await loadCars();
+  } catch(err){
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+  }
+}
+
+function startDeleteCar(id){
+  deletingCarId = id;
+  editingCarId = null;
+  renderCars();
+}
+function cancelDeleteCar(){
+  deletingCarId = null;
+  renderCars();
+}
+async function confirmDeleteCar(id){
+  try{
+    await apiDelete(`/cars/${id}`);
+    deletingCarId = null;
+    await loadCars();
+  } catch(err){
+    alert(err.message);
+  }
+}
+
+function renderCars(){
+  const list = document.getElementById('car-list');
+  if(carsCache.length === 0){
+    list.innerHTML = `<div class="acc-empty" style="margin-top:20px;">
+      <div class="acc-empty-icon">🚗</div>
+      <div class="acc-empty-title">Dar nėra pridėtų automobilių</div>
+      <div class="acc-empty-sub">Paspauskite "+ Pridėti automobilį", kad įrašytumėte pirmąjį.</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = carsCache.map(c => {
+    if(editingCarId === c.id){
+      return `
+        <div class="car-card">
+          ${carFormHtml('edit-car-'+c.id, c)}
+          <div class="car-form-actions">
+            <button class="car-btn car-btn-pri" onclick="submitEditCar(${c.id})">💾 Išsaugoti</button>
+            <button class="car-btn" onclick="cancelEditCar()">✕ Atšaukti</button>
+          </div>
+          <div id="edit-car-${c.id}-error" style="display:none;color:#e07a6b;font-size:12px;margin-top:8px;"></div>
+        </div>`;
+    }
+    if(deletingCarId === c.id){
+      return `
+        <div class="car-card">
+          <div class="car-confirm">
+            <span class="car-confirm-txt">🗑 Ar tikrai norite ištrinti <b>${c.make} ${c.model}</b>?</span>
+            <button class="car-btn danger" onclick="confirmDeleteCar(${c.id})">✓ Taip, ištrinti</button>
+            <button class="car-btn" onclick="cancelDeleteCar()">✕ Ne</button>
+          </div>
+        </div>`;
+    }
+    const metaParts = [];
+    if(c.year) metaParts.push(`<span>Metai: <b>${c.year}</b></span>`);
+    if(c.engine) metaParts.push(`<span>Variklis: <b>${c.engine}</b></span>`);
+    if(c.fuel_type) metaParts.push(`<span>Kuras: <b>${FUEL_LABELS[c.fuel_type]||c.fuel_type}</b></span>`);
+    if(c.plate_number) metaParts.push(`<span>Numeris: <b>${c.plate_number}</b></span>`);
+    if(c.vin) metaParts.push(`<span>🔒 VIN įrašytas</span>`);
+    return `
+      <div class="car-card">
+        <div class="car-card-head">
+          <div>
+            <div class="car-card-title">🚗 ${c.make} ${c.model}</div>
+            <div class="car-card-meta">${metaParts.join('')}</div>
+          </div>
+          <div class="car-card-actions">
+            <button class="car-btn" onclick="startEditCar(${c.id})">✎ Redaguoti</button>
+            <button class="car-btn danger" onclick="startDeleteCar(${c.id})">🗑 Ištrinti</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
 }
 
 function showAccPage(id, el){

@@ -63,6 +63,22 @@ CREATE TABLE IF NOT EXISTS clients (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Kliento automobilių knyga (Serviso knyga, Žingsnis 2/7). VIN — PRIVATUS laukas,
+-- niekada neatskleidžiamas jokiam kitam vartotojui/servisui, grąžinamas TIK pačiam
+-- klientui per jo autentifikuotą GET /api/cars/me (žr. cars.routes.js).
+CREATE TABLE IF NOT EXISTS cars (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  client_id INTEGER NOT NULL REFERENCES clients(id) ON DELETE CASCADE,
+  make TEXT NOT NULL,
+  model TEXT NOT NULL,
+  year INTEGER,
+  engine TEXT,
+  fuel_type TEXT,
+  plate_number TEXT,
+  vin TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS orders (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   client_id INTEGER NOT NULL REFERENCES clients(id),
@@ -135,3 +151,4 @@ CREATE INDEX IF NOT EXISTS idx_orders_service ON orders(service_id);
 CREATE INDEX IF NOT EXISTS idx_order_messages_order ON order_messages(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_declines_order ON order_declines(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_declines_service ON order_declines(service_id);
+CREATE INDEX IF NOT EXISTS idx_cars_client ON cars(client_id);

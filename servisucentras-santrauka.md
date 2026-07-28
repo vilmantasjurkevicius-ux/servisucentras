@@ -833,6 +833,18 @@ Naujas, atskiras 7-žingsnių planas ("Serviso knyga"). Šis žingsnis TIK sukū
 
 ---
 
+## Serviso knyga — Žingsnis 2/7: "Mano automobiliai" (2026-07-28)
+Pirmas iš trijų 1-žingsnyje sukurtų skyrių gauna realų turinį — pilnas CRUD registruoto kliento automobiliams.
+
+- **Nauja DB lentelė `cars`**: `client_id` (FK→clients, CASCADE), `make`, `model` (abu privalomi), `year`, `engine`, `fuel_type`, `plate_number`, `vin` — visi neprivalomi. **VIN — PRIVATUS**: niekada negrąžinamas jokiame kitame endpoint'e (patikrinta — jokia nuoroda į `cars`/`vin` neegzistuoja `admin.routes.js`/`orders.routes.js`/`services.routes.js`), matomas TIK savininkui per jo paties autentifikuotą `GET /api/cars/me`.
+- **Naujas `backend/src/routes/cars.routes.js`**: `GET /me`, `POST /`, `PATCH /:id`, `DELETE /:id` — visi reikalauja `requireRole('client')` IR papildomo `requireRegisteredClient` tikrinimo (JWT `guest` požymis, tas pats principas kaip Žingsnyje 1/7 ir tiesioginiame rezervavime) — svečiai negali turėti automobilių knygos. `PATCH`/`DELETE` papildomai tikrina `car.client_id === req.user.id` (403 jei ne savo automobilis). Užregistruota `server.js` (`app.use('/api/cars', carsRoutes)`).
+- **`mano-paskyra.html`, "Mano automobiliai"**: sąrašas (naujausi viršuje), "+ Pridėti automobilį" (inline forma, ne modalas), kiekvienam automobiliui "✎ Redaguoti" (forma pakeičia kortelę vietoje) ir "🗑 Ištrinti" (INLINE patvirtinimas "Ar tikrai? ✓ Taip / ✕ Ne" — SĄMONINGAI ne naršyklės native `confirm()`, nes ankstesniuose žingsniuose pastebėta, kad automatizuotas naršyklės testavimas native dialogų nepriima; inline forma taip pat nuosekliau atrodo su likusia sąsaja). Kuras — `<select>` su 5 pasirinkimais (Benzinas/Dyzelinas/Elektra/Hibridas/Dujos). **VIN sąrašo kortelėje NIEKADA nerodomas pilnai** — tik ženkliukas "🔒 VIN įrašytas" (jei nustatytas); pilna VIN reikšmė matoma TIK atsidarius redagavimo formą (savininkui pačiam, kaip ir turėtų).
+- **Patikrinta gyvai**: pridėti 2 automobiliai (VW Golf 2018 su VIN+numeriu, Toyota Corolla 2015 be jų) — abu sąraše rodomi teisingai, VW kortelėje matyti tik "🔒 VIN įrašytas" (ne pati reikšmė); Toyota redaguota (metai 2015→2016, pridėtas numeris XYZ789) — pakeitimai išsaugoti; Toyota ištrinta per inline patvirtinimą — dingo iš sąrašo, VW liko. Tiesioginis API patikrinimas: `GET /cars/me` savininkui grąžina pilną VIN reikšmę (teisingai — jam tai leidžiama); servisas gauna `403` (rolė), svečias gauna `403` ("tik registruotiems klientams"). Jokių console klaidų. Automatiniai testai (7/7) nepakitę.
+
+**Kito žingsnio laukiama** (3/7+) — dar neįgyvendinta: "Užsakymų istorija" ir "Profilis" skyrių turinys, bei tolimesnė "Serviso knygos" funkcionalumo dalis.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -10,6 +10,7 @@ const ordersRoutes = require('./routes/orders.routes');
 const adminRoutes = require('./routes/admin.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const diagnostikaRoutes = require('./routes/diagnostika.routes');
+const carsRoutes = require('./routes/cars.routes');
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://localhost:3000')
   .split(',')
@@ -42,6 +43,7 @@ app.use('/api/orders', ordersRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/diagnostika', diagnostikaRoutes);
+app.use('/api/cars', carsRoutes);
 
 // Statiniai HTML/CSS/JS failai projekto šaknyje (vienas viešas adresas — ir API, ir frontend'as)
 const STATIC_ROOT = path.join(__dirname, '..', '..');
