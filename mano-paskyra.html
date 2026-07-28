@@ -86,6 +86,23 @@ nav{
 .car-confirm{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
 .car-confirm-txt{font-size:13px;color:var(--text);}
 
+/* ══ UŽSAKYMŲ ISTORIJA (Serviso knyga, Žingsnis 3/7) ══ */
+.order-list{display:flex;flex-direction:column;gap:12px;margin-top:20px;}
+.order-card{background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:16px 20px;}
+.order-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;}
+.order-card-title{font-family:'Oswald';font-size:15.5px;font-weight:600;}
+.order-card-date{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.order-card-meta{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px;}
+.order-card-meta span b{color:var(--text);font-weight:500;}
+.order-card-desc{font-size:13px;color:var(--text);margin-top:8px;line-height:1.5;}
+.order-status{font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:12px;white-space:nowrap;}
+.os-new{background:rgba(122,176,240,0.15);color:#7ab0f0;}
+.os-accepted{background:var(--ydim);color:var(--y);}
+.os-progress{background:var(--gdim);color:#6fbf8a;}
+.os-done{background:rgba(122,176,240,0.1);color:#7ab0f0;}
+.os-cancelled{background:rgba(139,26,26,0.15);color:#e07070;}
+.order-decline-note{margin-top:10px;background:rgba(139,26,26,0.1);border:1px solid rgba(139,26,26,0.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#e0a0a0;line-height:1.5;}
+
 /* ══ MOBILE HAMBURGER ══ */
 .acc-hamburger{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;}
 .acc-sidebar-backdrop{display:none;}
@@ -140,11 +157,7 @@ nav{
     <div class="acc-page" id="acc-page-history">
       <div class="acc-page-title">📋 Užsakymų istorija</div>
       <div class="acc-page-sub">Visos jūsų pateiktos užklausos ir rezervacijos — praeitos ir esamos.</div>
-      <div class="acc-empty">
-        <div class="acc-empty-icon">🚧</div>
-        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
-        <div class="acc-empty-sub">Netrukus čia matysite pilną savo užsakymų istoriją su statusais ir pokalbiais.</div>
-      </div>
+      <div class="order-list" id="order-list"></div>
     </div>
 
     <div class="acc-page" id="acc-page-profile">
@@ -184,6 +197,7 @@ async function init(){
     if(client.is_guest){ redirectToLogin(); return; }
     document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(client.first_name||'')+'</b>!';
     loadCars();
+    loadOrderHistory();
   } catch(err){
     redirectToLogin();
   }
@@ -397,6 +411,74 @@ function renderCars(){
             <button class="car-btn danger" onclick="startDeleteCar(${c.id})">🗑 Ištrinti</button>
           </div>
         </div>
+      </div>`;
+  }).join('');
+}
+
+/* ══ UŽSAKYMŲ ISTORIJA (Serviso knyga, Žingsnis 3/7) ══ */
+let categoriesCache = [];
+let orderHistoryCache = [];
+
+function categoryLabel(id){
+  const cat = categoriesCache.find(c=>c.id===id);
+  return cat ? cat.label : (id || '—');
+}
+
+async function loadOrderHistory(){
+  try{
+    const catsRes = await fetch(`${API_BASE}/categories`);
+    categoriesCache = catsRes.ok ? await catsRes.json() : [];
+  } catch(e){ categoriesCache = []; }
+  orderHistoryCache = await apiGet('/clients/me/orders');
+  renderOrderHistory();
+}
+
+// Sistemos statusų (new/pending/in_progress/done/cancelled/declined) atvaizdavimas į 5
+// klientui suprantamas būsenas: Naujas, Priimtas, Vykdomas, Baigtas, Atšauktas (žr. užduotį).
+// 'in_progress' skiriamas į Priimtas/Vykdomas pagal tai, ar servisas jau paspaudė "Priimti
+// klientą" (client_accepted_at) — sistemoje tai VIENINTELIS egzistuojantis skirtumas tarp
+// "klientas pasirinko servisą" ir "servisas patvirtino/pradėjo dirbti". 'declined' (servisas
+// atsisakė ir užklausa vėl laisva) rodomas kaip "Naujas" — ta pati reikšmė kitiems servisams.
+function clientStatusInfo(o){
+  if(o.status === 'done') return { label:'Baigtas', cls:'os-done' };
+  if(o.status === 'cancelled') return { label:'Atšauktas', cls:'os-cancelled' };
+  if(o.status === 'in_progress') return o.client_accepted_at
+    ? { label:'Vykdomas', cls:'os-progress' }
+    : { label:'Priimtas', cls:'os-accepted' };
+  return { label:'Naujas', cls:'os-new' };
+}
+
+function renderOrderHistory(){
+  const list = document.getElementById('order-list');
+  if(orderHistoryCache.length === 0){
+    list.innerHTML = `<div class="acc-empty" style="margin-top:20px;">
+      <div class="acc-empty-icon">📋</div>
+      <div class="acc-empty-title">Dar nėra pateiktų užklausų</div>
+      <div class="acc-empty-sub">Kai pateiksite užklausą servisams, ji atsiras čia.</div>
+    </div>`;
+    return;
+  }
+  list.innerHTML = orderHistoryCache.map(o => {
+    const status = clientStatusInfo(o);
+    const dateStr = (o.created_at||'').slice(0,16).replace('T',' ');
+    const declineHtml = o.last_decline_reason
+      ? `<div class="order-decline-note">⚠ <b>${o.last_decline_service_name||'Servisas'}</b> atsisakė šios užklausos (${(o.last_decline_at||'').slice(0,10)}). Priežastis: ${o.last_decline_reason}</div>`
+      : '';
+    return `
+      <div class="order-card">
+        <div class="order-card-head">
+          <div>
+            <div class="order-card-title">#${String(o.id).padStart(4,'0')} · ${categoryLabel(o.category_id)}</div>
+            <div class="order-card-date">${dateStr}</div>
+          </div>
+          <span class="order-status ${status.cls}">${status.label}</span>
+        </div>
+        <div class="order-card-meta">
+          <span>Servisas: <b>${o.service_name || '— dar nepriskirta —'}</b></span>
+          ${o.car_info ? `<span>Automobilis: <b>${o.car_info}</b></span>` : ''}
+        </div>
+        <div class="order-card-desc">${o.description||''}</div>
+        ${declineHtml}
       </div>`;
   }).join('');
 }

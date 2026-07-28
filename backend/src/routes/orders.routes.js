@@ -26,15 +26,42 @@ function findMatchingServices(city, categoryId) {
   `).all(city);
 }
 
+// Automobilio pasirinkimas kuriant užklausą (Serviso knyga, Žingsnis 3/7) — registruotas
+// klientas gali PASIRINKTI konkretų automobilį (carId) iš savo "Mano automobiliai" sąrašo,
+// vietoj laisvo teksto. car_info išsaugomas kaip UŽRAŠYTA nuotrauka ("Markė Modelis (Metai)")
+// pasirinkimo METU — nepriklauso nuo vėlesnio automobilio redagavimo/ištrynimo, tad senos
+// užklausos visada rodo tai, kas buvo pasirinkta tada. Svečiai carId neturi (jų automobilių
+// knygos nėra), tad jiems visada naudojamas laisvas tekstas (carInfo) — nepakitęs elgesys.
+function resolveCarSelection(clientId, carId, carInfoText) {
+  if (carId) {
+    const car = db.prepare('SELECT * FROM cars WHERE id = ?').get(carId);
+    if (!car || car.client_id !== clientId) {
+      const err = new Error('Automobilis nerastas arba jums nepriklauso');
+      err.status = 400;
+      throw err;
+    }
+    const label = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`;
+    return { carId: car.id, carInfo: label };
+  }
+  return { carId: null, carInfo: carInfoText || null };
+}
+
 // ── SUKURTI UŽKLAUSĄ (klientas aprašo bėdą) ──
 router.post('/', authRequired, requireRole('client'), (req, res) => {
-  const { categoryId, city, description, carInfo } = req.body;
+  const { categoryId, city, description, carInfo, carId } = req.body;
   if (!description || !city) return res.status(400).json({ error: 'Trūksta miesto arba aprašymo' });
 
+  let resolvedCar;
+  try {
+    resolvedCar = resolveCarSelection(req.user.id, carId, carInfo);
+  } catch (err) {
+    return res.status(err.status || 400).json({ error: err.message });
+  }
+
   const info = db.prepare(`
-    INSERT INTO orders (client_id, category_id, city, description, car_info, status)
-    VALUES (?, ?, ?, ?, ?, 'new')
-  `).run(req.user.id, categoryId || null, city, description, carInfo || null);
+    INSERT INTO orders (client_id, category_id, city, description, car_info, car_id, status)
+    VALUES (?, ?, ?, ?, ?, ?, 'new')
+  `).run(req.user.id, categoryId || null, city, description, resolvedCar.carInfo, resolvedCar.carId);
 
   const order = getOrder(info.lastInsertRowid);
   res.status(201).json(order);
@@ -52,7 +79,7 @@ router.post('/', authRequired, requireRole('client'), (req, res) => {
 router.post('/direct', authRequired, requireRole('client'), (req, res) => {
   if (req.user.guest) return res.status(403).json({ error: 'Tiesioginis rezervavimas galimas tik registruotiems klientams' });
 
-  const { serviceId, categoryId, scheduledTime, comment } = req.body;
+  const { serviceId, categoryId, scheduledTime, comment, carId } = req.body;
   if (!serviceId || !scheduledTime) return res.status(400).json({ error: 'Trūksta serviso arba laiko' });
 
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(serviceId);
@@ -65,10 +92,17 @@ router.post('/direct', authRequired, requireRole('client'), (req, res) => {
   `).get(serviceId, scheduledTime);
   if (busy) return res.status(409).json({ error: 'Šis laikas jau užimtas — pasirinkite kitą' });
 
+  let resolvedCar;
+  try {
+    resolvedCar = resolveCarSelection(req.user.id, carId, null);
+  } catch (err) {
+    return res.status(err.status || 400).json({ error: err.message });
+  }
+
   const info = db.prepare(`
-    INSERT INTO orders (client_id, service_id, category_id, city, description, status, order_type, scheduled_time)
-    VALUES (?, ?, ?, ?, ?, 'new', 'direct', ?)
-  `).run(req.user.id, serviceId, categoryId || null, service.city, comment || null, scheduledTime);
+    INSERT INTO orders (client_id, service_id, category_id, city, description, car_info, car_id, status, order_type, scheduled_time)
+    VALUES (?, ?, ?, ?, ?, ?, ?, 'new', 'direct', ?)
+  `).run(req.user.id, serviceId, categoryId || null, service.city, comment || null, resolvedCar.carInfo, resolvedCar.carId, scheduledTime);
 
   res.status(201).json(getOrder(info.lastInsertRowid));
 });

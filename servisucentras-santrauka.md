@@ -845,6 +845,23 @@ Pirmas iš trijų 1-žingsnyje sukurtų skyrių gauna realų turinį — pilnas 
 
 ---
 
+## Serviso knyga — Žingsnis 3/7: Automobilio pasirinkimas užsakyme + Užsakymų istorija (2026-07-28)
+
+### A) Automobilio pasirinkimas kuriant užsakymą
+- **`orders` naujas stulpelis `car_id`** (FK→cars). `car_info` (esamas laisvo teksto stulpelis) dabar arba lieka laisvas tekstas (svečiams — nepakitęs elgesys), arba UŽRAŠOMA kaip nuotrauka ("Markė Modelis (Metai)") pasirinkto automobilio DUOMENŲ pasirinkimo METU — nepriklauso nuo vėlesnio automobilio redagavimo/ištrynimo.
+- **Backend `resolveCarSelection(clientId, carId, carInfoText)`** (`orders.routes.js`) — jei `carId` pateiktas, patikrina nuosavybę (`car.client_id === clientId`, kitaip `400`) ir IŠVEDA `car_info` iš automobilio įrašo; jei ne — naudoja laisvą tekstą (arba `null`). Naudojama IR `POST /orders` (broadcast/chat), IR `POST /orders/direct` (tiesioginis rezervavimas) — abu srautai dabar priima `carId`.
+- **`servisucentras-pagrindinis.html`**: bendros `renderCarPickerOptions(prefix)` / `onCarPickerChange(prefix)` / `resolveCarPickerSelection(prefix)` funkcijos naudojamos DVIEJUOSE overlay'uose (prefix `'gm'` chat'o "Apie kurį automobilį klausiate šįkart?" žingsnyje, prefix `'booking'` tiesioginio rezervavimo modale). Registruotam klientui laisvo teksto laukas PAKEIČIAMAS `<select>` su jo esamais automobiliais + "+ Naujas automobilis" pasirinkimu; pasirinkus pastarąjį, atsiranda TRUMPA forma (Markė*/Modelis*/Metai) — patvirtinus, iškarto sukuriamas realus, nuolatinis įrašas per `POST /api/cars` (atsiranda ir "Mano automobiliai" sąraše, ne vienkartinis). Svečiams (ir 'new' chat'o režimui, kuris VISADA yra dar neidentifikuotas lankytojas) — nepakitęs laisvo teksto laukas.
+- **Patikrinta gyvai**: (1) chat'e pasirinkus esamą "Volkswagen Golf (2018)" — sukurta užklausa su `car_id:1, car_info:"Volkswagen Golf (2018)"`; (2) tiesioginiame rezervavime — TAS PATS car-picker veikė, sukurta rezervacija su tokiu pačiu `car_id`; (3) pasirinkus "+ Naujas automobilis" (Skoda Octavia 2020) rezervavimo modale — sukurtas NAUJAS, PERMANENTUS `cars` įrašas (engine/fuel/plate/vin liko `null` — trumpa forma), iškarto panaudotas tai užklausai IR atsirado "Mano automobiliai" sąraše.
+
+### B) Užsakymų istorija kliento paskyroje
+- **`GET /api/clients/me/orders`** (jau egzistavo) papildytas 3 koreliuotais subquery — `last_decline_reason`, `last_decline_service_name`, `last_decline_at` — PASKUTINIS `order_declines` įrašas tai užklausai, jei toks yra (net jei užklausa VĖLIAU vėl priskirta kitam servisui — istorinis įrašas išlieka).
+- **`mano-paskyra.html`, "Užsakymų istorija"**: kortelių sąrašas — data, servisas (arba "— dar nepriskirta —"), automobilis (`car_info`), statusas, trumpas aprašymas. **Statusų atvaizdavimas** (sistemos `new/pending/in_progress/done/cancelled/declined` → kliento 5 būsenos iš užduoties): `done`→Baigtas, `cancelled`→Atšauktas, `in_progress` BE `client_accepted_at`→Priimtas (klientas pasirinko servisą, servisas dar nepatvirtino), `in_progress` SU `client_accepted_at`→Vykdomas (servisas patvirtino/priėmė), likusieji (`new`/`pending`/`declined`)→Naujas. Jei yra `last_decline_reason` — rodoma raudonai paryškinta pastaba "⚠ [servisas] atsisakė... Priežastis: [tekstas]", NEPRIKLAUSOMAI nuo dabartinio statuso.
+- **Patikrinta gyvai** (viena užklausa, visas gyvavimo ciklas): sukurta (Naujas) → servisas pasiūlė kainą → klientas pasirinko (Priimtas) → servisas priėmė klientą/mokestis (Vykdomas) → servisas atsisakė su priežastimi (grįžo į Naujas + atsirado įspėjimas su TIKSLIA priežastimi ir serviso vardu). Automobilis ("Volkswagen Golf (2018)") teisingai rodomas visose būsenose. Automatiniai testai (7/7) nepakitę.
+
+**Kito žingsnio laukiama** (4/7+) — dar neįgyvendinta: "Profilis" skyriaus turinys, bei tolimesnė "Serviso knygos" funkcionalumo dalis.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

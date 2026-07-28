@@ -87,7 +87,8 @@ CREATE TABLE IF NOT EXISTS orders (
   city TEXT,
   description TEXT,
   price REAL,
-  car_info TEXT, -- automobilio markė/modelis/metai, laisvas tekstas iš kliento formos
+  car_info TEXT, -- automobilio markė/modelis/metai — arba laisvas tekstas (svečias), arba užrašas, IŠVESTAS iš pasirinkto car_id kūrimo metu (registruotas klientas, žr. Serviso knyga Žingsnis 3/7)
+  car_id INTEGER REFERENCES cars(id), -- registruoto kliento pasirinktas konkretus automobilis (Serviso knyga, Žingsnis 3/7) — NULL svečiams/laisvo teksto atveju
   commission_amount REAL,
   status TEXT NOT NULL DEFAULT 'new', -- new | pending | in_progress | done | cancelled | declined (servisas atsisakė po priėmimo, žr. order_declines)
   scheduled_time TEXT, -- suplanuoto vizito data/laikas (ISO), nustato servisas po priėmimo

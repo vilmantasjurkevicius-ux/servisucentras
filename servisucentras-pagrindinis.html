@@ -716,8 +716,16 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
       <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000" onfocus="this.setSelectionRange(this.value.length,this.value.length)">
     </div>
     <div id="gm-car-group">
-      <label class="gm-label">Automobilio modelis ir metai</label>
+      <label class="gm-label" id="gm-car-label">Automobilio modelis ir metai</label>
       <input class="gm-field" id="gm-car" type="text" placeholder="pvz. VW Golf, 2018">
+      <div id="gm-car-picker-wrap" style="display:none;">
+        <select class="gm-field" id="gm-car-select" onchange="onCarPickerChange('gm')"></select>
+        <div id="gm-car-quickadd" style="display:none;">
+          <input class="gm-field" id="gm-car-new-make" type="text" placeholder="Markė (pvz. Volkswagen)">
+          <input class="gm-field" id="gm-car-new-model" type="text" placeholder="Modelis (pvz. Golf)">
+          <input class="gm-field" id="gm-car-new-year" type="number" placeholder="Metai (neprivaloma)">
+        </div>
+      </div>
     </div>
     <button class="gm-btn" id="gm-submit-btn" onclick="guestOk()">💬 Rašyti servisams →</button>
     <div class="gm-note" id="gm-note">Jau turite paskyrą? <a onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</a></div>
@@ -734,8 +742,15 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     <div class="booking-days" id="booking-days"></div>
     <div class="booking-slots" id="booking-slots"></div>
     <div id="booking-comment-step" style="display:none;">
+      <label class="gm-label">Automobilis</label>
+      <select class="gm-field" id="booking-car-select" onchange="onCarPickerChange('booking')"></select>
+      <div id="booking-car-quickadd" style="display:none;">
+        <input class="gm-field" id="booking-car-new-make" type="text" placeholder="Markė (pvz. Volkswagen)">
+        <input class="gm-field" id="booking-car-new-model" type="text" placeholder="Modelis (pvz. Golf)">
+        <input class="gm-field" id="booking-car-new-year" type="number" placeholder="Metai (neprivaloma)">
+      </div>
       <label class="gm-label">Trumpas komentaras servisui</label>
-      <textarea class="gm-field" id="booking-comment" rows="3" placeholder="pvz. VW Golf 2018, keičiu stabdžių kaladėles" style="resize:vertical;"></textarea>
+      <textarea class="gm-field" id="booking-comment" rows="3" placeholder="pvz. keičiu stabdžių kaladėles" style="resize:vertical;"></textarea>
       <button class="gm-btn" id="booking-submit-btn" onclick="submitBooking()">✓ Patvirtinti rezervaciją →</button>
     </div>
   </div>
@@ -922,6 +937,8 @@ let clientToken = localStorage.getItem('sc_client_token') || null;
 let guestName = localStorage.getItem('sc_client_name') || '';
 let guestPhone = localStorage.getItem('sc_client_phone') || '';
 let guestCarInfo = '';
+let guestCarId = null; // registruoto kliento pasirinktas automobilis (Serviso knyga, Žingsnis 3/7)
+let myCarsCache = []; // registruoto kliento "Mano automobiliai" — naudojama car-picker'iuose
 let currentOrderId = null;
 let guestOverlayMode = 'new'; // 'new' | 'car' | 'edit'
 let renderedMessageIds = new Set();
@@ -983,7 +1000,20 @@ function showGuestOverlay(mode){
     title.textContent = 'Apie kurį automobilį klausiate šįkart?';
     sub.textContent = 'Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart.';
     note.style.display = 'none';
-    carField.value = '';
+    // Registruotas klientas — RENKASI iš "Mano automobiliai" (Serviso knyga, Žingsnis 3/7),
+    // ne laisvas tekstas. Svečias — nepakitęs laisvo teksto laukas.
+    const carPickerWrap = document.getElementById('gm-car-picker-wrap');
+    if(isRegisteredClient){
+      carField.style.display = 'none';
+      document.getElementById('gm-car-label').style.display = 'none';
+      carPickerWrap.style.display = 'block';
+      renderCarPickerOptions('gm');
+    } else {
+      carField.style.display = '';
+      document.getElementById('gm-car-label').style.display = '';
+      carPickerWrap.style.display = 'none';
+      carField.value = '';
+    }
     btn.textContent = '💬 Tęsti →';
   } else if(mode === 'edit'){
     document.getElementById('chat-panel').classList.remove('show');
@@ -1005,6 +1035,11 @@ function showGuestOverlay(mode){
     title.textContent = 'Prieš rašant servisams';
     sub.innerHTML = 'Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b>';
     note.style.display = 'block';
+    // 'new' režimas — visada dar neidentifikuotas lankytojas (nei registruotas, nei žinomas
+    // svečias), tad visada laisvas tekstas, ne car-picker.
+    carField.style.display = '';
+    document.getElementById('gm-car-label').style.display = '';
+    document.getElementById('gm-car-picker-wrap').style.display = 'none';
     nameField.value = ''; phoneField.value = '+370 '; carField.value = '';
     nameField.style.borderColor = ''; phoneField.style.borderColor = '';
     btn.textContent = '💬 Rašyti servisams →';
@@ -1025,9 +1060,19 @@ function editGuestInfo(){ showGuestOverlay('edit'); }
 async function guestOk(){
   const carInfo = document.getElementById('gm-car').value.trim();
 
-  // 'car' režimas — vardas/telefonas jau žinomi, token galiojantis, jokio API kvietimo nereikia
+  // 'car' režimas — vardas/telefonas jau žinomi, token galiojantis. Registruotam klientui —
+  // reikia išspręsti car-picker'io pasirinkimą (gali sukurti naują automobilį per API);
+  // svečiui — nepakitęs laisvas tekstas, jokio API kvietimo nereikia.
   if(guestOverlayMode === 'car'){
-    guestCarInfo = carInfo;
+    if(isRegisteredClient){
+      try{
+        guestCarId = await resolveCarPickerSelection('gm');
+      } catch(err){ alert(err.message); return; }
+      guestCarInfo = '';
+    } else {
+      guestCarInfo = carInfo;
+      guestCarId = null;
+    }
     document.getElementById('guest-overlay').classList.remove('show');
     showChat();
     return;
@@ -1114,7 +1159,7 @@ async function sendMsg(){
     if(!currentOrderId){
       const res = await fetch(`${API_BASE}/orders`, {
         method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
-        body: JSON.stringify({ categoryId: activeCat, city: activeCity, description: txt, carInfo: guestCarInfo || null })
+        body: JSON.stringify({ categoryId: activeCat, city: activeCity, description: txt, carInfo: guestCarInfo || null, carId: guestCarId || null })
       });
       const data = await res.json();
       if(!res.ok) throw new Error(data.error || 'Nepavyko sukurti užklausos');
@@ -1268,7 +1313,58 @@ async function checkClientRegistration(){
   if(isRegisteredClient){
     const navRight = document.getElementById('nav-right');
     if(navRight) navRight.innerHTML = `<button class="nav-btn nav-btn-out" onclick="location.href='mano-paskyra.html'">👤 Mano paskyra</button>`;
+    // Automobilio pasirinkimas kuriant užklausą (Serviso knyga, Žingsnis 3/7) — reikia
+    // iš anksto, kad car-picker'iai (chat/rezervavimo formose) turėtų ką rodyti.
+    try{
+      const carsRes = await fetch(`${API_BASE}/cars/me`, { headers:{'Authorization':'Bearer '+clientToken} });
+      if(carsRes.ok) myCarsCache = await carsRes.json();
+    } catch(e){ /* tylus fail — car-picker tiesiog rodys tuščią sąrašą */ }
   }
+}
+
+/* ══ AUTOMOBILIO PASIRINKIMAS (Serviso knyga, Žingsnis 3/7) — bendros funkcijos,
+   naudojamos IR chat'o 'car' overlay'uje (prefix 'gm'), IR rezervavimo modale
+   (prefix 'booking'). Registruotas klientas renkasi iš esamų arba greitai
+   sukuria naują (trumpa forma) — jokio laisvo teksto, užklausa susiejama su
+   konkrečiu car_id (žr. backend orders.routes.js resolveCarSelection). ══ */
+function renderCarPickerOptions(prefix){
+  const sel = document.getElementById(prefix+'-car-select');
+  if(!sel) return;
+  const opts = ['<option value="">— pasirinkite automobilį —</option>']
+    .concat(myCarsCache.map(c=>`<option value="${c.id}">${c.make} ${c.model}${c.year?' ('+c.year+')':''}</option>`))
+    .concat(['<option value="__new__">+ Naujas automobilis</option>']);
+  sel.innerHTML = opts.join('');
+  const quickadd = document.getElementById(prefix+'-car-quickadd');
+  if(quickadd) quickadd.style.display = 'none';
+}
+function onCarPickerChange(prefix){
+  const sel = document.getElementById(prefix+'-car-select');
+  const quickadd = document.getElementById(prefix+'-car-quickadd');
+  if(!sel || !quickadd) return;
+  quickadd.style.display = sel.value === '__new__' ? 'block' : 'none';
+}
+async function apiPostCar(data){
+  const res = await fetch(`${API_BASE}/cars`, {
+    method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+    body: JSON.stringify(data)
+  });
+  const result = await res.json();
+  if(!res.ok) throw new Error(result.error || 'Nepavyko sukurti automobilio');
+  return result;
+}
+async function resolveCarPickerSelection(prefix){
+  const sel = document.getElementById(prefix+'-car-select');
+  if(!sel || !sel.value) return null;
+  if(sel.value === '__new__'){
+    const make = document.getElementById(prefix+'-car-new-make').value.trim();
+    const model = document.getElementById(prefix+'-car-new-model').value.trim();
+    const year = document.getElementById(prefix+'-car-new-year').value.trim();
+    if(!make || !model) throw new Error('Naujam automobiliui būtina nurodyti markę ir modelį');
+    const car = await apiPostCar({ make, model, year: year ? parseInt(year,10) : null });
+    myCarsCache.push(car);
+    return car.id;
+  }
+  return parseInt(sel.value, 10);
 }
 
 async function openBooking(serviceId){
@@ -1285,6 +1381,7 @@ async function openBooking(serviceId){
   bookingSelectedTime = null;
   document.getElementById('booking-title').textContent = 'Rezervuoti laiką — '+svc.name;
   document.getElementById('booking-comment-step').style.display = 'none';
+  renderCarPickerOptions('booking');
   document.getElementById('booking-days').innerHTML = '';
   document.getElementById('booking-slots').innerHTML = '<div style="color:var(--muted);font-size:12.5px;padding:8px 0;">Kraunama...</div>';
   document.getElementById('booking-overlay').classList.add('show');
@@ -1352,9 +1449,13 @@ async function submitBooking(){
   const orig = btn.textContent;
   btn.disabled = true; btn.textContent = 'Rezervuojama...';
   try{
+    let carId = null;
+    try{ carId = await resolveCarPickerSelection('booking'); }
+    catch(err){ alert(err.message); btn.disabled = false; btn.textContent = orig; return; }
+
     const res = await fetch(`${API_BASE}/orders/direct`, {
       method:'POST', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
-      body: JSON.stringify({ serviceId: bookingServiceId, categoryId: activeCat, scheduledTime: bookingSelectedTime, comment: comment || null })
+      body: JSON.stringify({ serviceId: bookingServiceId, categoryId: activeCat, scheduledTime: bookingSelectedTime, comment: comment || null, carId })
     });
     const data = await res.json();
     if(!res.ok){
