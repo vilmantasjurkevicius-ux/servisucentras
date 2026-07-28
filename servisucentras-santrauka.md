@@ -821,6 +821,18 @@ Naujas srautas, statomas ANT baigto 6-žingsnių plano: servisas gali atsisakyti
 
 ---
 
+## Serviso knyga — Žingsnis 1/7: Kliento paskyros puslapio pagrindas (2026-07-28)
+Naujas, atskiras 7-žingsnių planas ("Serviso knyga"). Šis žingsnis TIK sukūrė struktūrą/navigaciją registruoto kliento asmeninei paskyrai — jokio turinio dar nėra (sąmoningai — tai kito žingsnio darbas).
+
+- **Naujas `mano-paskyra.html`** — TIK registruotiems (ne svečio) klientams. Šoninis meniu (mobile — hamburger): "🚗 Mano automobiliai", "📋 Užsakymų istorija", "👤 Profilis" — visi trys šiuo metu rodo tuščią "🚧 Ši funkcija bus pridėta netrukus" placeholder'į (`showAccPage(id)` router, ta pati `.acc-item`/`.acc-page` show/hide logika kaip esamų puslapių tab'ai).
+- **Apsauga**: jei `localStorage.sc_client_token` nėra — iškart (dar prieš API kvietimą) `window.location.href` į `automeistrai-login.html?type=client&tab=login-c`. Jei tokenas yra, bet `GET /api/clients/me` grąžina `is_guest:true` (arba `401`) — irgi nukreipiama į login. Svečiai TAIP PAT gauna `clientToken` (per `POST /auth/guest`), tad vien tokeno buvimo nepakako — būtinas `is_guest` patikrinimas serverio pusėje, tas pats principas kaip anksčiau naudotas tiesioginio rezervavimo (Žingsnis 6/6) registracijos tikrinime.
+- **`servisucentras-pagrindinis.html`**: esama `checkClientRegistration()` (jau naudota Žingsnyje 6/6 rezervavimo mygtukui) papildyta — kai `isRegisteredClient===true`, `#nav-right` ("Prisijungti"/"Registruotis") pakeičiamas į "👤 Mano paskyra" nuorodą į `mano-paskyra.html`. Joks naujas API kvietimas nereikalingas — panaudotas jau esantis tikrinimas.
+- **Patikrinta gyvai**: (1) be tokeno atidarius `mano-paskyra.html` — iškart nukreipta į login (kliento tab'as); (2) prisijungus kaip registruotas klientas ("Direktas Klientas") — paskyra atsidarė, sveikinimas "Sveiki, Direktas!" rodomas teisingai, visi trys meniu punktai perjungia tarp savęs korektiškai; (3) pagrindiniame puslapyje prisijungus nav dešinėje pusėje rodo "👤 Mano paskyra" (ne Prisijungti/Registruotis), paspaudus — nuveda į paskyrą; (4) "🚪 Atsijungti" ištrina tokeną ir grąžina į pagrindinį puslapį. Jokių console klaidų. Automatiniai testai (7/7) nepakitę (backend'as šiame žingsnyje nekeistas).
+
+**Kito žingsnio laukiama** (2/7+) — dar neįgyvendinta: pačių trijų skyrių (automobiliai/istorija/profilis) realus turinys ir "Serviso knygos" pagrindinė funkcija (dar nepaaiškinta, kokia tiksliai — laukiama sekančios užduoties).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

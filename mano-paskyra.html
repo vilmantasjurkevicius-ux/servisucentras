@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<title>Mano paskyra — ServisuCentras.lt</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0E0F10; --bg2:#161819; --bg3:#1E2022;
+  --line:rgba(255,255,255,0.07); --line2:rgba(255,255,255,0.13);
+  --text:#F0EDE5; --muted:#7A8088; --dim:#3A3F45;
+  --y:#F5C400; --ydim:rgba(245,196,0,0.1);
+  --g:#3D6B4A; --gdim:rgba(61,107,74,0.14);
+  --r:#8B1A1A; --rdim:rgba(139,26,26,0.13);
+  --radius:4px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+
+/* ══ TOP NAV ══ */
+nav{
+  position:sticky;top:0;z-index:100;height:56px;padding:0 24px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(14,15,16,0.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--line);
+}
+.logo{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;}
+.logo-icon{width:32px;height:32px;border-radius:4px;overflow:hidden;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
+.logo-icon .ly{flex:1;background:var(--y);} .logo-icon .lg{flex:1;background:var(--g);} .logo-icon .lr{flex:1;background:var(--r);}
+.logo-name{font-family:'Oswald';font-size:16px;font-weight:700;letter-spacing:0.05em;color:var(--text);}
+.logo-name em{font-style:normal;color:var(--y);}
+.nav-right{display:flex;align-items:center;gap:14px;}
+.nav-greeting{font-size:13px;color:var(--muted);}
+.nav-greeting b{color:var(--text);}
+.nav-btn{font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:var(--radius);cursor:pointer;transition:all .15s;background:transparent;border:1px solid var(--line2);color:var(--text);}
+.nav-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+
+/* ══ SHELL: SIDEBAR + CONTENT ══ */
+.shell{display:flex;min-height:calc(100vh - 56px);}
+.acc-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--line);padding:20px 0;}
+.acc-sb-title{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0 20px 10px;}
+.acc-item{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:11px 20px;background:none;border:none;border-left:3px solid transparent;
+  color:var(--muted);font-family:'IBM Plex Sans';font-size:13.5px;font-weight:500;
+  cursor:pointer;text-align:left;transition:all .15s;
+}
+.acc-item:hover{color:var(--text);background:rgba(255,255,255,0.03);}
+.acc-item.on{color:var(--y);border-left-color:var(--y);background:var(--ydim);}
+.acc-item .ic{font-size:15px;width:18px;text-align:center;}
+.acc-main{flex:1;padding:32px 40px;}
+.acc-page{display:none;}
+.acc-page.show{display:block;}
+.acc-page-title{font-family:'Oswald';font-size:24px;font-weight:600;margin-bottom:6px;}
+.acc-page-sub{font-size:13px;color:var(--muted);margin-bottom:28px;}
+.acc-empty{
+  background:var(--bg2);border:1px solid var(--line2);border-radius:8px;
+  padding:48px 32px;text-align:center;color:var(--muted);
+}
+.acc-empty-icon{font-size:34px;margin-bottom:14px;}
+.acc-empty-title{font-family:'Oswald';font-size:16px;color:var(--text);margin-bottom:6px;}
+.acc-empty-sub{font-size:13px;line-height:1.5;max-width:360px;margin:0 auto;}
+
+/* ══ MOBILE HAMBURGER ══ */
+.acc-hamburger{display:none;background:none;border:none;color:var(--text);font-size:22px;cursor:pointer;padding:4px 8px;}
+.acc-sidebar-backdrop{display:none;}
+@media(max-width:800px){
+  .nav-greeting{display:none;}
+  .acc-hamburger{display:block;}
+  .shell{display:block;}
+  .acc-sidebar{
+    position:fixed;top:56px;left:0;bottom:0;width:240px;z-index:200;
+    background:var(--bg);transform:translateX(-100%);transition:transform .2s;overflow-y:auto;
+  }
+  .acc-sidebar.show{transform:translateX(0);}
+  .acc-sidebar-backdrop.show{
+    display:block;position:fixed;inset:56px 0 0 0;background:rgba(0,0,0,0.6);z-index:190;
+  }
+  .acc-main{padding:24px 20px;}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="servisucentras-pagrindinis.html">
+    <div class="logo-icon"><div class="ly"></div><div class="lg"></div><div class="lr"></div></div>
+    <div class="logo-name">SERVISU<em>CENTRAS</em></div>
+  </a>
+  <div class="nav-right">
+    <span class="nav-greeting" id="nav-greeting">Sveiki!</span>
+    <button class="nav-btn" onclick="logout()">🚪 Atsijungti</button>
+  </div>
+  <button class="acc-hamburger" id="acc-hamburger-btn" onclick="toggleAccSidebar()" aria-label="Meniu">☰</button>
+</nav>
+
+<div class="shell">
+  <div class="acc-sidebar-backdrop" id="acc-sidebar-backdrop" onclick="closeAccSidebar()"></div>
+  <nav class="acc-sidebar" id="acc-sidebar">
+    <div class="acc-sb-title">Mano paskyra</div>
+    <button class="acc-item on" data-page="cars" onclick="showAccPage('cars',this)"><span class="ic">🚗</span> Mano automobiliai</button>
+    <button class="acc-item" data-page="history" onclick="showAccPage('history',this)"><span class="ic">📋</span> Užsakymų istorija</button>
+    <button class="acc-item" data-page="profile" onclick="showAccPage('profile',this)"><span class="ic">👤</span> Profilis</button>
+  </nav>
+
+  <div class="acc-main">
+    <div class="acc-page show" id="acc-page-cars">
+      <div class="acc-page-title">🚗 Mano automobiliai</div>
+      <div class="acc-page-sub">Čia matysite savo įrašytus automobilius ir jų aptarnavimo istoriją.</div>
+      <div class="acc-empty">
+        <div class="acc-empty-icon">🚧</div>
+        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
+        <div class="acc-empty-sub">Netrukus čia galėsite pridėti savo automobilius ir sekti jų aptarnavimo istoriją vienoje vietoje.</div>
+      </div>
+    </div>
+
+    <div class="acc-page" id="acc-page-history">
+      <div class="acc-page-title">📋 Užsakymų istorija</div>
+      <div class="acc-page-sub">Visos jūsų pateiktos užklausos ir rezervacijos — praeitos ir esamos.</div>
+      <div class="acc-empty">
+        <div class="acc-empty-icon">🚧</div>
+        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
+        <div class="acc-empty-sub">Netrukus čia matysite pilną savo užsakymų istoriją su statusais ir pokalbiais.</div>
+      </div>
+    </div>
+
+    <div class="acc-page" id="acc-page-profile">
+      <div class="acc-page-title">👤 Profilis</div>
+      <div class="acc-page-sub">Jūsų paskyros duomenys.</div>
+      <div class="acc-empty">
+        <div class="acc-empty-icon">🚧</div>
+        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
+        <div class="acc-empty-sub">Netrukus čia galėsite peržiūrėti ir keisti savo vardą, telefoną ir el. paštą.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const API_BASE = '/api';
+let clientToken = localStorage.getItem('sc_client_token');
+
+// Apsauga: neprisijungęs arba svečio tokenas — iškart nukreipiama į prisijungimą,
+// dar prieš bandant kviesti API (žr. "Serviso knyga — Žingsnis 1/7" santrauka.md).
+if(!clientToken){
+  window.location.href = 'automeistrai-login.html?type=client&tab=login-c';
+}
+
+function redirectToLogin(){
+  localStorage.removeItem('sc_client_token');
+  window.location.href = 'automeistrai-login.html?type=client&tab=login-c';
+}
+
+async function init(){
+  try{
+    const res = await fetch(`${API_BASE}/clients/me`, { headers: { 'Authorization': 'Bearer '+clientToken } });
+    if(!res.ok){ redirectToLogin(); return; }
+    const client = await res.json();
+    // Svečiai (is_guest=1) taip pat turi clientToken (žr. POST /auth/guest), tad vien tokeno
+    // buvimo nepakanka — ši paskyra TIK registruotiems klientams.
+    if(client.is_guest){ redirectToLogin(); return; }
+    document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(client.first_name||'')+'</b>!';
+  } catch(err){
+    redirectToLogin();
+  }
+}
+init();
+
+function logout(){
+  localStorage.removeItem('sc_client_token');
+  window.location.href = 'servisucentras-pagrindinis.html';
+}
+
+function showAccPage(id, el){
+  document.querySelectorAll('.acc-page').forEach(p=>p.classList.remove('show'));
+  document.getElementById('acc-page-'+id).classList.add('show');
+  document.querySelectorAll('.acc-item').forEach(b=>b.classList.remove('on'));
+  el.classList.add('on');
+  closeAccSidebar();
+}
+
+function toggleAccSidebar(){
+  document.getElementById('acc-sidebar').classList.toggle('show');
+  document.getElementById('acc-sidebar-backdrop').classList.toggle('show');
+}
+function closeAccSidebar(){
+  document.getElementById('acc-sidebar').classList.remove('show');
+  document.getElementById('acc-sidebar-backdrop').classList.remove('show');
+}
+</script>
+</body>
+</html>

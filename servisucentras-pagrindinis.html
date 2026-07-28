@@ -494,7 +494,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     <a class="nav-link" href="servisucentras-diagnostika.html">🔍 Diagnostika</a>
     <a class="nav-link" href="servisucentras-admin.html" style="color:var(--y);">⚙️ Admin</a>
   </div>
-  <div class="nav-right">
+  <div class="nav-right" id="nav-right">
     <button class="nav-btn nav-btn-out" onclick="location.href='automeistrai-login.html?type=client&tab=login'">Prisijungti</button>
     <button class="nav-btn nav-btn-pri" onclick="location.href='automeistrai-login.html?type=client&tab=reg-c'">Registruotis</button>
   </div>
@@ -1262,6 +1262,13 @@ async function checkClientRegistration(){
     const data = await res.json();
     isRegisteredClient = !data.is_guest;
   } catch(e){ isRegisteredClient = false; }
+
+  // Registruotam, prisijungusiam klientui — nuoroda į asmeninę paskyrą vietoj
+  // Prisijungti/Registruotis (žr. "Serviso knyga — Žingsnis 1/7" santrauka.md).
+  if(isRegisteredClient){
+    const navRight = document.getElementById('nav-right');
+    if(navRight) navRight.innerHTML = `<button class="nav-btn nav-btn-out" onclick="location.href='mano-paskyra.html'">👤 Mano paskyra</button>`;
+  }
 }
 
 async function openBooking(serviceId){
