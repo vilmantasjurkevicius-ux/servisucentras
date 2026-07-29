@@ -20,6 +20,16 @@ router.post('/login', authLimiter, (req, res) => {
   res.json({ token });
 });
 
+// Viešas endpoint'as — TIK commissionMasterEnabled (God Mode būsena), naudojamas
+// viešuose puslapiuose (pvz. automeistrai-login.html registracijos pranešime), kad
+// rodytų tikslią informaciją, ar servisams po bandomojo laikotarpio bus taikomas
+// mokestis. Jokios kitos admin_settings informacijos (kainos, banko rekvizitai,
+// admin slaptažodis) čia nėra — tyčia registruotas PRIEŠ authRequired žemiau.
+router.get('/settings/public', (req, res) => {
+  const settings = db.prepare('SELECT commission_master_enabled FROM admin_settings WHERE id = 1').get();
+  res.json({ commissionMasterEnabled: !!settings.commission_master_enabled });
+});
+
 router.use(authRequired, requireRole('admin'));
 
 // ── DASHBOARD ──

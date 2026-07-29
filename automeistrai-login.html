@@ -500,7 +500,27 @@ function clearError(){
 // ankstesnio puslapio per ?action=). switchType() pereina iš picker'io tiesiai
 // į atitinkamos formos skydelį, iškart pritaikydamas jau žinomą veiksmą.
 let currentType = null;
-const NEUTRAL_NOTE = '✓ Servisams — nemokama registracija, pirmieji 6 mėnesiai be jokių mokesčių.<br>✓ Klientams — paskyra neprivaloma, galima rezervuoti kaip svečias.';
+
+// God Mode būsena (žr. admin Nustatymai) — nuskaitoma iš viešo endpoint'o, kad
+// "servisų registracija nemokama" pranešimas rodytų TIKSLIĄ informaciją: jei God
+// Mode išjungtas, mokestis niekada nebus taikomas (ne tik pirmus 6 mėn.).
+let godModeEnabled = true;
+async function loadGodModeState(){
+  try{
+    const res = await fetch(`${API_BASE}/admin/settings/public`);
+    if(res.ok){ const data = await res.json(); godModeEnabled = !!data.commissionMasterEnabled; }
+  } catch(e){ /* tylus fail — liekame prie numatyto (God Mode įjungtas) teksto */ }
+}
+function neutralNoteHtml(){
+  return godModeEnabled
+    ? '✓ Servisams — nemokama registracija, pirmieji 6 mėnesiai be jokių mokesčių.<br>✓ Klientams — paskyra neprivaloma, galima rezervuoti kaip svečias.'
+    : '✓ Servisams — nemokama registracija, šiuo metu VISIŠKAI be mokesčių.<br>✓ Klientams — paskyra neprivaloma, galima rezervuoti kaip svečias.';
+}
+function serviceNoteHtml(){
+  return godModeEnabled
+    ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.'
+    : '✓ Servisų registracija nemokama.<br>Šiuo metu VISIŠKAI be jokių mokesčių — neribotą laiką.<br>Jokio fiksuoto mokesčio už priimtus klientus, kol tai nepasikeis.';
+}
 
 function switchType(type){
   currentType = type;
@@ -513,7 +533,7 @@ function switchType(type){
   document.getElementById('panel-service').classList.toggle('show', type==='service');
   document.getElementById('panel-client').classList.toggle('show', type==='client');
   document.getElementById('left-note').innerHTML = type === 'service'
-    ? '✓ Servisų registracija nemokama.<br>Pirmieji 6 mėnesiai be jokių mokesčių nuo jūsų registracijos datos.<br>Vėliau — tik nedidelis fiksuotas mokestis už kiekvieną priimtą klientą.'
+    ? serviceNoteHtml()
     : '✓ Klientams registracija neprivaloma.<br>Galite rezervuoti kaip svečias<br>be jokios paskyros.';
 
   // Iškart pritaikome jau žinomą veiksmą (login/register) atitinkamai formai.
@@ -529,7 +549,7 @@ function backToPicker(){
   document.getElementById('panel-service').classList.remove('show');
   document.getElementById('panel-client').classList.remove('show');
   document.getElementById('panel-picker').classList.add('show');
-  document.getElementById('left-note').innerHTML = NEUTRAL_NOTE;
+  document.getElementById('left-note').innerHTML = neutralNoteHtml();
   document.querySelectorAll('.type-card').forEach(c=>{
     c.classList.remove('active');
     c.querySelector('.type-check').textContent = '';
@@ -869,7 +889,11 @@ function initFromQuery(){
 loadCategories();
 populateWorkHourSelects();
 populateCitySelect();
-initFromQuery();
+(async function initPage(){
+  await loadGodModeState();
+  if(!currentType) document.getElementById('left-note').innerHTML = neutralNoteHtml();
+  initFromQuery();
+})();
 </script>
 </body>
 </html>

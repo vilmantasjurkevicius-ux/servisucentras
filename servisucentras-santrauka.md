@@ -943,6 +943,17 @@ Automobilio markės/modelio laukai (visose 3 vietose, kur juos galima įvesti) p
 
 ---
 
+## Registracijos pranešimas dabar atspindi tikrą God Mode būseną (2026-07-29)
+`automeistrai-login.html` žalias pranešimas ("Servisų registracija nemokama...") anksčiau buvo STATIŠKAS tekstas — visada žadėjo "vėliau — fiksuotas mokestis", nepriklausomai nuo to, ar admin faktiškai įjungęs God Mode (Nustatymai).
+
+- Naujas VIEŠAS endpoint'as `GET /api/admin/settings/public` (`admin.routes.js`, registruotas PRIEŠ `router.use(authRequired,...)` gatę) — grąžina TIK `commissionMasterEnabled`, jokios kitos admin_settings informacijos (kainų, banko rekvizitų, admin slaptažodžio).
+- `automeistrai-login.html` puslapio užkrovimo metu nuskaito šią būseną (`loadGodModeState()`), ir pagal ją parenka vieną iš dviejų tekstų:
+  - God Mode ĮJUNGTAS: "Pirmieji 6 mėnesiai be jokių mokesčių... Vėliau — tik nedidelis fiksuotas mokestis..." (kaip anksčiau).
+  - God Mode IŠJUNGTAS: "Šiuo metu VISIŠKAI be jokių mokesčių — neribotą laiką..." (nebežadama būsimo mokesčio, kurio faktiškai nebus, kol admin neįjungs atgal).
+- Patikrinta gyvai: per admin API laikinai išjungus God Mode, IR neutralus (tipo dar nepasirinkus) pranešimas, IR "Servisas" tipo pranešimas teisingai pasikeitė į "VISIŠKAI be mokesčių" variantą; įjungus atgal — grįžo prie originalaus teksto. Jokių console klaidų, testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
