@@ -151,19 +151,11 @@ nav{
 .lt-flag-wave{
   display:inline-flex;flex-direction:column;width:34px;height:14px;border-radius:2px;overflow:hidden;
   border:1px solid rgba(255,255,255,0.15);flex-shrink:0;
-  transform-origin:left center;
-  animation:lt-flag-wave-anim 2.6s ease-in-out infinite;
 }
 .lt-flag-wave span{flex:1;}
 .lt-flag-wave .fy{background:var(--y);}
 .lt-flag-wave .fg{background:var(--g);}
 .lt-flag-wave .fr{background:var(--r);}
-@keyframes lt-flag-wave-anim{
-  0%,100%{transform:skewY(0deg) scaleY(1);}
-  25%{transform:skewY(-5deg) scaleY(0.95);}
-  50%{transform:skewY(0deg) scaleY(1);}
-  75%{transform:skewY(5deg) scaleY(0.95);}
-}
 h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;}
 h1 em{font-style:normal;color:var(--y);}
 .hero-sub{font-size:16px;color:var(--muted);max-width:520px;line-height:1.65;margin-bottom:32px;}
