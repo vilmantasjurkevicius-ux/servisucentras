@@ -537,8 +537,10 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
   </div>
 </section>
 
-<!-- MIESTO PAIEŠKA + KATEGORIJOS -->
+<!-- KATEGORIJOS + MIESTO PAIEŠKA -->
 <div class="search-section" id="servisai">
+  <div class="board-label">Pasirink gedimo kategoriją <b id="board-active"></b></div>
+  <div class="board" id="board"></div>
   <div class="city-row">
     <span class="city-ico">📍</span>
     <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
@@ -554,8 +556,6 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
     <div class="city-chip" onclick="selCity(this,'Kitas')">🗺️ Kitas</div>
   </div>
-  <div class="board-label">Pasirink gedimo kategoriją <b id="board-active"></b></div>
-  <div class="board" id="board"></div>
 </div>
 
 <!-- SERVISŲ SĄRAŠAS -->
