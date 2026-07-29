@@ -933,6 +933,16 @@ Automobilio markės/modelio laukai (visose 3 vietose, kur juos galima įvesti) p
 
 ---
 
+## Serviso registracija: visas Lietuvos miestų sąrašas (2026-07-29)
+`automeistrai-login.html` serviso registracijos "Miestas" laukas anksčiau turėjo tik 9 fiksuotas reikšmes (Ukmergė/Vilnius/Kaunas/Klaipėda/Šiauliai/Panevėžys/Alytus/Marijampolė/Kitas), o "Kitas" tebuvo tekstas be jokio veikimo (pasirinkus, tiesiog būtų išsiųsta reikšmė "Kitas" kaip miesto pavadinimas).
+
+- Naujas `LT_CITIES` sąrašas — visi 54 Lietuvos savivaldybių centrai, rikiuojami abėcėliškai.
+- Paskutinė parinktis "Kita vietovė..." dabar TIKRAI veikia — pasirinkus, atsiveria laisvo teksto laukas (`reg-s-city-other`), skirtas kaimams ir kitoms vietovėms, kurių sąraše nėra.
+- `serviceRegister()` naudoja naują `readRegCity()`, kuri grąžina arba pasirinktą miestą, arba įrašytą laisvą tekstą.
+- Patikrinta gyvai: sąrašas rodo visus 54 miestus + "Kita vietovė..."; pasirinkus pastarąją, atsiranda teksto laukas. Jokių console klaidų, testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

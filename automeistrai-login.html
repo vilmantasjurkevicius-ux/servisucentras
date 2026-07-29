@@ -325,13 +325,8 @@ select.field{cursor:pointer;}
             </div>
             <div class="field-group">
               <label class="field-label">Miestas</label>
-              <select class="field" id="reg-s-city">
-                <option value="">Pasirinkite miestą</option>
-                <option>Ukmergė</option>
-                <option>Vilnius</option><option>Kaunas</option><option>Klaipėda</option>
-                <option>Šiauliai</option><option>Panevėžys</option><option>Alytus</option>
-                <option>Marijampolė</option><option>Kitas</option>
-              </select>
+              <select class="field" id="reg-s-city" onchange="onRegCityChange()"></select>
+              <input class="field" id="reg-s-city-other" type="text" style="display:none;margin-top:8px;" placeholder="Įrašykite miestą arba kaimo/vietovės pavadinimą">
             </div>
             <div class="field-group">
               <label class="field-label">Tikslus adresas</label>
@@ -590,6 +585,33 @@ function populateWorkHourSelects(){
   document.getElementById('reg-s-work-end').value = '18:00';
 }
 
+// MIESTAS — visų Lietuvos savivaldybių centrų sąrašas. Kaimams ir kitoms
+// vietovėms, kurių sąraše nėra, "Kita vietovė..." atveria laisvo teksto lauką.
+const LT_CITIES = [
+  'Akmenė','Alytus','Anykščiai','Birštonas','Biržai','Druskininkai','Elektrėnai',
+  'Ignalina','Jonava','Joniškis','Jurbarkas','Kaišiadorys','Kalvarija','Kaunas',
+  'Kazlų Rūda','Kėdainiai','Kelmė','Klaipėda','Kretinga','Kupiškis','Lazdijai',
+  'Marijampolė','Mažeikiai','Molėtai','Neringa','Pagėgiai','Pakruojis','Palanga',
+  'Panevėžys','Pasvalys','Plungė','Prienai','Radviliškis','Raseiniai','Rietavas',
+  'Rokiškis','Skuodas','Šakiai','Šalčininkai','Šiauliai','Šilalė','Šilutė',
+  'Širvintos','Švenčionys','Tauragė','Telšiai','Trakai','Ukmergė','Utena',
+  'Varėna','Vilkaviškis','Vilnius','Visaginas','Zarasai',
+];
+function populateCitySelect(){
+  const sel = document.getElementById('reg-s-city');
+  sel.innerHTML = '<option value="">Pasirinkite miestą</option>'
+    + LT_CITIES.map(c=>`<option>${c}</option>`).join('')
+    + '<option value="__other__">Kita vietovė...</option>';
+}
+function onRegCityChange(){
+  const sel = document.getElementById('reg-s-city');
+  document.getElementById('reg-s-city-other').style.display = sel.value === '__other__' ? 'block' : 'none';
+}
+function readRegCity(){
+  const sel = document.getElementById('reg-s-city');
+  return sel.value === '__other__' ? document.getElementById('reg-s-city-other').value.trim() : sel.value;
+}
+
 // CATEGORIJOS — realios, iš GET /api/categories
 async function loadCategories(){
   const res = await fetch(`${API_BASE}/categories`);
@@ -653,7 +675,7 @@ async function serviceRegister(){
     phone: document.getElementById('reg-s-phone').value.trim(),
     password: document.getElementById('reg-s-pass').value,
     name: document.getElementById('reg-s-name').value.trim(),
-    city: document.getElementById('reg-s-city').value,
+    city: readRegCity(),
     address: document.getElementById('reg-s-address').value.trim(),
     serviceType: document.getElementById('reg-s-type').value,
     mechanicCount: document.getElementById('reg-s-mech').value,
@@ -846,6 +868,7 @@ function initFromQuery(){
 
 loadCategories();
 populateWorkHourSelects();
+populateCitySelect();
 initFromQuery();
 </script>
 </body>
