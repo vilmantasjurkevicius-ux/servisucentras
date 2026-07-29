@@ -1308,11 +1308,10 @@ async function checkClientRegistration(){
     isRegisteredClient = !data.is_guest;
   } catch(e){ isRegisteredClient = false; }
 
-  // Registruotam, prisijungusiam klientui — nuoroda į asmeninę paskyrą vietoj
-  // Prisijungti/Registruotis (žr. "Serviso knyga — Žingsnis 1/7" santrauka.md).
+  // Nav mygtukai (Prisijungti/Registruotis) sąmoningai NEBEKEIČIAMI automatiškai vien
+  // dėl to, kad naršyklėje išliko senas tokenas iš ankstesnio apsilankymo — vartotojas
+  // pats sprendžia, kada eiti į "Mano paskyra" (paspaudęs Prisijungti/užsiregistravęs).
   if(isRegisteredClient){
-    const navRight = document.getElementById('nav-right');
-    if(navRight) navRight.innerHTML = `<button class="nav-btn nav-btn-out" onclick="location.href='mano-paskyra.html'">👤 Mano paskyra</button>`;
     // Automobilio pasirinkimas kuriant užklausą (Serviso knyga, Žingsnis 3/7) — reikia
     // iš anksto, kad car-picker'iai (chat/rezervavimo formose) turėtų ką rodyti.
     try{

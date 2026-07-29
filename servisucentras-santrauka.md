@@ -914,6 +914,15 @@ Anksčiau `automeistrai-login.html` eiga buvo TIPAS→VEIKSMAS (vartotojas pirma
 
 ---
 
+## "Mano paskyra" nav mygtukas nebeatsiranda automatiškai (2026-07-29)
+Pagrindinio puslapio (`servisucentras-pagrindinis.html`) `checkClientRegistration()` anksčiau automatiškai pakeisdavo "Prisijungti"/"Registruotis" mygtukus į "👤 Mano paskyra", vien tik aptikus GALIOJANTĮ tokeną `localStorage` (t.y. iš BET KURIO ankstesnio apsilankymo, net jei nuo to laiko praėjo daug laiko). Vartotojui tai pasirodė netikėta ("kodėl rodo iškarto Mano paskyra").
+
+- Pašalintas nav-right perrašymo blokas iš `checkClientRegistration()` — mygtukai DABAR VISADA rodo "Prisijungti"/"Registruotis", nepriklausomai nuo to, ar naršyklėje yra galiojantis tokenas.
+- `isRegisteredClient` požymis ir `myCarsCache` (naudojami car-picker'iui chat'e/rezervavime bei booking'o apsaugai) TOLIAU tyliai nustatomi fone — šios funkcijos veikia nepakitusios grįžtančiam registruotam klientui, keitėsi TIK matomas nav mygtukas.
+- Patikrinta gyvai: su galiojančiu registruoto kliento tokenu naršyklėje, po puslapio perkrovimo nav rodo "Prisijungti"/"Registruotis" (ne "Mano paskyra"), o `isRegisteredClient===true` ir automobilių sąrašas fone teisingai užsikrauna. Jokių console klaidų. Testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
