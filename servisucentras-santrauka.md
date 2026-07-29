@@ -923,6 +923,16 @@ Pagrindinio puslapio (`servisucentras-pagrindinis.html`) `checkClientRegistratio
 
 ---
 
+## Markė/modelis — kaskadinis pasirinkimas vietoj laisvo teksto (2026-07-29)
+Automobilio markės/modelio laukai (visose 3 vietose, kur juos galima įvesti) pakeisti iš laisvo teksto į kaskadinius `<select>` sąrašus, kaip autoplius.lt: pasirenkama markė, tada modelio sąrašas automatiškai apsiriboja tik tos markės modeliais.
+
+- Nauja duomenų aibė `CAR_MAKES_MODELS` (~30 LT rinkoje populiarių markių, po ~5-13 modelių kiekvienai) — DUBLIUOTA `mano-paskyra.html` ir `servisucentras-pagrindinis.html` (atskiri statiniai HTML failai, bendro JS modulio nėra).
+- Abiejų sąrašų gale — "Kita markė..."/"Kitas modelis..." variantas, atveriantis laisvo teksto lauką retesniems atvejams (sąrašas negali būti absoliučiai išsamus).
+- Pakeistos VISOS 3 vietos: `mano-paskyra.html` "Mano automobiliai" pridėjimo/redagavimo forma (`carFormHtml`/`readCarForm`); `servisucentras-pagrindinis.html` chat'o "+ Naujas automobilis" greito pridėjimo forma (prefix `gm-car-new`) IR rezervavimo modalo analogiška forma (prefix `booking-car-new`) — abi naudoja tas pačias bendras funkcijas (`carMakeOptionsHtml`/`carModelOptionsHtml`/`onCarMakeSelectChange`/`onCarModelSelectChange`/`readCarMakeModel`), skiriasi tik prefix'u.
+- Patikrinta gyvai: (1) `mano-paskyra.html` pridėjimo formoje pasirinkus "Volkswagen" modelio sąrašas iškart apsiriboja tik VW modeliais (Caddy/Golf/Passat/...), išsaugotas automobilis rodomas teisingai; redagavimo forma teisingai iš anksto pažymi esamą markę/modelį; (2) pagrindinio puslapio chat'o "+ Naujas automobilis" formoje pasirinkus "Toyota" modelio sąrašas apsiriboja Toyota modeliais; pasirinkus "Kita markė..." atsiveria laisvo teksto laukas. Jokių console klaidų, testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
