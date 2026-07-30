@@ -977,6 +977,14 @@ Klientas dabar gali savo paskyroje ("Mano paskyra") pradėti pokalbį su KONKRE�
 
 ---
 
+## Registracijos/prisijungimo pranešimas dabar nuveda į "Mano paskyrą" (2026-07-30)
+Užsiregistravus arba prisijungus kaip klientui, sėkmės ekrano mygtukas anksčiau visada vesdavo į `servisucentras-pagrindinis.html` (pagrindinį/rinkos puslapį), ne į paties kliento paskyrą.
+
+- `automeistrai-login.html` `showSuccess()`: `client-login` IR `client-register` atvejais mygtukas dabar "Į mano paskyrą →" ir veda į `mano-paskyra.html`. Svečio (`guest`) atvejis NEPAKITO — svečiai neturi paskyros puslapio, jiems lieka pagrindinis puslapis.
+- Patikrinta gyvai: tiek registracija, tiek prisijungimas — mygtukas rodo teisingą tekstą, paspaudus atsiduriama "Mano paskyroje" (ne pagrindiniame puslapyje). Jokių console klaidų.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

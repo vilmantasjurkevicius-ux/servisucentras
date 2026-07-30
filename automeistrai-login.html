@@ -844,8 +844,8 @@ async function showSuccess(type, data){
     document.getElementById('s-text').textContent='Prisijungėte prie savo ServisuCentras paskyros — čia rasite rezervacijų istoriją.';
     document.getElementById('s-detail').innerHTML=`
       <div class="sd-row"><span>Statusas</span><span style="color:#6fbf8a">✓ Prisijungta</span></div>`;
-    actionBtn.textContent = 'Į ServisuCentras.lt →';
-    actionBtn.onclick = () => location.href = 'servisucentras-pagrindinis.html';
+    actionBtn.textContent = 'Į mano paskyrą →';
+    actionBtn.onclick = () => location.href = 'mano-paskyra.html';
   } else {
     document.getElementById('s-icon').textContent='✅';
     document.getElementById('s-title').textContent='Paskyra sukurta!';
@@ -853,8 +853,8 @@ async function showSuccess(type, data){
     document.getElementById('s-detail').innerHTML=`
       <div class="sd-row"><span>Paskyra</span><span style="color:#6fbf8a">✓ Aktyvuota</span></div>
       <div class="sd-row"><span>Rezervacijos</span><span>Visos išsaugomos</span></div>`;
-    actionBtn.textContent = 'Į ServisuCentras.lt →';
-    actionBtn.onclick = () => location.href = 'servisucentras-pagrindinis.html';
+    actionBtn.textContent = 'Į mano paskyrą →';
+    actionBtn.onclick = () => location.href = 'mano-paskyra.html';
   }
 }
 
