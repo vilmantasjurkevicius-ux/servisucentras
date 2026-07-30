@@ -554,7 +554,7 @@ footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex 
     <div class="city-chip" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
     <div class="city-chip" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
     <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
-    <div class="city-chip" onclick="selCity(this,'Kitas')">🗺️ Kitas</div>
+    <div class="city-chip" onclick="focusCityInput(this)">🗺️ Kitas</div>
   </div>
 </div>
 
@@ -896,6 +896,13 @@ function renderCards(){
   }).join('');
 }
 
+function focusCityInput(el){
+  document.querySelectorAll('.city-chip').forEach(c=>c.classList.remove('on'));
+  if(el) el.classList.add('on');
+  const input = document.getElementById('city-input');
+  input.value = '';
+  input.focus();
+}
 async function selCity(el, city){
   document.querySelectorAll('.city-chip').forEach(c=>c.classList.remove('on'));
   el.classList.add('on');

@@ -1023,6 +1023,16 @@ Vartotojas pranešė: kai servisas atsako pokalbyje, klientas savo paskyroje ("M
 
 ---
 
+## Bug fix: "🗺️ Kitas" miesto mygtukas realiai neveikė (2026-07-30)
+Pagrindiniame puslapyje sparčiųjų miestų mygtukų eilutė (Ukmergė, Vilnius, Kaunas, Klaipėda, Šiauliai, Panevėžys, Alytus) yra kietai užkoduota HTML'e — naujas miestas, iš kurio užsiregistruoja servisas, savaime mygtuko negauna (klientas jį vis tiek gali surasti PATS įvedęs miesto pavadinimą į paieškos lauką, nes tai kreipiasi į tikrą backend'ą `GET /services?city=...`).
+
+Tikrinant paaiškėjo papildoma, nesusijusi klaida: **"🗺️ Kitas" mygtukas** buvo užprogramuotas kviesti `selCity(this,'Kitas')` — t.y. jis IEŠKODAVO miesto, PAŽODŽIUI pavadinimu "Kitas", ne atidarydavo lauką kitam miestui įvesti. Todėl paspaudus visada rodydavo "nėra servisų".
+
+- `servisucentras-pagrindinis.html`: naujas `focusCityInput(el)` — pažymi "Kitas" mygtuką aktyviu, išvalo ir fokusuoja paieškos laukelį, NEATLIEKA jokios paieškos. `onclick="selCity(this,'Kitas')"` pakeista į `onclick="focusCityInput(this)"`.
+- Patikrinta gyvai: paspaudus "Kitas" — laukelis išsivalo ir gauna fokusą (mygtukas pažymėtas aktyviu), REZULTATAI NEPASIKEIČIA (teisingai, nes dar nieko neieškota); įvedus "Vilnius" ir paspaudus "Ieškoti" — realus paieškos užklausimas `GET /services?city=Vilnius` įvykdytas, rezultatai atsinaujino. Jokių console klaidų, testai 7/7.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
