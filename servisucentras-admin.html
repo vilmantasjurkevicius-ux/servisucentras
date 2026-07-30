@@ -233,6 +233,9 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   </div>
 </div>
 
+<!-- Laikino slaptažodžio rodinys — VIENĄ kartą po reset, niekada nepersaugomas -->
+<div id="temp-password-box" style="display:none;position:sticky;top:52px;z-index:90;background:var(--ydim,rgba(245,196,0,0.12));border-bottom:1px solid rgba(245,196,0,0.3);padding:12px 20px;"></div>
+
 <div class="shell">
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
 
@@ -717,7 +720,9 @@ function renderClients(){
         ? `<span style="font-size:11px;color:var(--muted);margin-right:6px;">Tikrai?</span><button class="ab red" onclick="confirmDeleteClient(${c.id})">✓ Taip</button><button class="ab" onclick="cancelDeleteClient()">✕</button>`
         : (c.status==='banned'
           ? `<button class="ab green" onclick="unbanClient(${c.id})">✓ Atblokuoti</button>`
-          : `<button class="ab red" onclick="banClient(${c.id})">🚫 Ban</button>`) + `<button class="ab" onclick="startDeleteClient(${c.id})">🗑 Ištrinti</button>`}</div></td>
+          : `<button class="ab red" onclick="banClient(${c.id})">🚫 Ban</button>`)
+          + `<button class="ab" onclick="resetClientPassword(${c.id},'${escapeHtml((c.first_name||'')+' '+(c.last_name||'')).replace(/'/g,"\\'")}')">🔑 Reset</button>`
+          + `<button class="ab" onclick="startDeleteClient(${c.id})">🗑 Ištrinti</button>`}</div></td>
     </tr>`).join('') || emptyRow(7);
 
   const counts = {
@@ -732,6 +737,42 @@ function renderClients(){
 }
 async function banClient(id){ await apiPatch(`/admin/clients/${id}/ban`); await loadClients(); }
 async function unbanClient(id){ await apiPatch(`/admin/clients/${id}/unban`); await loadClients(); }
+
+// Slaptažodžio atstatymas — TIK bcrypt hash saugomas, originalo peržiūrėti
+// neįmanoma (ir nesaugu). Vietoj to sugeneruojamas naujas laikinas slaptažodis,
+// parodomas VIENĄ kartą — admin turi jį nukopijuoti ir persiųsti vartotojui.
+async function resetClientPassword(id, name){
+  try{
+    const result = await apiPost(`/admin/clients/${id}/reset-password`);
+    showTempPasswordBox(name, result.tempPassword);
+  } catch(err){ alert(err.message); }
+}
+async function resetServicePassword(id, name){
+  try{
+    const result = await apiPost(`/admin/services/${id}/reset-password`);
+    showTempPasswordBox(name, result.tempPassword);
+  } catch(err){ alert(err.message); }
+}
+function showTempPasswordBox(name, tempPassword){
+  const box = document.getElementById('temp-password-box');
+  box.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:12px;color:var(--muted);">Naujas laikinas slaptažodis vartotojui <b style="color:var(--text);">${escapeHtml(name)}</b> — nukopijuokite ir persiųskite DABAR, daugiau šis puslapis jo nebeparodys:</div>
+        <div style="font-family:'IBM Plex Mono';font-size:17px;color:var(--y);margin-top:6px;letter-spacing:0.03em;">${escapeHtml(tempPassword)}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-shrink:0;">
+        <button class="ab green" onclick="copyTempPassword('${tempPassword.replace(/'/g,"\\'")}', this)">📋 Kopijuoti</button>
+        <button class="ab" onclick="document.getElementById('temp-password-box').style.display='none'">✕</button>
+      </div>
+    </div>`;
+  box.style.display = 'block';
+}
+function copyTempPassword(pw, btn){
+  navigator.clipboard.writeText(pw).then(()=>{
+    if(btn){ const orig = btn.textContent; btn.textContent = '✓ Nukopijuota'; setTimeout(()=>{ btn.textContent = orig; }, 1500); }
+  });
+}
 function startDeleteClient(id){ deletingClientId = id; renderClients(); }
 function cancelDeleteClient(){ deletingClientId = null; renderClients(); }
 async function confirmDeleteClient(id){
@@ -758,7 +799,9 @@ function serviceActionButtons(s){
     : (s.status==='banned'
       ? `<button class="ab green" onclick="unbanService(${s.id})">✓ Atblokuoti</button>`
       : `<button class="ab red" onclick="banService(${s.id})">🚫</button>`);
-  return base + `<button class="ab" onclick="startDeleteService(${s.id})">🗑 Ištrinti</button>`;
+  return base
+    + `<button class="ab" onclick="resetServicePassword(${s.id},'${escapeHtml(s.name).replace(/'/g,"\\'")}')">🔑 Reset</button>`
+    + `<button class="ab" onclick="startDeleteService(${s.id})">🗑 Ištrinti</button>`;
 }
 function startDeleteService(id){ deletingServiceId = id; renderServices(); }
 function cancelDeleteService(){ deletingServiceId = null; renderServices(); }

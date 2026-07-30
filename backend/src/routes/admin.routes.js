@@ -1,5 +1,6 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 const db = require('../db');
 const { authRequired, requireRole, signToken } = require('../middleware/auth');
 const { trialEndDate } = require('../utils/commission');
@@ -64,6 +65,18 @@ router.get('/dashboard', (req, res) => {
   res.json({ totalClients, activeServices, ordersToday, monthIncome, totalIncome, newOrders, newServices });
 });
 
+// Slaptažodžiai saugomi TIK kaip bcrypt hash'ai — originalus slaptažodis niekada
+// nesaugomas, tad jo "peržiūrėti" neįmanoma (ir nesaugu). Vietoj to, admin gali
+// SUGENERUOTI naują laikiną slaptažodį, kurį parodome VIENĄ kartą atsakyme — admin
+// jį nukopijuoja ir persiunčia vartotojui (pvz. telefonu/el.paštu). Be dviprasmiškų
+// simbolių (0/O, 1/l/I), kad būtų lengva perskaityti/perduoti balsu.
+function generateTempPassword() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let pw = '';
+  for (let i = 0; i < 10; i += 1) pw += chars[crypto.randomInt(chars.length)];
+  return pw;
+}
+
 // ── KLIENTAI ──
 router.get('/clients', (req, res) => {
   const { status } = req.query;
@@ -75,6 +88,14 @@ router.get('/clients', (req, res) => {
 router.patch('/clients/:id/ban', (req, res) => {
   db.prepare("UPDATE clients SET status = 'banned' WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
+});
+
+router.post('/clients/:id/reset-password', (req, res) => {
+  const client = db.prepare('SELECT id FROM clients WHERE id = ?').get(req.params.id);
+  if (!client) return res.status(404).json({ error: 'Klientas nerastas' });
+  const tempPassword = generateTempPassword();
+  db.prepare('UPDATE clients SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(tempPassword, 10), client.id);
+  res.json({ ok: true, tempPassword });
 });
 
 router.patch('/clients/:id/unban', (req, res) => {
@@ -136,6 +157,14 @@ router.patch('/services/:id/ban', (req, res) => {
 router.patch('/services/:id/unban', (req, res) => {
   db.prepare("UPDATE services SET status = 'active' WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
+});
+
+router.post('/services/:id/reset-password', (req, res) => {
+  const service = db.prepare('SELECT id FROM services WHERE id = ?').get(req.params.id);
+  if (!service) return res.status(404).json({ error: 'Servisas nerastas' });
+  const tempPassword = generateTempPassword();
+  db.prepare('UPDATE services SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(tempPassword, 10), service.id);
+  res.json({ ok: true, tempPassword });
 });
 
 // Visiškas ištrynimas — skirtas testinių/klaidingų įrašų tvarkymui (žr. analogišką

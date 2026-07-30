@@ -1005,6 +1005,15 @@ Klientams `DELETE /admin/clients/:id` jau egzistavo backend'e, bet niekur nebuvo
 
 ---
 
+## Admin: slaptažodžio atstatymas vietoje peržiūros (2026-07-30)
+Vartotojas paprašė galimybės God Mode matyti klientų/servisų slaptažodžius — tai NEĮMANOMA (slaptažodžiai saugomi TIK kaip bcrypt hash'ai, originalas niekada nesaugomas) ir nesaugu (BDAR/GDPR pažeidimas). Vietoj to įgyvendintas standartinis saugus sprendimas — admin-inicijuotas slaptažodžio atstatymas.
+
+- Nauji `POST /admin/clients/:id/reset-password` ir `POST /admin/services/:id/reset-password` — sugeneruoja atsitiktinį 10 simbolių laikiną slaptažodį (be dviprasmiškų simbolių 0/O/1/l/I), atnaujina `password_hash`, grąžina tekstą ATSAKYME (vienintelis momentas, kai jis egzistuoja tekstu — niekur nesaugomas, nelogguojamas).
+- `servisucentras-admin.html`: naujas "🔑 Reset" mygtukas Klientai/Servisai lentelėse. Paspaudus, viršuje puslapio atsiranda lipni juosta su nauju slaptažodžiu + "📋 Kopijuoti" mygtuku — aiškiai pažymėta, kad tai rodoma TIK VIENĄ kartą, admin turi persiųsti vartotojui pats (telefonu/el.paštu).
+- Patikrinta gyvai: sugeneruotas laikinas slaptažodis realiai prisijungia (`POST /auth/client/login`), SENAS slaptažodis po reset korektiškai atmetamas. Testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
