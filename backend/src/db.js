@@ -41,6 +41,8 @@ function migrate() {
 
   const serviceCols = db.prepare("PRAGMA table_info(services)").all().map((c) => c.name);
   if (!serviceCols.includes('work_hours')) db.exec('ALTER TABLE services ADD COLUMN work_hours TEXT');
+  if (!serviceCols.includes('temp_closed')) db.exec('ALTER TABLE services ADD COLUMN temp_closed INTEGER NOT NULL DEFAULT 0');
+  if (!serviceCols.includes('vacation_until')) db.exec('ALTER TABLE services ADD COLUMN vacation_until TEXT');
 
   const settingsCols = db.prepare("PRAGMA table_info(admin_settings)").all().map((c) => c.name);
   if (!settingsCols.includes('collection_mode')) db.exec("ALTER TABLE admin_settings ADD COLUMN collection_mode TEXT NOT NULL DEFAULT 'manual'");

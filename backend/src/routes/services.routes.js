@@ -49,7 +49,7 @@ router.get('/me', authRequired, requireRole('service'), (req, res) => {
 });
 
 router.patch('/me', authRequired, requireRole('service'), (req, res) => {
-  const allowed = ['name', 'email', 'phone', 'address', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end'];
+  const allowed = ['name', 'email', 'phone', 'address', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end', 'temp_closed', 'vacation_until'];
   const fields = [];
   const params = [];
   for (const key of allowed) {

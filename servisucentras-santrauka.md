@@ -954,6 +954,17 @@ Automobilio markės/modelio laukai (visose 3 vietose, kur juos galima įvesti) p
 
 ---
 
+## "Laikinai nedirbu" ir "Atostogos" — realiai veikiantys, matomi paieškoje (2026-07-29)
+Dashboard'o "Greiti veiksmai" mygtukai "🔒 Uždaryti" ir "⛔ Atostogos" anksčiau buvo tik dekoratyvūs — arba grynai vietinis CSS perjungimas be jokio išsaugojimo (dingdavo po puslapio perkrovimo), arba `alert()` placeholder be jokio realaus veikimo. Dabar abu realiai veikia ir matomi klientams viešoje paieškoje.
+
+- Nauji `services` lentelės stulpeliai: `temp_closed` (rankinis "laikinai nedirbu" perjungimas, be datos) ir `vacation_until` (atostogų pabaigos data, YYYY-MM-DD).
+- `PATCH /api/services/me` allowed laukų sąrašas papildytas `temp_closed`/`vacation_until` (automatiškai veikia per esamą bendrą camelCase→snake_case mechanizmą, jokio naujo endpoint'o nereikėjo).
+- Dashboard'o topbar mygtukas (buvęs vien CSS) dabar TIKRAI persistuoja: paspaudus, kai servisas veikia → `tempClosed:1`; paspaudus, kai uždarytas ARBA atostogauja → grąžina į darbą IŠJUNGDAMAS abu (`tempClosed:0, vacationUntil:null`). "Atostogos" mygtukas atveria realią datos pasirinkimo formą (anksčiau — vien `alert()`), su patvirtinimu ir atšaukimu.
+- Servisucentras-pagrindinis.html naujas `serviceAvailability(svc)` — VIRŠIJA įprastą darbo laiko tikrinimą (`isOpenNow`): jei `temp_closed` → "Nedirba", jei `vacation_until` >= šiandien → "Atostogauja", kitu atveju įprastas DIRBA/UŽDARYTA pagal valandas.
+- Patikrinta gyvai: paspaudus "Uždaryti" dashboard'e, būsena išliko po puslapio perkrovimo IR viešoje paieškoje servisas rodomas "Nedirba"; nustačius atostogų datą (be rankinio uždarymo) — dashboard'e "🌴 ATOSTOGOS", viešoje paieškoje "Atostogauja". Jokių console klaidų, testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -813,6 +813,17 @@ function isOpenNow(svc){
   return mins >= sh*60+sm && mins <= eh*60+em;
 }
 
+// Servisas gali būti "laikinai nedirbu" (rankinis perjungimas, be datos) arba
+// "atostogaujantis" (iki konkrečios datos) — abu VIRŠIJA įprastą darbo laiko
+// tikrinimą (isOpenNow), kad klientai matytų TIKRĄ priežastį, ne tik "UŽDARYTA".
+function serviceAvailability(svc){
+  if(svc.temp_closed) return { open:false, label:'Nedirba', cls:'closed' };
+  const todayStr = new Date().toISOString().slice(0,10);
+  if(svc.vacation_until && svc.vacation_until >= todayStr) return { open:false, label:'Atostogauja', cls:'closed' };
+  const open = isOpenNow(svc);
+  return { open, label: open?'DIRBA':'UŽDARYTA', cls: open?'open':'closed' };
+}
+
 async function loadCategories(){
   const res = await fetch(`${API_BASE}/categories`);
   categories = res.ok ? await res.json() : [];
@@ -867,13 +878,13 @@ function renderCards(){
     return;
   }
   document.getElementById('cards').innerHTML=list.map(s=>{
-    const open = isOpenNow(s);
+    const avail = serviceAvailability(s);
     const tags = s.categories.map(c=>categoryName(c.label));
     return `
     <div class="card">
       <div><div class="dist-num">${s.rating!=null ? s.rating.toFixed(1) : '—'}</div><div class="dist-unit">reitingas</div></div>
       <div>
-        <div class="card-name">${s.name} <span class="sdot ${open?'open':'closed'}"></span><span class="sst ${open?'open':'closed'}">${open?'DIRBA':'UŽDARYTA'}</span></div>
+        <div class="card-name">${s.name} <span class="sdot ${avail.cls}"></span><span class="sst ${avail.cls}">${avail.label}</span></div>
         <div class="card-meta">${s.service_type||'Servisas'} · ${s.address || s.city}</div>
         <div class="tags">${tags.map((t,i)=>`<span class="tag ${i===0?'hi':''}">${t}</span>`).join('')}</div>
       </div>

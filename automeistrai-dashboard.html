@@ -513,16 +513,25 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
                 <div class="qa-label">Siųsti SMS</div>
                 <div class="qa-sub">Klientui priminti</div>
               </div>
-              <div class="qa-btn" onclick="blockVacationDates()">
+              <div class="qa-btn" onclick="toggleVacationForm()">
                 <div class="qa-icon">⛔</div>
-                <div class="qa-label">Atostogos</div>
-                <div class="qa-sub">Blokuoti datas</div>
+                <div class="qa-label" id="vacation-qa-label">Atostogos</div>
+                <div class="qa-sub" id="vacation-qa-sub">Blokuoti datas</div>
               </div>
               <div class="qa-btn" onclick="callLastClient()">
                 <div class="qa-icon">📞</div>
                 <div class="qa-label">Skambinti</div>
                 <div class="qa-sub">Paskutiniam klientui</div>
               </div>
+            </div>
+            <div id="vacation-form" style="display:none;margin-top:12px;padding:12px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;">
+              <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Atostogaujame iki (data):</label>
+              <div style="display:flex;gap:8px;">
+                <input type="date" id="vacation-date-input" style="flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:4px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:12.5px;">
+                <button class="action-btn accept" onclick="submitVacation()">✓ Nustatyti</button>
+              </div>
+              <button class="action-btn decline" style="margin-top:8px;width:100%;" onclick="clearVacation()">✕ Atšaukti atostogas</button>
+              <div id="vacation-error" style="display:none;color:#e07a6b;font-size:10.5px;margin-top:6px;"></div>
             </div>
           </div>
 
@@ -676,6 +685,7 @@ async function apiRequest(method, path, body){
 }
 const apiGet = (path) => apiRequest('GET', path);
 const apiPost = (path, body) => apiRequest('POST', path, body || {});
+const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
 
 const TAB_STATUS = ['new','confirmed','done'];
 const TAB_LABELS = {new:'Naujos', confirmed:'Patvirtintos', done:'Atliktos'};
@@ -1542,8 +1552,35 @@ function callClient(name, phone){
 function sendReminderSms(){
   alert('📤 SMS priminimas išsiųstas paskutiniam klientui apie rezervaciją.');
 }
-function blockVacationDates(){
-  alert('⛔ Pasirink datas kalendoriuje, kurias nori blokuoti (funkcija bus pilnai veikianti prijungus kalendorių).');
+// ATOSTOGOS — servisas nurodo datą, iki kurios nedirba. Rodoma viešoje paieškoje
+// (servisucentras-pagrindinis.html) kaip "Atostogauja", kad klientai matytų, jog
+// servisas šiuo metu neatsakinės, nepriklausomai nuo įprasto darbo laiko.
+function toggleVacationForm(){
+  const form = document.getElementById('vacation-form');
+  const showing = form.style.display !== 'none';
+  form.style.display = showing ? 'none' : 'block';
+  if(!showing) document.getElementById('vacation-date-input').value = serviceProfile.vacation_until || '';
+}
+async function submitVacation(){
+  const input = document.getElementById('vacation-date-input');
+  const errEl = document.getElementById('vacation-error');
+  const date = input.value;
+  if(!date){ errEl.textContent = 'Pasirinkite datą'; errEl.style.display = 'block'; return; }
+  const todayStr = new Date().toISOString().slice(0,10);
+  if(date < todayStr){ errEl.textContent = 'Data negali būti praeityje'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  try{
+    serviceProfile = await apiPatch('/services/me', { vacationUntil: date });
+    document.getElementById('vacation-form').style.display = 'none';
+    updateStatusDisplay();
+  } catch(err){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+}
+async function clearVacation(){
+  try{
+    serviceProfile = await apiPatch('/services/me', { vacationUntil: null });
+    document.getElementById('vacation-form').style.display = 'none';
+    updateStatusDisplay();
+  } catch(err){ alert(err.message); }
 }
 function callLastClient(){
   if(ordersCache.length === 0){ alert('Nėra užklausų.'); return; }
@@ -1571,6 +1608,7 @@ async function init(){
   document.getElementById('nav-service-name').textContent = serviceProfile.name;
   document.getElementById('nav-avatar').textContent = (serviceProfile.name || '?').charAt(0).toUpperCase();
   document.getElementById('stat-rating').textContent = serviceProfile.rating != null ? serviceProfile.rating.toFixed(1)+' ★' : '—';
+  updateStatusDisplay();
 
   categoriesCache = await apiGet('/categories');
   await loadOrders();
@@ -1609,18 +1647,46 @@ function renderTimeline(){
   }).join('');
 }
 
-// STATUS TOGGLE
-function toggleStatus(){
+// STATUS — "Laikinai nedirbu" (temp_closed) + "Atostogos" (vacation_until), abu
+// PERSISTUOJAMI backend'e (PATCH /services/me) ir matomi viešoje paieškoje
+// (servisucentras-pagrindinis.html), ne tik vietinis mygtuko perjungimas.
+function isOnVacation(){
+  return !!serviceProfile.vacation_until && serviceProfile.vacation_until >= new Date().toISOString().slice(0,10);
+}
+function updateStatusDisplay(){
   const btn = document.getElementById('status-toggle');
-  if(btn.classList.contains('open')){
-    btn.classList.remove('open');
-    btn.classList.add('closed');
+  if(isOnVacation()){
+    btn.classList.remove('open'); btn.classList.add('closed');
+    btn.innerHTML = '🌴 ATOSTOGOS';
+  } else if(serviceProfile.temp_closed){
+    btn.classList.remove('open'); btn.classList.add('closed');
     btn.innerHTML = '● UŽDARYTA';
   } else {
-    btn.classList.remove('closed');
-    btn.classList.add('open');
+    btn.classList.remove('closed'); btn.classList.add('open');
     btn.innerHTML = '● DIRBA';
   }
+  const vacLabel = document.getElementById('vacation-qa-label');
+  const vacSub = document.getElementById('vacation-qa-sub');
+  if(vacLabel && vacSub){
+    if(isOnVacation()){
+      vacLabel.textContent = 'Atostogos iki ' + serviceProfile.vacation_until;
+      vacSub.textContent = 'Keisti / atšaukti';
+    } else {
+      vacLabel.textContent = 'Atostogos';
+      vacSub.textContent = 'Blokuoti datas';
+    }
+  }
+}
+async function toggleStatus(){
+  try{
+    if(isOnVacation() || serviceProfile.temp_closed){
+      // Grįžtama į darbą — išjungiamas rankinis uždarymas IR atšaukiamos atostogos.
+      serviceProfile = await apiPatch('/services/me', { tempClosed: 0, vacationUntil: null });
+    } else {
+      serviceProfile = await apiPatch('/services/me', { tempClosed: 1 });
+    }
+    updateStatusDisplay();
+  } catch(err){ alert(err.message); }
 }
 </script>
 </body>

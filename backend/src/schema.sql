@@ -36,6 +36,8 @@ CREATE TABLE IF NOT EXISTS services (
   work_start TEXT NOT NULL DEFAULT '08:00', -- senas laukas, naudojamas kaip atsarginis kol servisas neįsivedė work_hours
   work_end TEXT NOT NULL DEFAULT '18:00',
   work_hours TEXT, -- JSON masyvas [{open,start,end}] x7, Pir..Sek tvarka; NULL = naudoti work_start/work_end visoms dienoms
+  temp_closed INTEGER NOT NULL DEFAULT 0, -- "Laikinai nedirbu" rankinis perjungimas (be konkrečios grįžimo datos)
+  vacation_until TEXT, -- atostogų pabaigos data (YYYY-MM-DD); jei >= šiandien, servisas rodomas kaip atostogaujantis viešoje paieškoje
   rating REAL,
   status TEXT NOT NULL DEFAULT 'pending', -- pending | active | inactive | banned
   is_bot INTEGER NOT NULL DEFAULT 0,
