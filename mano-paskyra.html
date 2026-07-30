@@ -266,6 +266,7 @@ async function init(){
     loadCars();
     loadOrderHistory();
     loadNewChatCities();
+    if(!document.hidden) startOrderHistoryPolling();
   } catch(err){
     redirectToLogin();
   }
@@ -854,6 +855,34 @@ async function sendOrderChatText(id){
     alert(err.message);
   }
 }
+
+// AUTO-ATNAUJINIMAS — anksčiau šis puslapis niekada neperkraudavo pokalbio, kol
+// vartotojas patys neperkraudavo viso puslapio, tad serviso atsakymai NEATSIRASDAVO
+// atidarytoje gijoje (tas pats mechanizmas, kuris jau veikia serviso dashboard'e —
+// žr. pollOrders()/startPolling() automeistrai-dashboard.html). Perima esamą
+// atviro pokalbio būseną (expandedOrderId) — perpiešia tik jei vartotojas šiuo
+// metu NErašo žinutės (kad neprarastume jo įvedamo teksto).
+let paPollTimer = null;
+async function pollOrderHistory(){
+  try{
+    orderHistoryCache = await apiGet('/clients/me/orders');
+    const typingInChat = document.activeElement && document.activeElement.closest('.order-chat');
+    if(!typingInChat) renderOrderHistory();
+  } catch(err){
+    // tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo
+  }
+}
+function startOrderHistoryPolling(){
+  if(paPollTimer) return;
+  paPollTimer = setInterval(pollOrderHistory, 12000);
+}
+function stopOrderHistoryPolling(){
+  if(paPollTimer){ clearInterval(paPollTimer); paPollTimer = null; }
+}
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden) stopOrderHistoryPolling();
+  else startOrderHistoryPolling();
+});
 
 function showAccPage(id, el){
   document.querySelectorAll('.acc-page').forEach(p=>p.classList.remove('show'));

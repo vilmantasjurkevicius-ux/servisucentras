@@ -1014,6 +1014,15 @@ Vartotojas paprašė galimybės God Mode matyti klientų/servisų slaptažodžiu
 
 ---
 
+## Bug fix: serviso atsakymas chat'e nepasirodydavo klientui automatiškai (2026-07-30)
+Vartotojas pranešė: kai servisas atsako pokalbyje, klientas savo paskyroje ("Mano paskyra") teksto NEMATO, kol pats rankiniu būdu neperkrauna puslapio. Kliento → serviso kryptis veikė, serviso → kliento — ne.
+
+- **Priežastis**: `mano-paskyra.html` niekada neturėjo jokio auto-atnaujinimo/polling mechanizmo (patvirtinta grep'u — jokio `setInterval`/`poll` visame faile), skirtingai nuo `automeistrai-dashboard.html`, kur tokia infrastruktūra jau seniai veikia serviso pusėje. Backend'as buvo teisingas — problema buvo tik kliento pusės UI, kuris niekada patys iš naujo neužklausdavo žinučių.
+- **Sprendimas** — pridėtas `mano-paskyra.html` polling'as, veidrodinis dashboard'o pavyzdžiui: `pollOrderHistory()` kas 12 sek. iš naujo užkrauna `/clients/me/orders` ir perpiešia istoriją, BET praleidžia perpiešimą, jei vartotojas šiuo metu rašo žinutę (`document.activeElement` viduje `.order-chat`) — kad neprarastume jo įvedamo teksto. `startOrderHistoryPolling()`/`stopOrderHistoryPolling()` valdomi ir per `visibilitychange` (pristabdoma, kai skiltis nematoma).
+- Patikrinta gyvai: sukurtas testinis klientas + servisas + tiesioginis pokalbis (be laiko), servisas atsakė per API — kliento jau atidarytoje pokalbio gijoje žinutė pasirodė AUTOMATIŠKAI per ~12 sek., be jokio rankinio perkrovimo. Taip pat patikrinta, kad "rašymo apsauga" veikia: kol klientas rašė savo žinutę, nauja serviso žinutė NEIŠTRYNĖ jo teksto, o pasirodė iškart po focus perkėlimo į kitą vietą. Jokių console klaidų, testai 7/7.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
