@@ -995,6 +995,16 @@ Patikrinta: `GET /admin/conversations` NIEKUR nefiltruoja pagal `is_guest` ar se
 
 ---
 
+## Admin: tikras serviso ištrynimas + Ištrinti mygtukai UI (2026-07-30)
+Klientams `DELETE /admin/clients/:id` jau egzistavo backend'e, bet niekur nebuvo naudojamas UI — o servisams tokios funkcijos apskritai nebuvo (tik Ban/Unban). Reikėjo tikro testinių/klaidingų įrašų (production) tvarkymo.
+
+- Naujas `DELETE /admin/services/:id` — veidrodinis esamam kliento endpoint'ui: atsisako trinti, jei servisas turi bent vieną užklausą (siūlo naudoti Ban vietoj to, kad neprarastume verslo duomenų).
+- `servisucentras-admin.html`: naujas "🗑 Ištrinti" mygtukas IR Klientai, IR Servisai lentelėse — inline "Tikrai? ✓ Taip / ✕" patvirtinimas (ne native `confirm()`, nes tas neveikia automatizuoto naršyklės testavimo įrankyje). Naujas `apiDelete()` helperis.
+- Patikrinta gyvai (lokaliai): užregistruotas testinis servisas ir klientas, per naują UI mygtuką (tiesiogiai per JS, ne click, nes pane šiuo metu nekompozituoja kadrų) — abu sėkmingai ištrinti, patvirtinimo langelis rodėsi teisingai. Testai 7/7 nepakitę.
+- **Kontekstas**: šis pakeitimas skirtas realiam production duomenų tvarkymui (Railway deployment) — ten po ankstesnio vietinio išvalymo atsirado 3 testiniai servisai + 7 klientai (matyt, iš vartotojo pačio testavimo naršyklėje), kuriuos reikėjo ištrinti, bet servisų trynimo funkcijos ten iš viso nebuvo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -634,6 +634,7 @@ async function apiRequest(method, path, body){
 const apiGet = (path) => apiRequest('GET', path);
 const apiPost = (path, body) => apiRequest('POST', path, body || {});
 const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
+const apiDelete = (path) => apiRequest('DELETE', path);
 
 // LOGIN
 function showLoginScreen(){ document.getElementById('login-screen').style.display='flex'; }
@@ -694,6 +695,7 @@ function computeStatChanges(){
 }
 
 // ── KLIENTAI ──
+let deletingClientId = null;
 async function loadClients(){ clientsCache = await apiGet('/admin/clients'); renderClients(); }
 function renderClients(){
   const q = (document.getElementById('clients-search').value || '').toLowerCase();
@@ -711,9 +713,11 @@ function renderClients(){
       <td>${c.phone||'—'}</td>
       <td>${(c.created_at||'').slice(0,10)}</td>
       <td>${clientStatusBadge(c)}</td>
-      <td><div class="action-btns">${c.status==='banned'
-        ? `<button class="ab green" onclick="unbanClient(${c.id})">✓ Atblokuoti</button>`
-        : `<button class="ab red" onclick="banClient(${c.id})">🚫 Ban</button>`}</div></td>
+      <td><div class="action-btns">${deletingClientId===c.id
+        ? `<span style="font-size:11px;color:var(--muted);margin-right:6px;">Tikrai?</span><button class="ab red" onclick="confirmDeleteClient(${c.id})">✓ Taip</button><button class="ab" onclick="cancelDeleteClient()">✕</button>`
+        : (c.status==='banned'
+          ? `<button class="ab green" onclick="unbanClient(${c.id})">✓ Atblokuoti</button>`
+          : `<button class="ab red" onclick="banClient(${c.id})">🚫 Ban</button>`) + `<button class="ab" onclick="startDeleteClient(${c.id})">🗑 Ištrinti</button>`}</div></td>
     </tr>`).join('') || emptyRow(7);
 
   const counts = {
@@ -728,13 +732,46 @@ function renderClients(){
 }
 async function banClient(id){ await apiPatch(`/admin/clients/${id}/ban`); await loadClients(); }
 async function unbanClient(id){ await apiPatch(`/admin/clients/${id}/unban`); await loadClients(); }
+function startDeleteClient(id){ deletingClientId = id; renderClients(); }
+function cancelDeleteClient(){ deletingClientId = null; renderClients(); }
+async function confirmDeleteClient(id){
+  try{
+    await apiDelete(`/admin/clients/${id}`);
+    deletingClientId = null;
+    await loadClients();
+  } catch(err){
+    alert(err.message);
+    deletingClientId = null;
+    renderClients();
+  }
+}
 
 // ── SERVISAI ──
+let deletingServiceId = null;
 async function loadServices(){ servicesCache = await apiGet('/admin/services'); renderServices(); }
 function serviceActionButtons(s){
-  if(s.status==='pending') return `<button class="ab green" onclick="approveService(${s.id})">✓ Tvirtinti</button><button class="ab red" onclick="banService(${s.id})">✕</button>`;
-  if(s.status==='banned') return `<button class="ab green" onclick="unbanService(${s.id})">✓ Atblokuoti</button>`;
-  return `<button class="ab red" onclick="banService(${s.id})">🚫</button>`;
+  if(deletingServiceId===s.id){
+    return `<span style="font-size:11px;color:var(--muted);margin-right:6px;">Tikrai?</span><button class="ab red" onclick="confirmDeleteService(${s.id})">✓ Taip</button><button class="ab" onclick="cancelDeleteService()">✕</button>`;
+  }
+  const base = s.status==='pending'
+    ? `<button class="ab green" onclick="approveService(${s.id})">✓ Tvirtinti</button><button class="ab red" onclick="banService(${s.id})">✕</button>`
+    : (s.status==='banned'
+      ? `<button class="ab green" onclick="unbanService(${s.id})">✓ Atblokuoti</button>`
+      : `<button class="ab red" onclick="banService(${s.id})">🚫</button>`);
+  return base + `<button class="ab" onclick="startDeleteService(${s.id})">🗑 Ištrinti</button>`;
+}
+function startDeleteService(id){ deletingServiceId = id; renderServices(); }
+function cancelDeleteService(){ deletingServiceId = null; renderServices(); }
+async function confirmDeleteService(id){
+  try{
+    await apiDelete(`/admin/services/${id}`);
+    deletingServiceId = null;
+    await loadServices();
+  } catch(err){
+    alert(err.message);
+    deletingServiceId = null;
+    renderServices();
+  }
 }
 function renderServices(){
   const q = (document.getElementById('services-search').value || '').toLowerCase();

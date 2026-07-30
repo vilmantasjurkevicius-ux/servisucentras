@@ -138,6 +138,23 @@ router.patch('/services/:id/unban', (req, res) => {
   res.json({ ok: true });
 });
 
+// Visiškas ištrynimas — skirtas testinių/klaidingų įrašų tvarkymui (žr. analogišką
+// DELETE /clients/:id aukščiau). Saugumo sumetimais atsisako trinti, jei servisas
+// jau turi bent vieną užklausą — tokiu atveju geriau naudoti ban, kad neprarastume
+// realių verslo duomenų (užklausų/pokalbių/atsiliepimų istorijos).
+router.delete('/services/:id', (req, res) => {
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.params.id);
+  if (!service) return res.status(404).json({ error: 'Servisas nerastas' });
+
+  const orderCount = db.prepare('SELECT COUNT(*) AS n FROM orders WHERE service_id = ?').get(service.id).n;
+  if (orderCount > 0) {
+    return res.status(409).json({ error: 'Šis servisas turi užklausų — naudokite užblokavimą (ban), ne ištrynimą' });
+  }
+
+  db.prepare('DELETE FROM services WHERE id = ?').run(service.id);
+  res.json({ ok: true });
+});
+
 // ── UŽKLAUSOS ──
 router.get('/orders', (req, res) => {
   const orders = db.prepare(`
