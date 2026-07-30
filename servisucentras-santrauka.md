@@ -985,6 +985,16 @@ Užsiregistravus arba prisijungus kaip klientui, sėkmės ekrano mygtukas anksč
 
 ---
 
+## God Mode: patvirtinta pilna aprėptis + 3 mėn. žinučių saugojimo politika (2026-07-30)
+Patikrinta: `GET /admin/conversations` NIEKUR nefiltruoja pagal `is_guest` ar servisą — God Mode jau rodo VISUS pokalbius, nepriklausomai ar rašė svečias, registruotas klientas, ar bet kuris servisas (patvirtinta grep'u — jokio `is_guest` filtro kode — bei anksčiau atliktu gyvu testu, kur svečio pokalbis "Svecias" jau buvo matomas sąraše).
+
+- Naujas `backend/src/utils/retention.js` — `purgeOldMessages()` ištrina `order_messages` eilutes, senesnes nei 90 dienų (`datetime('now', '-90 days')`). TRINAMOS TIK pačios žinutės — užklausa (orders) IŠLIEKA (istorijai, serviso knygai, atsiliepimams), išnyksta tik chat tekstas.
+- `startRetentionSchedule()` paleidžiama serverio starto metu (`server.js`) IR kartą per parą (`setInterval`, 24 val.) — veikia automatiškai, be jokio papildomo veiksmo.
+- Politika vienoda VISIEMS pokalbiams — nepriklausomai, ar rašė svečias, registruotas klientas, ar servisas.
+- Patikrinta gyvai: rankiniu būdu įterpta testinė 100 dienų sena žinutė ir šviežia žinutė tam pačiam užsakymui → paleidus `purgeOldMessages()`, sena žinutė pašalinta, šviežia liko nepaliesta. Testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

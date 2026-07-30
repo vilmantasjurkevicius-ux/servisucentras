@@ -11,6 +11,7 @@ const adminRoutes = require('./routes/admin.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const diagnostikaRoutes = require('./routes/diagnostika.routes');
 const carsRoutes = require('./routes/cars.routes');
+const { startRetentionSchedule } = require('./utils/retention');
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://localhost:3000')
   .split(',')
@@ -63,3 +64,7 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`ServisuCentras backend veikia: http://localhost:${PORT}`));
+
+// Chat žinučių saugojimo politika — senesnės nei 3 mėn. žinutės automatiškai
+// pašalinamos (žr. utils/retention.js). Paleidžiama iškart ir kartą per parą.
+startRetentionSchedule();
