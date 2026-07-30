@@ -529,8 +529,23 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     </div>
   </div>
 
+  <!-- ════ CHAT ŽINUTĖS (God Mode) ════ -->
+  <div class="page" id="p-chat">
+    <div class="page-head">
+      <div><div class="page-title">💬 Chat žinutės</div><div class="page-sub">Visi klientų ir servisų susirašinėjimai — God Mode, be jokio redagavimo ar slėpimo.</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Visi pokalbiai</div></div>
+        <table>
+          <tr><th>Paskutinė žinutė</th><th>Užklausa</th><th>Klientas</th><th>Servisas</th><th>Žinučių sk.</th><th></th></tr>
+          <tbody id="conversations-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <!-- Tuščios puslapiai -->
-  <div class="page" id="p-chat"><div class="page-head"><div class="page-title">💬 Chat žinutės</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Čia matysite visas kliento žinutes servisams realiu laiku.</div></div></div>
   <div class="page" id="p-reviews"><div class="page-head"><div class="page-title">⭐ Atsiliepimai</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Visi klientų atsiliepimai apie servisus.</div></div></div>
   <div class="page" id="p-commissions">
     <div class="page-head">
@@ -1013,6 +1028,68 @@ function renderDeclines(){
   }).join('') || emptyRow(7);
 }
 
+// ── CHAT ŽINUTĖS (God Mode — visi susirašinėjimai, be jokio redagavimo) ──
+let conversationsCache = [];
+let expandedConvId = null;
+const CHAT_MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+function escapeHtml(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function formatChatTime(dateStr){
+  if(!dateStr) return '—';
+  const d = new Date(dateStr.replace(' ','T')+'Z');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${d.getDate()} ${CHAT_MONTHS_SHORT[d.getMonth()]}, ${hh}:${mm}`;
+}
+async function loadConversations(){
+  conversationsCache = await apiGet('/admin/conversations');
+  renderConversations();
+}
+function toggleConversation(orderId){
+  expandedConvId = expandedConvId === orderId ? null : orderId;
+  renderConversations();
+}
+function renderConversations(){
+  document.getElementById('conversations-table-body').innerHTML = conversationsCache.map(c=>{
+    const clientName = `${c.client_first_name||''} ${c.client_last_name||''}`.trim() || 'Klientas';
+    const rows = [`
+    <tr style="cursor:pointer;" onclick="toggleConversation(${c.order_id})">
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${formatChatTime(c.last_message_at)}</td>
+      <td><span style="font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);">#${String(c.order_id).padStart(4,'0')}</span><br>${categoryLabel(c.category_id)} · ${c.city||'—'}</td>
+      <td>${escapeHtml(clientName)}</td>
+      <td>${c.service_name ? escapeHtml(c.service_name) : '<span style="color:var(--muted);">— (dar nepriskirta)</span>'}</td>
+      <td>${c.message_count}</td>
+      <td style="color:var(--y);">${expandedConvId===c.order_id ? '▲' : '▼'}</td>
+    </tr>`];
+    if(expandedConvId === c.order_id){
+      rows.push(`<tr><td colspan="6" style="background:var(--bg3);padding:16px 20px;"><div id="conv-thread-${c.order_id}" style="color:var(--muted);">Kraunama...</div></td></tr>`);
+    }
+    return rows.join('');
+  }).join('') || emptyRow(6);
+  if(expandedConvId !== null) loadConversationThread(expandedConvId);
+}
+async function loadConversationThread(orderId){
+  const el = document.getElementById(`conv-thread-${orderId}`);
+  if(!el) return;
+  try{
+    const messages = await apiGet(`/admin/conversations/${orderId}/messages`);
+    el.innerHTML = messages.length === 0 ? 'Žinučių nėra.' : messages.map(m=>{
+      const who = m.sender_type === 'client' ? (m.sender_name || 'Klientas') : (m.sender_name || 'Servisas');
+      const roleLabel = m.sender_type === 'client' ? 'klientas' : 'servisas';
+      let offer = '';
+      if(m.price_quote != null) offer = ` <span style="color:var(--y);">💰 ${fmtEUR(m.price_quote)}${m.available_time ? ' · '+escapeHtml(m.available_time) : ''}</span>`;
+      return `<div style="margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid var(--line);">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:3px;"><b style="color:var(--text);">${escapeHtml(who)}</b> (${roleLabel}) · ${formatChatTime(m.created_at)}</div>
+        ${m.message ? `<div style="font-size:13px;color:var(--text);">${escapeHtml(m.message)}</div>` : ''}
+        ${offer}
+      </div>`;
+    }).join('');
+  } catch(err){
+    el.innerHTML = 'Nepavyko įkelti pokalbio.';
+  }
+}
+
 // ── VISO KROVIMAS PO PRISIJUNGIMO ──
 async function loadEverything(){
   categoriesCache = await apiGet('/categories');
@@ -1025,7 +1102,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;

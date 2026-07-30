@@ -667,6 +667,14 @@ function timeAgo(dateStr){
   if(hours < 24) return `prieš ${hours} val`;
   return `prieš ${Math.floor(hours/24)} d.`;
 }
+const MSG_MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+function formatMsgTime(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr.replace(' ','T')+'Z');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${d.getDate()} ${MSG_MONTHS_SHORT[d.getMonth()]}, ${hh}:${mm}`;
+}
 
 async function apiRequest(method, path, body){
   const res = await fetch(`${API_BASE}${path}`, {
@@ -900,7 +908,7 @@ async function loadChatThread(id, force){
           const privateNote = other ? `<div class="price-hidden">🔒 Kaina/laikas privatu (matys tik klientas)</div>` : '';
           return `
             <div class="ochat-msg ${mine?'mine':(other?'other':'')}">
-              <div class="who">${escapeHtml(who)} · ${timeAgo(m.created_at)}</div>
+              <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgo(m.created_at)})</div>
               ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
             </div>`;
         }).join('');

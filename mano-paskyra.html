@@ -174,6 +174,7 @@ nav{
   <nav class="acc-sidebar" id="acc-sidebar">
     <div class="acc-sb-title">Mano paskyra</div>
     <button class="acc-item on" data-page="cars" onclick="showAccPage('cars',this)"><span class="ic">🚗</span> Mano automobiliai</button>
+    <button class="acc-item" data-page="newchat" onclick="showAccPage('newchat',this)"><span class="ic">💬</span> Naujas pokalbis</button>
     <button class="acc-item" data-page="history" onclick="showAccPage('history',this)"><span class="ic">📋</span> Užsakymų istorija</button>
     <button class="acc-item" data-page="profile" onclick="showAccPage('profile',this)"><span class="ic">👤</span> Profilis</button>
   </nav>
@@ -185,6 +186,39 @@ nav{
       <div id="car-add-form-wrap"></div>
       <button class="car-btn car-btn-pri" id="car-add-toggle-btn" onclick="toggleAddCarForm()">+ Pridėti automobilį</button>
       <div class="car-list" id="car-list"></div>
+    </div>
+
+    <div class="acc-page" id="acc-page-newchat">
+      <div class="acc-page-title">💬 Naujas pokalbis</div>
+      <div class="acc-page-sub">Pasirinkite miestą ir servisą, su kuriuo norite susisiekti tiesiogiai — be konkretaus laiko rezervavimo.</div>
+      <div class="car-form" style="max-width:460px;">
+        <div class="car-form-grid" style="grid-template-columns:1fr;">
+          <div>
+            <label class="car-label">Miestas</label>
+            <select class="car-input" id="nc-city" onchange="onNewChatCityChange()">
+              <option value="">— pasirinkite miestą —</option>
+            </select>
+          </div>
+          <div>
+            <label class="car-label">Servisas</label>
+            <select class="car-input" id="nc-service" onchange="onNewChatServiceChange()" disabled>
+              <option value="">— pirma pasirinkite miestą —</option>
+            </select>
+          </div>
+          <div>
+            <label class="car-label">Automobilis (nebūtina)</label>
+            <select class="car-input" id="nc-car">
+              <option value="">— nenurodyta —</option>
+            </select>
+          </div>
+          <div>
+            <label class="car-label">Žinutė *</label>
+            <textarea class="car-input" id="nc-message" rows="3" placeholder="Aprašykite, kuo galėtų padėti šis servisas..." oninput="updateNewChatSubmitState()"></textarea>
+          </div>
+        </div>
+        <button class="car-btn car-btn-pri" id="nc-submit-btn" onclick="submitNewChat()" disabled>💬 Pradėti pokalbį</button>
+        <div id="nc-error" style="display:none;color:#e07a6b;font-size:12px;margin-top:8px;"></div>
+      </div>
     </div>
 
     <div class="acc-page" id="acc-page-history">
@@ -231,6 +265,7 @@ async function init(){
     document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(client.first_name||'')+'</b>!';
     loadCars();
     loadOrderHistory();
+    loadNewChatCities();
   } catch(err){
     redirectToLogin();
   }
@@ -482,6 +517,7 @@ async function confirmDeleteCar(id){
 }
 
 function renderCars(){
+  renderNewChatCarOptions();
   const list = document.getElementById('car-list');
   if(carsCache.length === 0){
     list.innerHTML = `<div class="acc-empty" style="margin-top:20px;">
@@ -577,6 +613,73 @@ function renderCarBookHtml(carId){
   `).join('')}</div>`;
 }
 
+/* ══ NAUJAS POKALBIS — klientas renkasi miestą ir konkretų servisą, pradedamas
+   tiesioginis pokalbis (backend POST /orders/direct, scheduledTime neprivalomas —
+   tai NE rezervacija, tik susisiekimas). Po sukūrimo persijungiama į "Užsakymų
+   istoriją" ir iškart išskleidžiamas naujas pokalbis. ══ */
+let ncAllServices = [];
+async function loadNewChatCities(){
+  try{
+    ncAllServices = await apiGet('/services');
+  } catch(e){ ncAllServices = []; }
+  const cities = [...new Set(ncAllServices.filter(s=>!s.is_bot).map(s=>s.city))].sort((a,b)=>a.localeCompare(b,'lt'));
+  document.getElementById('nc-city').innerHTML = '<option value="">— pasirinkite miestą —</option>'
+    + cities.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+  renderNewChatCarOptions();
+}
+function renderNewChatCarOptions(){
+  const sel = document.getElementById('nc-car');
+  if(!sel) return;
+  sel.innerHTML = '<option value="">— nenurodyta —</option>'
+    + carsCache.map(c=>`<option value="${c.id}">${escapeHtml(c.make)} ${escapeHtml(c.model)}${c.year?' ('+c.year+')':''}</option>`).join('');
+}
+function onNewChatCityChange(){
+  const city = document.getElementById('nc-city').value;
+  const serviceSel = document.getElementById('nc-service');
+  if(!city){
+    serviceSel.innerHTML = '<option value="">— pirma pasirinkite miestą —</option>';
+    serviceSel.disabled = true;
+    updateNewChatSubmitState();
+    return;
+  }
+  const services = ncAllServices.filter(s=>!s.is_bot && s.city===city);
+  serviceSel.innerHTML = (services.length ? '<option value="">— pasirinkite servisą —</option>' : '<option value="">— šiame mieste servisų nėra —</option>')
+    + services.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  serviceSel.disabled = services.length === 0;
+  updateNewChatSubmitState();
+}
+function onNewChatServiceChange(){ updateNewChatSubmitState(); }
+function updateNewChatSubmitState(){
+  const ok = document.getElementById('nc-service').value && document.getElementById('nc-message').value.trim();
+  document.getElementById('nc-submit-btn').disabled = !ok;
+}
+async function submitNewChat(){
+  const serviceId = parseInt(document.getElementById('nc-service').value, 10);
+  const message = document.getElementById('nc-message').value.trim();
+  const carSel = document.getElementById('nc-car').value;
+  const carId = carSel ? parseInt(carSel, 10) : null;
+  const errEl = document.getElementById('nc-error');
+  if(!serviceId || !message){ errEl.textContent = 'Pasirinkite servisą ir įrašykite žinutę'; errEl.style.display = 'block'; return; }
+  errEl.style.display = 'none';
+  const btn = document.getElementById('nc-submit-btn');
+  btn.disabled = true; btn.textContent = 'Siunčiama...';
+  try{
+    const order = await apiPost('/orders/direct', { serviceId, comment: message, carId });
+    document.getElementById('nc-city').value = '';
+    document.getElementById('nc-service').innerHTML = '<option value="">— pirma pasirinkite miestą —</option>';
+    document.getElementById('nc-service').disabled = true;
+    document.getElementById('nc-message').value = '';
+    showAccPage('history', document.querySelector('[data-page="history"]'));
+    await loadOrderHistory();
+    toggleOrderChat(order.id);
+  } catch(err){
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  } finally {
+    btn.textContent = '💬 Pradėti pokalbį';
+    updateNewChatSubmitState();
+  }
+}
+
 /* ══ UŽSAKYMŲ ISTORIJA (Serviso knyga, Žingsnis 3/7) ══ */
 let categoriesCache = [];
 let orderHistoryCache = [];
@@ -595,6 +698,14 @@ function timeAgoShort(dateStr){
   const hours = Math.floor(mins/60);
   if(hours < 24) return `prieš ${hours} val`;
   return `prieš ${Math.floor(hours/24)} d.`;
+}
+const MSG_MONTHS_SHORT = ['saus','vas','kov','bal','geg','birž','liep','rugp','rugs','spal','lapkr','gruod'];
+function formatMsgTime(dateStr){
+  if(!dateStr) return '';
+  const d = new Date(dateStr.replace(' ','T')+'Z');
+  const hh = String(d.getHours()).padStart(2,'0');
+  const mm = String(d.getMinutes()).padStart(2,'0');
+  return `${d.getDate()} ${MSG_MONTHS_SHORT[d.getMonth()]}, ${hh}:${mm}`;
 }
 function formatOrderTime(v){
   if(!v) return '';
@@ -720,7 +831,7 @@ async function loadOrderChat(id, force){
           }
           return `
             <div class="order-chat-msg ${mine?'mine':'other'}">
-              <div class="who">${escapeHtml(who)} · ${timeAgoShort(m.created_at)}</div>
+              <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgoShort(m.created_at)})</div>
               ${m.message ? `<div class="bubble">${escapeHtml(m.message)}</div>` : ''}
               ${offerHtml}
             </div>`;

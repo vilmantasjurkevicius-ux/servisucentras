@@ -80,17 +80,21 @@ router.post('/direct', authRequired, requireRole('client'), (req, res) => {
   if (req.user.guest) return res.status(403).json({ error: 'Tiesioginis rezervavimas galimas tik registruotiems klientams' });
 
   const { serviceId, categoryId, scheduledTime, comment, carId } = req.body;
-  if (!serviceId || !scheduledTime) return res.status(400).json({ error: 'Trūksta serviso arba laiko' });
+  if (!serviceId) return res.status(400).json({ error: 'Trūksta serviso' });
 
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(serviceId);
   if (!service || service.status !== 'active' || service.is_bot) {
     return res.status(404).json({ error: 'Servisas nerastas arba nepriima rezervacijų' });
   }
 
-  const busy = db.prepare(`
-    SELECT id FROM orders WHERE service_id = ? AND scheduled_time = ? AND status IN ('in_progress', 'done')
-  `).get(serviceId, scheduledTime);
-  if (busy) return res.status(409).json({ error: 'Šis laikas jau užimtas — pasirinkite kitą' });
+  // Laikas neprivalomas — leidžia klientui tiesiog PARAŠYTI konkrečiam servisui
+  // (žr. "Naujas pokalbis" kliento paskyroje), nebūtinai rezervuoti konkretų laiką.
+  if (scheduledTime) {
+    const busy = db.prepare(`
+      SELECT id FROM orders WHERE service_id = ? AND scheduled_time = ? AND status IN ('in_progress', 'done')
+    `).get(serviceId, scheduledTime);
+    if (busy) return res.status(409).json({ error: 'Šis laikas jau užimtas — pasirinkite kitą' });
+  }
 
   let resolvedCar;
   try {
@@ -102,7 +106,7 @@ router.post('/direct', authRequired, requireRole('client'), (req, res) => {
   const info = db.prepare(`
     INSERT INTO orders (client_id, service_id, category_id, city, description, car_info, car_id, status, order_type, scheduled_time)
     VALUES (?, ?, ?, ?, ?, ?, ?, 'new', 'direct', ?)
-  `).run(req.user.id, serviceId, categoryId || null, service.city, comment || null, resolvedCar.carInfo, resolvedCar.carId, scheduledTime);
+  `).run(req.user.id, serviceId, categoryId || null, service.city, comment || null, resolvedCar.carInfo, resolvedCar.carId, scheduledTime || null);
 
   res.status(201).json(getOrder(info.lastInsertRowid));
 });

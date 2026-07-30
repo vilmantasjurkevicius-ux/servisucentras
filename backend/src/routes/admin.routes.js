@@ -175,6 +175,47 @@ router.get('/order-declines', (req, res) => {
   res.json(declines);
 });
 
+// ── CHAT ŽINUTĖS (God Mode — visi susirašinėjimai matomi be jokio redagavimo) ──
+router.get('/conversations', (req, res) => {
+  const conversations = db.prepare(`
+    SELECT o.id AS order_id, o.category_id, o.city, o.order_type, o.status,
+      o.created_at AS order_created_at,
+      c.first_name AS client_first_name, c.last_name AS client_last_name,
+      s.name AS service_name,
+      COUNT(om.id) AS message_count,
+      MAX(om.created_at) AS last_message_at
+    FROM orders o
+    JOIN clients c ON c.id = o.client_id
+    LEFT JOIN services s ON s.id = o.service_id
+    JOIN order_messages om ON om.order_id = o.id
+    GROUP BY o.id
+    ORDER BY last_message_at DESC
+  `).all();
+  res.json(conversations);
+});
+
+router.get('/conversations/:id/messages', (req, res) => {
+  const order = db.prepare('SELECT * FROM orders WHERE id = ?').get(req.params.id);
+  if (!order) return res.status(404).json({ error: 'Užklausa nerasta' });
+
+  const messages = db.prepare('SELECT * FROM order_messages WHERE order_id = ? ORDER BY created_at ASC').all(order.id);
+  const client = db.prepare('SELECT first_name, last_name FROM clients WHERE id = ?').get(order.client_id);
+  const clientName = client ? `${client.first_name || ''} ${client.last_name || ''}`.trim() : null;
+  const serviceIds = [...new Set(messages.filter((m) => m.sender_type === 'service').map((m) => m.sender_id))];
+  const serviceNames = {};
+  if (serviceIds.length) {
+    const placeholders = serviceIds.map(() => '?').join(',');
+    db.prepare(`SELECT id, name FROM services WHERE id IN (${placeholders})`).all(...serviceIds)
+      .forEach((s) => { serviceNames[s.id] = s.name; });
+  }
+  // God Mode — jokio kontaktų filtro ar kainos slėpimo, admin mato pilną, neredaguotą pokalbį.
+  const withNames = messages.map((m) => ({
+    ...m,
+    sender_name: m.sender_type === 'client' ? clientName : (serviceNames[m.sender_id] || null),
+  }));
+  res.json(withNames);
+});
+
 // ── NUSTATYMAI (God Mode) ──
 router.get('/settings', (req, res) => {
   const { admin_password_hash, ...settings } = db.prepare('SELECT * FROM admin_settings WHERE id = 1').get();

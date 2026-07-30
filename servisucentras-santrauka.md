@@ -965,6 +965,18 @@ Dashboard'o "Greiti veiksmai" mygtukai "🔒 Uždaryti" ir "⛔ Atostogos" anks�
 
 ---
 
+## Kliento paskyra: "Naujas pokalbis" (miestas+servisas) + God Mode chat + tikslūs laikai (2026-07-30)
+Klientas dabar gali savo paskyroje ("Mano paskyra") pradėti pokalbį su KONKREČIU servisu, pasirinkęs miestą — anksčiau tai buvo pasiekiama tik netiesiogiai (broadcast arba tiesioginė rezervacija su konkrečiu laiku pagrindiniame puslapyje). Visi susirašinėjimai dabar taip pat matomi admin "God Mode" panelėje, o kiekviena žinutė rodo tikslią datą ir laiką (ne tik "prieš X min").
+
+- **`POST /orders/direct` `scheduledTime` dabar neprivalomas** — leidžia sukurti užklausą konkrečiam servisui BE laiko rezervavimo, tik susisiekimui (naudojama naujam pokalbiui; esama tiesioginio rezervavimo funkcija pagrindiniame puslapyje nepakitusi, ten laikas ir toliau nurodomas).
+- **`mano-paskyra.html`, nauja "💬 Naujas pokalbis" skiltis**: pasirenkamas miestas (dinamiškai iš realių `GET /api/services` miestų, ne fiksuotas sąrašas), tada tik to miesto servisai (bot'ai neįtraukiami), automobilis (nebūtina, iš esamo `carsCache`) ir žinutė. Sukūrus — automatiškai persijungia į "Užsakymų istorija" ir iškart išskleidžia naują pokalbį (reuse `toggleOrderChat`).
+- **Tikslus data+laikas žinutėse** — naujas `formatMsgTime()` abiejuose chat rodiniuose (`mano-paskyra.html` ir `automeistrai-dashboard.html`): rodo "30 liep, 20:09 (ką tik)" — tikslų laiką ŠALIA santykinio, ne vietoj jo.
+- **Nauji admin endpoint'ai**: `GET /admin/conversations` (visų pokalbių sąrašas — klientas, servisas, kategorija, miestas, žinučių sk., paskutinės žinutės laikas) ir `GET /admin/conversations/:id/messages` (pilna, NEREDAGUOTA gija — jokio kontaktų filtro ar kainos slėpimo, God Mode mato viską).
+- **Admin "💬 Chat žinutės" puslapis** — buvo tuščias placeholder'is ("Čia matysite..."), dabar realus: lentelė su visais pokalbiais, paspaudus eilutę — išsiskleidžia pilna gija su tiksliais laikais.
+- Patikrinta gyvai pilnas ciklas: klientas pradėjo pokalbį su "Test Servisas 5/7" (Vilnius) per naują "Naujas pokalbis" formą → servisas dashboard'e pamatė naują užklausą (teisingai priskirta TIK jam, `scheduled_time: null`) → atsakė iš dashboard'o → klientas pamatė atsakymą paskyroje su tiksliu laiku → admin "Chat žinutės" puslapyje pokalbis matomas sąraše ir pilnai išsiskleidžia su abiem žinutėmis ir tiksliais laikais. Jokių console klaidų, testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
