@@ -1036,7 +1036,7 @@ Tikrinant paaiškėjo papildoma, nesusijusi klaida: **"🗺️ Kitas" mygtukas**
 ## Automobilio ikona ant hero vėliavos (2026-07-31)
 Vartotojas atsiuntė jau paruoštą permatomo fono PNG (`car-white-transparent.png`, 412×329, baltas automobilio siluetas) ir paprašė uždėti tiesiai ant hero sekcijos fone esančios didelės Lietuvos vėliavos (`.hero-flag-bg`) — be jokios baltos dėžutės aplink, centruotą, ~220px pločio.
 
-- Naujas CSS `.hero-flag-car` — `position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:220px;`, `pointer-events:none` (kad neblokuotų paspaudimų po juo).
+- Naujas CSS `.hero-flag-car` — pradžioje centruota (`top:50%;left:50%;transform:translate(-50%,-50%)`), vėliau vartotojo prašymu perkelta į KAIRĘ vėliavos dėžutės pusę: `top:50%;left:10px;transform:translateY(-50%);width:220px;`, `pointer-events:none` (kad neblokuotų paspaudimų po juo).
 - `<img class="hero-flag-car" src="car-white-transparent.png">` pridėtas kaip `.hero-flag-bg` vaikas, ŠALIA `.hero-flag-sway` (ne viduje) — todėl automobilis NESISUPA kartu su vėliavos linkio animacija, tiesiog ramiai stovi centre virš jos.
 - Patikrinta: paveikslėlis įsikrauna (200 OK, jokių console klaidų), o `getBoundingClientRect()` patvirtino tikslų centravimą (automobilio centras sutampa su vėliavos dėžutės centru per abi ašis). Vizualaus screenshot patvirtinimo šįkart padaryti nepavyko, nes naršyklės polangis vartotojo pusėje nebuvo rodomas — vertėtų patiems peržiūrėti gyvai.
 
