@@ -114,10 +114,8 @@ nav{
 /* LT vėliava — patvirtintas dizainas (lietuvos-veliava-stacia.html).
    Kraštai visada lieka švarūs/stačiakampiai, nes overflow:hidden "iškerpa" formą
    PRIEŠ pritaikant skewY vidiniam .hero-flag-sway elementui — sukasi jau iškirpta
-   forma kaip vienas standus vienetas, ne pati banguoja.
-   Automobilis (.hero-flag-car-box) stovi ŠALIA vėliavos (.hero-visual — flex),
-   NE ant jos — vėliava lieka pilnai matoma, nepridengta. */
-.hero-visual{display:flex;align-items:center;gap:16px;}
+   forma kaip vienas standus vienetas, ne pati banguoja. */
+.hero-visual{display:flex;align-items:center;}
 .hero-flag-bg{
   position:relative;width:500px;height:333px;flex-shrink:0;pointer-events:none;
 }
@@ -136,11 +134,6 @@ nav{
     rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 25%,
     rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.1) 75%, rgba(0,0,0,0.15) 100%);
 }
-.hero-flag-car-box{
-  background:transparent;flex-shrink:0;
-  display:flex;align-items:center;justify-content:center;pointer-events:none;
-}
-.hero-flag-car{height:70px;width:auto;}
 @keyframes hero-flag-sway-anim{
   0%,100%{transform:skewY(0deg);}
   50%{transform:skewY(0.8deg);}
@@ -547,9 +540,6 @@ footer a:hover{color:var(--y);}
     </div>
 
     <div class="hero-visual">
-      <div class="hero-flag-car-box">
-        <img class="hero-flag-car" src="car-white-transparent.png" alt="" aria-hidden="true">
-      </div>
       <div class="hero-flag-bg">
         <div class="hero-flag-sway">
           <div class="fy"></div><div class="fg"></div><div class="fr"></div>
