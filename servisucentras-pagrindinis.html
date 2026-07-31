@@ -135,6 +135,10 @@ nav{
     rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 25%,
     rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.1) 75%, rgba(0,0,0,0.15) 100%);
 }
+.hero-flag-car{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:220px;height:auto;pointer-events:none;
+}
 @keyframes hero-flag-sway-anim{
   0%,100%{transform:skewY(0deg);}
   50%{transform:skewY(0.8deg);}
@@ -506,6 +510,7 @@ footer a:hover{color:var(--y);}
       <div class="fy"></div><div class="fg"></div><div class="fr"></div>
       <div class="hero-flag-shine"></div>
     </div>
+    <img class="hero-flag-car" src="car-white-transparent.png" alt="" aria-hidden="true">
   </div>
   <div class="hero-inner">
     <div class="hero-eyebrow">
