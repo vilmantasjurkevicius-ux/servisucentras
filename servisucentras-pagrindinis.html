@@ -137,10 +137,10 @@ nav{
     rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.1) 75%, rgba(0,0,0,0.15) 100%);
 }
 .hero-flag-car-box{
-  width:150px;height:190px;background:transparent;flex-shrink:0;
+  background:transparent;flex-shrink:0;
   display:flex;align-items:center;justify-content:center;pointer-events:none;
 }
-.hero-flag-car{width:120px;height:auto;}
+.hero-flag-car{height:70px;width:auto;}
 @keyframes hero-flag-sway-anim{
   0%,100%{transform:skewY(0deg);}
   50%{transform:skewY(0.8deg);}
@@ -148,7 +148,7 @@ nav{
 
 .hero-inner{
   max-width:1100px;margin:0 auto;position:relative;z-index:2;
-  display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;
+  display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
 }
 @media(max-width:1160px){
   .hero-inner{grid-template-columns:1fr;}
@@ -169,7 +169,7 @@ nav{
 .lt-flag-wave .fy{background:var(--y);}
 .lt-flag-wave .fg{background:var(--g);}
 .lt-flag-wave .fr{background:var(--r);}
-h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;}
+h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;-webkit-hyphens:auto;-ms-hyphens:auto;hyphens:auto;}
 h1 em{font-style:normal;color:var(--y);}
 .hero-sub{font-size:16px;color:var(--muted);max-width:520px;line-height:1.65;margin-bottom:32px;}
 
