@@ -111,14 +111,15 @@ nav{
     repeating-linear-gradient(135deg,rgba(255,255,255,0.012) 0,rgba(255,255,255,0.012) 1px,transparent 1px,transparent 18px);
   pointer-events:none;
 }
-/* LT vėliava fone — patvirtintas dizainas (lietuvos-veliava-stacia.html).
-   Dydis/pozicija lieka ant išorinio .hero-flag-bg (nepakito). Kraštai visada
-   lieka švarūs/stačiakampiai, nes overflow:hidden "iškerpa" formą PRIEŠ
-   pritaikant skewY vidiniam .hero-flag-sway elementui — sukasi jau iškirpta
-   forma kaip vienas standus vienetas, ne pati banguoja. */
+/* LT vėliava — patvirtintas dizainas (lietuvos-veliava-stacia.html).
+   Kraštai visada lieka švarūs/stačiakampiai, nes overflow:hidden "iškerpa" formą
+   PRIEŠ pritaikant skewY vidiniam .hero-flag-sway elementui — sukasi jau iškirpta
+   forma kaip vienas standus vienetas, ne pati banguoja.
+   Automobilis (.hero-flag-car-box) stovi ŠALIA vėliavos (.hero-visual — flex),
+   NE ant jos — vėliava lieka pilnai matoma, nepridengta. */
+.hero-visual{display:flex;align-items:center;gap:16px;}
 .hero-flag-bg{
-  position:absolute;right:-40px;top:50%;transform:translateY(-50%);
-  width:440px;height:294px;pointer-events:none;
+  position:relative;width:300px;height:200px;flex-shrink:0;pointer-events:none;
 }
 .hero-flag-sway{
   position:relative;width:100%;height:100%;border-radius:4px;overflow:hidden;
@@ -135,16 +136,24 @@ nav{
     rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 25%,
     rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.1) 75%, rgba(0,0,0,0.15) 100%);
 }
-.hero-flag-car{
-  position:absolute;top:50%;left:10px;transform:translateY(-50%);
-  width:220px;height:auto;pointer-events:none;
+.hero-flag-car-box{
+  width:150px;height:190px;background:var(--bg);border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;pointer-events:none;
 }
+.hero-flag-car{width:120px;height:auto;}
 @keyframes hero-flag-sway-anim{
   0%,100%{transform:skewY(0deg);}
   50%{transform:skewY(0.8deg);}
 }
 
-.hero-inner{max-width:1100px;margin:0 auto;position:relative;z-index:2;}
+.hero-inner{
+  max-width:1100px;margin:0 auto;position:relative;z-index:2;
+  display:grid;grid-template-columns:1fr auto;gap:32px;align-items:center;
+}
+@media(max-width:960px){
+  .hero-inner{grid-template-columns:1fr;}
+  .hero-visual{display:none;}
+}
 .hero-eyebrow{font-family:'IBM Plex Mono';font-size:11px;color:var(--y);letter-spacing:0.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .hero-eyebrow::before{content:"";width:18px;height:1px;background:var(--y);}
 
@@ -505,42 +514,49 @@ footer a:hover{color:var(--y);}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-flag-bg">
-    <div class="hero-flag-sway">
-      <div class="fy"></div><div class="fg"></div><div class="fr"></div>
-      <div class="hero-flag-shine"></div>
-    </div>
-    <img class="hero-flag-car" src="car-white-transparent.png" alt="" aria-hidden="true">
-  </div>
   <div class="hero-inner">
-    <div class="hero-eyebrow">
-      <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
-      Lietuva · 340+ servisų tinkle
-    </div>
-    <h1>Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
-    <p class="hero-sub">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
-
-    <div class="cta-wrap">
-      <div class="cta-ring-wrap">
-        <div class="cta-ring"></div>
-        <div class="cta-ring2"></div>
-        <button class="cta-btn" onclick="openChat()">
-          <span class="cta-ico">💬</span>
-          <span>Be registracijos parašyk bėdą — gauk kainas</span>
-          <span class="cta-arr">→</span>
-        </button>
+    <div class="hero-text">
+      <div class="hero-eyebrow">
+        <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
+        Lietuva · 340+ servisų tinkle
       </div>
-      <div class="cta-meta">
-        <span class="cta-dot"></span>
-        <b>12 servisų</b> dabar online &nbsp;·&nbsp; atsakas per <span>~15 min</span>
-        &nbsp;·&nbsp; ✓ Nemokama
+      <h1>Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
+      <p class="hero-sub">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
+
+      <div class="cta-wrap">
+        <div class="cta-ring-wrap">
+          <div class="cta-ring"></div>
+          <div class="cta-ring2"></div>
+          <button class="cta-btn" onclick="openChat()">
+            <span class="cta-ico">💬</span>
+            <span>Be registracijos parašyk bėdą — gauk kainas</span>
+            <span class="cta-arr">→</span>
+          </button>
+        </div>
+        <div class="cta-meta">
+          <span class="cta-dot"></span>
+          <b>12 servisų</b> dabar online &nbsp;·&nbsp; atsakas per <span>~15 min</span>
+          &nbsp;·&nbsp; ✓ Nemokama
+        </div>
       </div>
+
+      <a class="diag-btn" href="servisucentras-diagnostika.html">
+        <span class="diag-pulse"></span>
+        <span>🔍 Nežinai kas sugedo? <em>Pabandyk nemokamą diagnostiką →</em></span>
+      </a>
     </div>
 
-    <a class="diag-btn" href="servisucentras-diagnostika.html">
-      <span class="diag-pulse"></span>
-      <span>🔍 Nežinai kas sugedo? <em>Pabandyk nemokamą diagnostiką →</em></span>
-    </a>
+    <div class="hero-visual">
+      <div class="hero-flag-car-box">
+        <img class="hero-flag-car" src="car-white-transparent.png" alt="" aria-hidden="true">
+      </div>
+      <div class="hero-flag-bg">
+        <div class="hero-flag-sway">
+          <div class="fy"></div><div class="fg"></div><div class="fr"></div>
+          <div class="hero-flag-shine"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 
