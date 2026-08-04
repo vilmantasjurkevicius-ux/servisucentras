@@ -121,6 +121,9 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
 .btn-y{background:var(--y);color:var(--bg);border-color:var(--y);}
 .btn-y:hover{background:#FFD740;color:var(--bg);}
+.btn:disabled{opacity:0.35;cursor:not-allowed;}
+.btn:disabled:hover{border-color:var(--line2);color:var(--text);}
+.btn-y:disabled:hover{background:var(--y);color:var(--bg);}
 
 /* CONTENT */
 .content{padding:20px 24px;display:flex;flex-direction:column;gap:20px;}
@@ -257,6 +260,9 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="sb-section">Finansai</div>
   <button class="sb-item" onclick="showPage('money',this)"><span class="ic">💰</span> Pajamos</button>
   <button class="sb-item" onclick="showPage('commissions',this)"><span class="ic">📈</span> Mokesčiai</button>
+
+  <div class="sb-section">Augimas</div>
+  <button class="sb-item" onclick="showPage('invitations',this)"><span class="ic">📨</span> Pakvietimai</button>
 
   <div class="sb-section">Sistema</div>
   <button class="sb-item" onclick="showPage('botservices',this)"><span class="ic">🤖</span> Bot servisai <span class="badge green" id="bot-active-badge">10</span></button>
@@ -543,6 +549,28 @@ tr:hover td{background:rgba(255,255,255,0.015);}
         <table>
           <tr><th>Paskutinė žinutė</th><th>Užklausa</th><th>Klientas</th><th>Servisas</th><th>Žinučių sk.</th><th></th></tr>
           <tbody id="conversations-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════ PAKVIETIMAI — realių servisų paieška (Places API) + laiško juodraštis (Gemini) ════ -->
+  <div class="page" id="p-invitations">
+    <div class="page-head">
+      <div><div class="page-title">📨 Pakvietimai</div><div class="page-sub">Suranda realius autoservisus mieste (Google Places) ir paruošia laiško juodraštį (Gemini). NIEKAS nesiunčiama automatiškai — el. paštą įrašai pats, siųsti spausk pats.</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
+        <input id="inv-city-input" type="text" placeholder="Miestas, pvz. Ukmergė" style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:8px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;" onkeydown="if(event.key==='Enter')searchInvitations()">
+        <button class="btn btn-y" id="inv-search-btn" onclick="searchInvitations()">🔍 Ieškoti</button>
+        <button class="btn" onclick="sendAllVisibleInvitations()">✉️ Siųsti visiems matomiems</button>
+      </div>
+      <div id="inv-status" style="color:var(--muted);font-size:12px;margin-bottom:10px;display:none;"></div>
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Rasti servisai</div></div>
+        <table>
+          <tr><th>Servisas</th><th>Kontaktai</th><th>El. paštas</th><th>Laiškas</th><th>Būsena</th></tr>
+          <tbody id="invitations-table-body"></tbody>
         </table>
       </div>
     </div>
@@ -1170,6 +1198,100 @@ async function loadConversationThread(orderId){
   }
 }
 
+// ── PAKVIETIMAI (realių servisų paieška + laiško juodraštis) ──
+let invitationsCache = [];
+let expandedInvId = null;
+
+async function loadInvitations(){
+  invitationsCache = await apiGet('/admin/invitations');
+  renderInvitations();
+}
+
+async function searchInvitations(){
+  const city = document.getElementById('inv-city-input').value.trim();
+  if(!city) return;
+  const btn = document.getElementById('inv-search-btn');
+  const status = document.getElementById('inv-status');
+  btn.disabled = true;
+  status.style.display = 'block';
+  status.textContent = `Ieškoma servisų mieste "${city}" ir ruošiami laiškai — tai gali užtrukti iki ~2 min (Gemini nemokamo plano limitas), nekraukite puslapio iš naujo...`;
+  try{
+    invitationsCache = await apiPost('/admin/invitations/search', { city });
+    status.textContent = `Rasta ${invitationsCache.length} servisų mieste "${city}".`;
+    renderInvitations();
+  } catch(err){
+    status.textContent = 'Klaida: ' + err.message;
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function toggleInvitationLetter(id){
+  expandedInvId = expandedInvId === id ? null : id;
+  renderInvitations();
+}
+
+async function updateInvitationEmail(id, value){
+  const row = invitationsCache.find(r => r.id === id);
+  if(row) row.email = value.trim() || null;
+  try{
+    await apiPatch(`/admin/invitations/${id}`, { email: value.trim() || null });
+  } catch(err){
+    alert('Nepavyko išsaugoti el. pašto: ' + err.message);
+  }
+  renderInvitations();
+}
+
+async function sendOneInvitation(id, btn){
+  btn.disabled = true;
+  btn.textContent = 'Siunčiama...';
+  try{
+    const updated = await apiPost(`/admin/invitations/${id}/send`);
+    const idx = invitationsCache.findIndex(r => r.id === id);
+    if(idx !== -1) invitationsCache[idx] = updated;
+    renderInvitations();
+  } catch(err){
+    alert('Nepavyko išsiųsti: ' + err.message);
+    btn.disabled = false;
+    btn.textContent = 'Siųsti';
+  }
+}
+
+async function sendAllVisibleInvitations(){
+  const ids = invitationsCache.filter(r => r.email && !r.sent_at).map(r => r.id);
+  if(!ids.length){ alert('Nėra kam siųsti — nė vienas matomas įrašas neturi el. pašto arba visi jau išsiųsti.'); return; }
+  if(!confirm(`Siųsti pakvietimus ${ids.length} servisams?`)) return;
+  const result = await apiPost('/admin/invitations/send-bulk', { ids });
+  await loadInvitations();
+  const failed = result.results.filter(r => !r.ok);
+  if(failed.length) alert(`Nepavyko išsiųsti ${failed.length} iš ${ids.length} (trūksta el. pašto arba jau išsiųsta anksčiau).`);
+}
+
+function renderInvitations(){
+  document.getElementById('invitations-table-body').innerHTML = invitationsCache.map(r=>{
+    let letter = null;
+    try{ letter = r.letter_text ? JSON.parse(r.letter_text) : null; } catch(e){ letter = null; }
+    const statusHtml = r.sent_at
+      ? `<span class="badge badge-active">Išsiųsta ${formatChatTime(r.sent_at)}</span>`
+      : `<button class="btn btn-y" ${(!r.email || !letter) ? 'disabled' : ''} onclick="sendOneInvitation(${r.id}, this)">Siųsti</button>`;
+    const rows = [`
+    <tr>
+      <td><b>${escapeHtml(r.name)}</b><br><span style="font-size:11px;color:var(--muted);">${escapeHtml(r.address||'—')}</span></td>
+      <td style="font-size:12px;">${r.phone ? escapeHtml(r.phone)+'<br>' : ''}${r.website ? `<a href="${escapeHtml(r.website)}" target="_blank" style="color:var(--y);">🔗 svetainė</a>` : '<span style="color:var(--muted);">be svetainės</span>'}</td>
+      <td><input type="email" placeholder="įrašyk el. paštą..." value="${escapeHtml(r.email||'')}" style="width:170px;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-size:12px;" onchange="updateInvitationEmail(${r.id}, this.value)"></td>
+      <td>${letter ? `<button class="btn" onclick="toggleInvitationLetter(${r.id})">${expandedInvId===r.id?'▲ Slėpti':'👁 Peržiūrėti'}</button>` : '<span style="color:var(--muted);font-size:12px;">nesugeneruotas</span>'}</td>
+      <td>${statusHtml}</td>
+    </tr>`];
+    if(expandedInvId === r.id && letter){
+      rows.push(`<tr><td colspan="5" style="background:var(--bg3);padding:16px 20px;">
+        <div style="font-weight:600;margin-bottom:8px;">${escapeHtml(letter.subject)}</div>
+        ${letter.paragraphs.map(p=>`<p style="font-size:13px;color:var(--text);margin:0 0 10px;">${escapeHtml(p)}</p>`).join('')}
+      </td></tr>`);
+    }
+    return rows.join('');
+  }).join('') || emptyRow(5);
+}
+
 // ── VISO KROVIMAS PO PRISIJUNGIMO ──
 async function loadEverything(){
   categoriesCache = await apiGet('/categories');
@@ -1182,7 +1304,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;

@@ -167,6 +167,25 @@ CREATE TABLE IF NOT EXISTS service_invoices (
   UNIQUE(service_id, period)
 );
 
+-- Admin "Pakvietimai" įrankis — realūs servisai, surasti per Google Places API,
+-- su Gemini sugeneruotu laiško juodraščiu. Niekas nesiunčiama automatiškai —
+-- admin peržiūri, pats įrašo el. paštą ir spaudžia "Siųsti" kiekvienam atskirai.
+-- place_id (Google) UNIQUE — apsaugo nuo pakartotinio to paties serviso įrašymo,
+-- jei admin ieško to paties miesto kelis kartus.
+CREATE TABLE IF NOT EXISTS service_invitations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  place_id TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  address TEXT,
+  phone TEXT,
+  website TEXT,
+  email TEXT,
+  city TEXT NOT NULL,
+  letter_text TEXT,
+  sent_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_services_city ON services(city);
 CREATE INDEX IF NOT EXISTS idx_invoices_service ON service_invoices(service_id);
 CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);

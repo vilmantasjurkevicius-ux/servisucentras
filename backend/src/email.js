@@ -102,7 +102,15 @@ async function sendOrderReopenedEmail(service, order) {
   });
 }
 
+async function sendInvitationEmail({ to, subject, paragraphs }) {
+  await sendEmail({
+    to,
+    subject,
+    html: layout(subject, paragraphs.map((p) => `<p>${p}</p>`).join('')),
+  });
+}
+
 module.exports = {
   sendServiceRegistrationEmail, sendNewOrderEmail, sendQuoteEmail,
-  sendServiceDeclinedEmail, sendOrderReopenedEmail,
+  sendServiceDeclinedEmail, sendOrderReopenedEmail, sendInvitationEmail,
 };

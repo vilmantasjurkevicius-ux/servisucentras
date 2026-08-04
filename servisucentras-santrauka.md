@@ -1065,6 +1065,35 @@ Vartotojas atsiuntė jau paruoštą permatomo fono PNG (`car-white-transparent.p
 
 ---
 
+## Admin: "Pakvietimai" — pusiau automatinis realių servisų kvietimo įrankis (2026-08-04)
+
+Vartotojas paprašė admin skilties, kuri padėtų RASTI ir PAKVIESTI realius autoservisus mieste — su patvirtinimu prieš kiekvieną siuntimą. Prieš rašant kodą buvo aiškiai paprašyta patikrinti apribojimą: ar Gemini gali PATIKIMAI surasti realius servisus/el.paštus vien tekstine užklausa.
+
+**Patikrintas ir patvirtintas apribojimas** (prieš rašant likusį kodą):
+- Projekto Gemini integracija (`gemini-flash-latest`, paprastas `generateContent`) NETURI interneto paieškos ("grounding") — tai grynas teksto generavimas iš treniravimo duomenų, be realaus laiko prieigos. Paprašius "surask autoservisus X mieste su kontaktais", modelis SUGALVOTŲ įtikinamus, bet fiktyvius pavadinimus/el.paštus — žinoma LLM problema vietinio verslo paieškai.
+- Vartotojas pats pasiūlė alternatyvą — **Google Places API** — kuri PATIKIMAI grąžina pavadinimą/adresą/telefoną/svetainę, BET **NEGRĄŽINA el. pašto** (tokio lauko apskritai nėra Places duomenų modelyje).
+- **Sprendimas** (vartotojo patvirtintas): Places API realiems servisams rasti, Gemini TIK laiško teksto rašymui (ne faktų paieškai — jam duodami TIK tikri faktai apie platformą, jokių išgalvotų statistikų), el. paštas lieka tuščias/redaguojamas — admin pats jį suranda ir įrašo prieš siųsdamas.
+
+**DB**: nauja lentelė `service_invitations` (`schema.sql`) — `place_id` UNIQUE (Google Place ID, apsauga nuo pakartotinio įrašymo/laiško generavimo ieškant to paties miesto pakartotinai), name/address/phone/website/email/city/letter_text (JSON `{subject, paragraphs}`)/sent_at.
+
+**`backend/src/utils/invitations.js`** (naujas):
+- `searchServicesInCity(city)` — POST į `https://places.googleapis.com/v1/places:searchText` (Places API New), `X-Goog-Api-Key` + `X-Goog-FieldMask`, `maxResultCount:10`.
+- `draftInvitationLetter(name, city)` — Gemini `generateContent` su `responseSchema` (`subject` + `paragraphs[]`), prompt'e AIŠKIAI nurodyta "naudok TIK šiuos faktus" + faktų sąrašas (kas yra ServisuCentras.lt, 6 mėn. nemokamai, registracijos nuoroda) — apsauga nuo haliucinacijų apie PAČIĄ platformą irgi.
+
+**`backend/src/routes/admin.routes.js`** — nauji endpoint'ai: `GET /invitations` (sąrašas), `POST /invitations/search` (Places + Gemini kiekvienam NAUJAM place_id), `PATCH /invitations/:id` (el. pašto įrašymas), `POST /invitations/:id/send` (siuntimas + `sent_at` žymėjimas, atmeta jei jau išsiųsta/nėra el.pašto/laiško), `POST /invitations/send-bulk`.
+
+**Realus Gemini nemokamo plano limitas, rastas gyvai testuojant**: 5 kvietimai/min (`generate_content_free_tier_requests`). Pirmas bandymas su 20 rezultatų iš karto sukėlė `429 RESOURCE_EXHAUSTED` po 5-to. Sprendimas: `maxResultCount:10` Places užklausoje + `13s` pauzė tarp Gemini kvietimų kiekvienam NAUJAM servisui (`GEMINI_FREE_TIER_DELAY_MS`) — nauja miesto paieška gali užtrukti iki ~2 min, bet PAKARTOTINĖ to paties miesto paieška greita (<1s), nes jau matyti `place_id` nekartojami.
+
+**`backend/src/email.js`**: nauja `sendInvitationEmail({to, subject, paragraphs})`, naudoja esamą `layout()` apvalkalą.
+
+**`servisucentras-admin.html`**: nauja "📨 Pakvietimai" skiltis (sidebar sekcija "Augimas") — miesto paieškos laukas + "Ieškoti" (su aiškiu "gali užtrukti iki 2 min" pranešimu), viršuje "Siųsti visiems matomiems", lentelė (servisas/kontaktai/el.paštas redaguojamas/laiško peržiūra išskleidžiama/būsena). "Siųsti" mygtukas HTML `disabled`, kol nėra el. pašto arba laiško, arba jau išsiųsta. Pridėtas `.btn:disabled` CSS (anksčiau disabled veikė funkciškai, bet atrodė identiškai aktyviam).
+
+**Naujas env kintamasis**: `GOOGLE_PLACES_API_KEY` (atskiras Google Cloud raktas, ne tas pats kaip `GEMINI_API_KEY`) — vartotojo pateiktas, įrašytas į `backend/.env` (gitignored).
+
+**Patikrinta gyvai pilnai**: paieška "Ukmergė" → 10 realių servisų rasta (Places API), visiems sugeneruoti faktais pagrįsti laiškai (jokių išgalvotų statistikų — patikrinta perskaičius realų sugeneruotą laišką). El. pašto įrašymas → mygtukas atsirakina. Siuntimas per Resend saugiu testiniu adresu `delivered@resend.dev` (žr. ankstesnę Resend pastabą — realių fake adresų sandbox neleidžia) → `sent_at` užsipildė, UI parodė žalią "Išsiųsta [data]" ženkliuką, PAKARTOTINIS siuntimo bandymas tam pačiam įrašui teisingai atmestas (`400 "Jau išsiųsta"`). `send-bulk` patikrintas su 2 įrašais — abu sėkmingi. Pakartotinė "Ukmergė" paieška NEPERGENERAVO laiškų (582ms vietoj ~2min). Jokių console klaidų. Testai 7/7 nepakitę.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

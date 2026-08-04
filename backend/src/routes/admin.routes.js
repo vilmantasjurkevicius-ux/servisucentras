@@ -7,6 +7,8 @@ const { trialEndDate } = require('../utils/commission');
 const { authLimiter } = require('../middleware/rateLimit');
 const { refreshInvoices, currentPeriod, periodLabelLt } = require('../utils/invoices');
 const { disableOverlappingBots } = require('../utils/bots');
+const { searchServicesInCity, draftInvitationLetter } = require('../utils/invitations');
+const { sendInvitationEmail } = require('../email');
 
 const router = express.Router();
 
@@ -370,6 +372,103 @@ router.post('/bots/replace', (req, res) => {
 
   db.prepare("UPDATE services SET status = 'inactive' WHERE id = ?").run(bot.id);
   res.json({ ok: true });
+});
+
+// ── PAKVIETIMAI — realių servisų paieška (Places API) + laiško juodraštis (Gemini) ──
+// NIEKAS nesiunčiama automatiškai — admin peržiūri, pats įrašo el. paštą ir
+// paspaudžia "Siųsti" kiekvienam įrašui atskirai (arba "Siųsti visiems matomiems").
+
+router.get('/invitations', (req, res) => {
+  const { city } = req.query;
+  const rows = city
+    ? db.prepare('SELECT * FROM service_invitations WHERE city = ? ORDER BY created_at DESC').all(city)
+    : db.prepare('SELECT * FROM service_invitations ORDER BY created_at DESC').all();
+  res.json(rows);
+});
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+// Gemini nemokamas planas leidžia tik 5 kvietimus/min šiam modeliui — kiekvienam
+// NAUJAM servisui reikia atskiro kvietimo (laiško juodraščiui), tad tarp jų būtina
+// palaukti, kitaip 429 (RESOURCE_EXHAUSTED) po penkto rezultato. ~13s saugu tilpti
+// į 5/60s limitą su atsarga. Todėl paieška naujame mieste gali užtrukti iki ~2 min.
+const GEMINI_FREE_TIER_DELAY_MS = 13000;
+
+router.post('/invitations/search', async (req, res) => {
+  const { city } = req.body;
+  if (!city || !city.trim()) return res.status(400).json({ error: 'Trūksta miesto' });
+  const cityName = city.trim();
+
+  let places;
+  try {
+    places = await searchServicesInCity(cityName);
+  } catch (err) {
+    const status = err.code === 'NO_PLACES_KEY' ? 503 : 502;
+    return res.status(status).json({ error: err.message });
+  }
+
+  const insertStmt = db.prepare(`
+    INSERT INTO service_invitations (place_id, name, address, phone, website, city, letter_text)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  const existingStmt = db.prepare('SELECT * FROM service_invitations WHERE place_id = ?');
+
+  const newPlaces = places.filter((p) => !existingStmt.get(p.placeId));
+  for (let i = 0; i < newPlaces.length; i += 1) {
+    const place = newPlaces[i];
+    let letterText = null;
+    try {
+      const letter = await draftInvitationLetter(place.name, cityName);
+      letterText = JSON.stringify(letter);
+    } catch (err) {
+      console.error(`Nepavyko sugeneruoti laiško "${place.name}":`, err.message);
+      // vis tiek įrašome servisą be laiško — admin galės pamatyti sąraše, laiškas tuščias
+    }
+    insertStmt.run(place.placeId, place.name, place.address, place.phone, place.website, cityName, letterText);
+    if (i < newPlaces.length - 1) await sleep(GEMINI_FREE_TIER_DELAY_MS);
+  }
+
+  const rows = db.prepare('SELECT * FROM service_invitations WHERE city = ? ORDER BY created_at DESC').all(cityName);
+  res.json(rows);
+});
+
+router.patch('/invitations/:id', (req, res) => {
+  const { email } = req.body;
+  const row = db.prepare('SELECT * FROM service_invitations WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Įrašas nerastas' });
+  db.prepare('UPDATE service_invitations SET email = ? WHERE id = ?').run(email || null, row.id);
+  res.json(db.prepare('SELECT * FROM service_invitations WHERE id = ?').get(row.id));
+});
+
+async function sendInvitation(row) {
+  if (!row.email) return { id: row.id, ok: false, error: 'Trūksta el. pašto' };
+  if (row.sent_at) return { id: row.id, ok: false, error: 'Jau išsiųsta' };
+  if (!row.letter_text) return { id: row.id, ok: false, error: 'Laiškas nesugeneruotas' };
+
+  const letter = JSON.parse(row.letter_text);
+  await sendInvitationEmail({ to: row.email, subject: letter.subject, paragraphs: letter.paragraphs });
+  db.prepare("UPDATE service_invitations SET sent_at = datetime('now') WHERE id = ?").run(row.id);
+  return { id: row.id, ok: true };
+}
+
+router.post('/invitations/:id/send', async (req, res) => {
+  const row = db.prepare('SELECT * FROM service_invitations WHERE id = ?').get(req.params.id);
+  if (!row) return res.status(404).json({ error: 'Įrašas nerastas' });
+  const result = await sendInvitation(row);
+  if (!result.ok) return res.status(400).json({ error: result.error });
+  res.json(db.prepare('SELECT * FROM service_invitations WHERE id = ?').get(row.id));
+});
+
+router.post('/invitations/send-bulk', async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'Trūksta ids sąrašo' });
+
+  const results = [];
+  for (const id of ids) {
+    const row = db.prepare('SELECT * FROM service_invitations WHERE id = ?').get(id);
+    if (!row) { results.push({ id, ok: false, error: 'Nerasta' }); continue; }
+    results.push(await sendInvitation(row));
+  }
+  res.json({ results });
 });
 
 module.exports = router;
