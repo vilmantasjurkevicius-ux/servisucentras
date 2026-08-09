@@ -4,20 +4,21 @@
 <meta charset="UTF-8">
 <title>ServisuCentras.lt — Lietuvos autoservisų platforma</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root{
   --bg:#0E0F10; --bg2:#161819; --bg3:#1E2022;
   --line:rgba(255,255,255,0.07); --line2:rgba(255,255,255,0.13);
   --text:#F0EDE5; --muted:#7A8088; --dim:#3A3F45;
-  --y:#F5C400; --ydim:rgba(245,196,0,0.1);
+  --y:#E63946; --ydim:rgba(230,57,70,0.1);
   --g:#3D6B4A; --gdim:rgba(61,107,74,0.14);
   --r:#8B1A1A; --rdim:rgba(139,26,26,0.13);
+  --lt-yellow:#F5C400; /* TIK tikrai Lietuvos vėliavos geltonai juostai — ne prekės ženklo akcentui (žr. --y) */
   --radius:4px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--text);font-family:'Hanken Grotesk',sans-serif;-webkit-font-smoothing:antialiased;}
 
 /* ══════════════════════════════════
    NAV
@@ -40,19 +41,19 @@ nav{
 .logo-icon .lr{flex:1;background:var(--r);}
 .logo-icon .lw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
 .logo-text{display:flex;flex-direction:column;gap:1px;}
-.logo-name{font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--text);line-height:1;}
+.logo-name{font-family:'Sora';font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--text);line-height:1;}
 .logo-name em{font-style:normal;color:var(--y);}
 .logo-bar{display:flex;height:2px;border-radius:1px;overflow:hidden;}
 .logo-bar span{flex:1;}
 .nav-links{display:flex;gap:4px;}
-.nav-link{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--radius);transition:all .15s;cursor:pointer;background:none;border:none;font-family:'IBM Plex Sans';}
+.nav-link{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--radius);transition:all .15s;cursor:pointer;background:none;border:none;font-family:'Hanken Grotesk';}
 .nav-link:hover{color:var(--text);background:rgba(255,255,255,0.04);}
 .nav-right{display:flex;gap:8px;align-items:center;}
-.nav-btn{font-family:'IBM Plex Sans';font-weight:600;font-size:13px;padding:7px 16px;border-radius:var(--radius);cursor:pointer;transition:all .15s;}
+.nav-btn{font-family:'Hanken Grotesk';font-weight:600;font-size:13px;padding:7px 16px;border-radius:var(--radius);cursor:pointer;transition:all .15s;}
 .nav-btn-out{background:transparent;border:1px solid var(--line2);color:var(--text);}
-.nav-btn-out:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.nav-btn-out:hover{border-color:rgba(230,57,70,0.3);color:var(--y);}
 .nav-btn-pri{background:var(--y);color:var(--bg);border:none;}
-.nav-btn-pri:hover{background:#FFD740;}
+.nav-btn-pri:hover{background:#FF525F;}
 
 /* HAMBURGER MENIU (mobile) — "Kaip veikia"/"Servisai"/"Diagnostika"/"Admin", kurios
    siaurame ekrane paslėptos iš pagrindinio nav, kitaip liktų visai nepasiekiamos.
@@ -62,7 +63,7 @@ nav{
   width:36px;height:36px;background:none;border:1px solid var(--line2);border-radius:var(--radius);
   color:var(--text);font-size:16px;cursor:pointer;flex-shrink:0;
 }
-.nav-hamburger:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.nav-hamburger:hover{border-color:rgba(230,57,70,0.3);color:var(--y);}
 .mobile-menu{
   display:none;flex-direction:column;
   position:sticky;top:56px;z-index:99;
@@ -73,7 +74,7 @@ nav{
   width:100%;text-align:left;padding:14px 20px;
   border:none;border-bottom:1px solid var(--line);border-radius:0;
   background:none;color:var(--muted);font-size:14px;text-decoration:none;
-  cursor:pointer;font-family:'IBM Plex Sans';
+  cursor:pointer;font-family:'Hanken Grotesk';
 }
 .mobile-menu .nav-link:last-child{border-bottom:none;}
 .mobile-menu .nav-link:active{background:rgba(255,255,255,0.04);}
@@ -107,47 +108,12 @@ nav{
 }
 .hero::before{
   content:"";position:absolute;inset:0;
-  background:radial-gradient(ellipse 60% 60% at 70% 50%,rgba(245,196,0,0.04) 0%,transparent 70%),
+  background:radial-gradient(ellipse 60% 60% at 70% 50%,rgba(230,57,70,0.04) 0%,transparent 70%),
     repeating-linear-gradient(135deg,rgba(255,255,255,0.012) 0,rgba(255,255,255,0.012) 1px,transparent 1px,transparent 18px);
   pointer-events:none;
 }
-/* LT vėliava — patvirtintas dizainas (lietuvos-veliava-stacia.html).
-   Kraštai visada lieka švarūs/stačiakampiai, nes overflow:hidden "iškerpa" formą
-   PRIEŠ pritaikant skewY vidiniam .hero-flag-sway elementui — sukasi jau iškirpta
-   forma kaip vienas standus vienetas, ne pati banguoja. */
-.hero-visual{display:flex;align-items:center;}
-.hero-flag-bg{
-  position:relative;width:580px;height:387px;flex-shrink:0;pointer-events:none;
-}
-.hero-flag-sway{
-  position:relative;width:100%;height:100%;border-radius:4px;overflow:hidden;
-  display:flex;flex-direction:column;opacity:0.1;
-  transform-origin:0% 50%;
-  animation:hero-flag-sway-anim 3.5s ease-in-out infinite;
-}
-.hero-flag-sway .fy{flex:1;background:var(--y);}
-.hero-flag-sway .fg{flex:1;background:var(--g);}
-.hero-flag-sway .fr{flex:1;background:var(--r);}
-.hero-flag-shine{
-  position:absolute;inset:0;pointer-events:none;
-  background:linear-gradient(90deg,
-    rgba(255,255,255,0.15) 0%, rgba(255,255,255,0) 25%,
-    rgba(0,0,0,0.1) 50%, rgba(255,255,255,0.1) 75%, rgba(0,0,0,0.15) 100%);
-}
-@keyframes hero-flag-sway-anim{
-  0%,100%{transform:skewY(0deg);}
-  50%{transform:skewY(0.8deg);}
-}
-
-.hero-inner{
-  max-width:1140px;margin:0 auto;position:relative;z-index:2;
-  display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
-}
-@media(max-width:1160px){
-  .hero-inner{grid-template-columns:1fr;}
-  .hero-visual{display:none;}
-}
-.hero-eyebrow{font-family:'IBM Plex Mono';font-size:11px;color:var(--y);letter-spacing:0.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
+.hero-inner{max-width:800px;margin:0 auto;position:relative;z-index:2;}
+.hero-eyebrow{font-family:'JetBrains Mono';font-size:11px;color:var(--y);letter-spacing:0.14em;text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:16px;}
 .hero-eyebrow::before{content:"";width:18px;height:1px;background:var(--y);}
 
 /* Plevėsuojanti LT vėliava — mažas animuotas ženkliukas prie "Lietuva" teksto pačioje
@@ -159,33 +125,16 @@ nav{
   border:1px solid rgba(255,255,255,0.15);flex-shrink:0;
 }
 .lt-flag-wave span{flex:1;}
-.lt-flag-wave .fy{background:var(--y);}
+.lt-flag-wave .fy{background:var(--lt-yellow);}
 .lt-flag-wave .fg{background:var(--g);}
 .lt-flag-wave .fr{background:var(--r);}
-h1{font-family:'Oswald';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;-webkit-hyphens:auto;-ms-hyphens:auto;hyphens:auto;}
+h1{font-family:'Sora';font-size:clamp(36px,5.5vw,64px);font-weight:700;text-transform:uppercase;line-height:0.96;margin-bottom:20px;-webkit-hyphens:auto;-ms-hyphens:auto;hyphens:auto;}
 h1 em{font-style:normal;color:var(--y);}
 .hero-sub{font-size:16px;color:var(--muted);max-width:520px;line-height:1.65;margin-bottom:32px;}
 
-/* CTA mygtukas */
-@keyframes pulse-ring{0%{transform:scale(1);opacity:0.6;}80%,100%{transform:scale(1.15);opacity:0;}}
-@keyframes bounce-x{0%,100%{transform:translateX(0);}50%{transform:translateX(5px);}}
+/* CTA meta (online skaičiukas — naudojamas naujoje hero-online-badge, žr. Stitch CSS aukščiau) */
 @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.3;}}
-.cta-wrap{margin-bottom:32px;}
-.cta-ring-wrap{position:relative;display:inline-flex;}
-.cta-ring{position:absolute;inset:-4px;border-radius:8px;border:2px solid rgba(245,196,0,0.45);animation:pulse-ring 2.2s ease-out infinite;pointer-events:none;}
-.cta-ring2{position:absolute;inset:-4px;border-radius:8px;border:2px solid rgba(245,196,0,0.25);animation:pulse-ring 2.2s ease-out 0.4s infinite;pointer-events:none;}
-.cta-btn{
-  display:flex;align-items:center;gap:13px;
-  background:var(--y);color:var(--bg);border:none;
-  font-family:'IBM Plex Sans';font-weight:700;font-size:16px;
-  padding:16px 28px;border-radius:var(--radius);cursor:pointer;
-  transition:transform .15s,background .15s;
-  position:relative;z-index:1;
-}
-.cta-btn:hover{transform:translateY(-2px);background:#FFD740;}
-.cta-ico{font-size:22px;}
-.cta-arr{animation:bounce-x 1.2s ease-in-out infinite;display:inline-block;opacity:0.7;font-size:18px;}
-.cta-meta{display:flex;align-items:center;gap:7px;margin-top:11px;font-family:'IBM Plex Mono';font-size:11px;color:#555;}
+.cta-meta{display:flex;align-items:center;gap:7px;font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
 .cta-dot{width:7px;height:7px;border-radius:50%;background:#6fbf8a;animation:blink 1.4s infinite;display:inline-block;}
 .cta-meta b{color:var(--text);}
 .cta-meta span{color:var(--y);}
@@ -195,8 +144,8 @@ h1 em{font-style:normal;color:var(--y);}
    ne makete esančius --yellow/--yellow-dim pavadinimus. */
 .diag-btn{
   display:inline-flex;align-items:center;gap:14px;
-  background:var(--ydim);border:1px solid rgba(245,196,0,0.35);
-  color:var(--text);font-family:'IBM Plex Sans';font-weight:600;font-size:16px;
+  background:var(--ydim);border:1px solid rgba(230,57,70,0.35);
+  color:var(--text);font-family:'Hanken Grotesk';font-weight:600;font-size:16px;
   padding:16px 20px;border-radius:var(--radius);cursor:pointer;
   transition:border-color .15s;margin-top:12px;text-decoration:none;
 }
@@ -210,47 +159,84 @@ h1 em{font-style:normal;color:var(--y);}
 @keyframes diag-pulse-ring{0%{transform:scale(0.6);opacity:1;}100%{transform:scale(1.8);opacity:0;}}
 
 /* ══════════════════════════════════
-   MIESTO PAIEŠKA + KATEGORIJOS
+   HERO CTA KORTELĖ + AI DIAGNOSTIKOS PROMO (Stitch dizainas)
 ══════════════════════════════════ */
-.search-section{padding:36px 28px 0;max-width:1100px;margin:0 auto;}
+.hero-cta-card{
+  background:var(--y);border-radius:24px;padding:28px 32px;margin:0 auto 24px;max-width:640px;
+  color:#fff;box-shadow:0 10px 40px rgba(230,57,70,0.25);position:relative;overflow:hidden;
+}
+.hero-cta-card h2{font-family:'Sora';font-size:clamp(20px,3vw,26px);font-weight:700;margin-bottom:18px;line-height:1.25;}
+.hero-cta-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;}
+.hero-cta-note{display:flex;align-items:center;gap:8px;font-size:13px;color:rgba(255,255,255,0.9);}
+.hero-cta-send-btn{
+  background:#fff;color:var(--y);border:none;padding:14px 24px;border-radius:12px;
+  font-family:'Hanken Grotesk';font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.hero-cta-send-btn:hover{background:#f0f0f0;}
+.hero-online-badge{
+  display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:999px;
+  padding:6px 16px;margin:0 auto 28px;background:var(--bg2);font-family:'JetBrains Mono';
+  font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);
+}
+.hero-city-label{text-align:center;color:var(--muted);font-family:'JetBrains Mono';text-transform:uppercase;letter-spacing:0.14em;font-size:12px;margin-bottom:16px;}
+.ai-promo-card{
+  max-width:640px;margin:28px auto 0;display:flex;align-items:center;gap:20px;
+  background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(230,57,70,0.3);
+  border-radius:24px;padding:20px;cursor:pointer;transition:border-color .15s;text-decoration:none;
+}
+.ai-promo-card:hover{border-color:var(--y);}
+.ai-promo-icon{
+  width:64px;height:64px;border-radius:16px;background:var(--ydim);border:1px solid rgba(230,57,70,0.3);
+  display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;
+}
+.ai-promo-tag{
+  display:inline-flex;align-items:center;gap:6px;background:var(--ydim);color:var(--y);
+  padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;
+  letter-spacing:0.08em;margin-bottom:8px;border:1px solid rgba(230,57,70,0.3);
+}
+.ai-promo-title{font-family:'Sora';font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px;}
+.ai-promo-sub{font-size:13px;color:var(--muted);}
+.ai-promo-arrow{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:16px;}
 
+/* ══════════════════════════════════
+   KATEGORIJŲ KORTELĖS SU NUOTRAUKOMIS (Stitch dizainas)
+══════════════════════════════════ */
+.cat-section{max-width:1140px;margin:0 auto;padding:8px 28px 48px;}
+.cat-section-title{text-align:center;margin-bottom:28px;}
+.cat-section-title span{
+  display:inline-block;background:var(--bg2);border:1px solid var(--line2);padding:10px 28px;
+  border-radius:999px;font-family:'Sora';font-size:14px;font-weight:600;text-transform:uppercase;
+  letter-spacing:0.1em;color:var(--text);
+}
+.cat-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;}
+@media(max-width:860px){.cat-grid{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:500px){.cat-grid{grid-template-columns:repeat(3,1fr);}}
+.cat-card{
+  position:relative;height:150px;border-radius:16px;overflow:hidden;cursor:pointer;
+  border:1px solid var(--line2);background:var(--bg2) center/cover no-repeat;transition:border-color .2s,box-shadow .2s;
+}
+.cat-card:hover,.cat-card.on{border-color:var(--y);box-shadow:0 0 20px rgba(230,57,70,0.2);}
+.cat-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,15,16,0.95),rgba(14,15,16,0.55) 55%,transparent);}
+.cat-card-body{position:absolute;left:0;right:0;bottom:0;padding:12px;}
+.cat-card-name{font-size:12.5px;font-weight:600;color:#fff;margin-bottom:2px;}
+.cat-card-count{font-family:'JetBrains Mono';font-size:9.5px;color:rgba(255,255,255,0.7);}
+
+/* ══════════════════════════════════
+   MIESTO PAIEŠKA (dabar hero viduje)
+══════════════════════════════════ */
 .city-row{display:flex;gap:8px;align-items:center;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);padding:6px 8px 6px 16px;margin-bottom:10px;transition:border-color .15s;}
-.city-row:focus-within{border-color:rgba(245,196,0,0.4);}
+.city-row:focus-within{border-color:rgba(230,57,70,0.4);}
 .city-ico{font-size:16px;flex-shrink:0;}
-.city-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;}
+.city-input{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-family:'Hanken Grotesk';font-size:14px;}
 .city-input::placeholder{color:var(--dim);}
-.city-search-btn{background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:13px;padding:8px 16px;border-radius:3px;cursor:pointer;transition:background .15s;white-space:nowrap;}
-.city-search-btn:hover{background:#FFD740;}
+.city-search-btn{background:var(--y);color:var(--bg);border:none;font-family:'Hanken Grotesk';font-weight:600;font-size:13px;padding:8px 16px;border-radius:3px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.city-search-btn:hover{background:#FF525F;}
 
 .city-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;}
 .city-chip{padding:5px 12px;border-radius:20px;border:1px solid var(--line);background:var(--bg2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s;color:var(--muted);}
-.city-chip:hover{border-color:rgba(245,196,0,0.3);color:var(--text);}
+.city-chip:hover{border-color:rgba(230,57,70,0.3);color:var(--text);}
 .city-chip.on{background:var(--ydim);border-color:var(--y);color:var(--y);}
-
-.board-label{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);margin-bottom:10px;}
-.board-label b{color:var(--text);}
-
-.board{
-  display:grid;grid-template-columns:repeat(6,1fr);
-  gap:2px;background:var(--line);border:1px solid var(--line);
-  border-radius:var(--radius);overflow:hidden;margin-bottom:0;
-}
-@media(max-width:860px){.board{grid-template-columns:repeat(4,1fr);}}
-@media(max-width:500px){.board{grid-template-columns:repeat(3,1fr);}}
-.peg{
-  background:var(--bg2);padding:18px 10px;
-  display:flex;flex-direction:column;align-items:center;gap:8px;
-  cursor:pointer;transition:background .15s;text-align:center;
-}
-.peg:hover{background:var(--bg3);}
-.peg.on{background:var(--y);}
-.peg-icon svg{width:26px;height:26px;}
-.peg-icon{transition:filter .15s;}
-.peg.on .peg-icon{filter:invert(1);}
-.peg-name{font-size:11.5px;font-weight:600;color:var(--text);}
-.peg.on .peg-name{color:var(--bg);}
-.peg-count{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);}
-.peg.on .peg-count{color:rgba(0,0,0,0.55);}
 
 /* ══════════════════════════════════
    SERVISŲ SĄRAŠAS
@@ -260,11 +246,11 @@ h1 em{font-style:normal;color:var(--y);}
   display:flex;align-items:baseline;justify-content:space-between;
   margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap;gap:10px;
 }
-.results-title{font-family:'Oswald';font-size:20px;font-weight:600;}
+.results-title{font-family:'Sora';font-size:20px;font-weight:600;}
 .results-title .n{color:var(--y);}
-.sort-tabs{display:flex;gap:6px;font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
+.sort-tabs{display:flex;gap:6px;font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
 .sort-tab{padding:4px 10px;border:1px solid var(--line);border-radius:2px;cursor:pointer;transition:all .15s;}
-.sort-tab.on{color:var(--y);border-color:rgba(245,196,0,0.35);}
+.sort-tab.on{color:var(--y);border-color:rgba(230,57,70,0.35);}
 
 .cards{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
 .empty-state{
@@ -272,14 +258,14 @@ h1 em{font-style:normal;color:var(--y);}
   padding:48px 24px;text-align:center;
 }
 .empty-icon{font-size:32px;margin-bottom:14px;opacity:0.7;}
-.empty-title{font-family:'Oswald';font-size:16px;font-weight:600;margin-bottom:8px;}
+.empty-title{font-family:'Sora';font-size:16px;font-weight:600;margin-bottom:8px;}
 .empty-sub{font-size:13px;color:var(--muted);margin-bottom:20px;max-width:360px;margin-left:auto;margin-right:auto;}
 .empty-cta{
-  font-family:'IBM Plex Sans';font-weight:600;font-size:13px;
+  font-family:'Hanken Grotesk';font-weight:600;font-size:13px;
   padding:10px 20px;border-radius:var(--radius);cursor:pointer;
   background:var(--y);color:var(--bg);border:1px solid var(--y);
 }
-.empty-cta:hover{background:#FFD740;}
+.empty-cta:hover{background:#FF525F;}
 .card{
   background:var(--bg2);padding:18px 22px;
   display:grid;grid-template-columns:56px 1fr auto;
@@ -287,34 +273,34 @@ h1 em{font-style:normal;color:var(--y);}
 }
 .card:hover{background:var(--bg3);}
 @media(max-width:680px){.card{grid-template-columns:1fr;gap:12px;}}
-.dist-num{font-family:'Oswald';font-size:22px;color:var(--y);line-height:1;text-align:center;}
-.dist-unit{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);text-transform:uppercase;text-align:center;}
+.dist-num{font-family:'Sora';font-size:22px;color:var(--y);line-height:1;text-align:center;}
+.dist-unit{font-family:'JetBrains Mono';font-size:9px;color:var(--muted);text-transform:uppercase;text-align:center;}
 .card-name{font-size:15px;font-weight:600;margin-bottom:3px;display:flex;align-items:center;gap:8px;}
 .sdot{width:6px;height:6px;border-radius:50%;display:inline-block;}
 .sdot.open{background:#6fbf8a;} .sdot.closed{background:var(--r);}
-.sst{font-family:'IBM Plex Mono';font-size:10px;}
+.sst{font-family:'JetBrains Mono';font-size:10px;}
 .sst.open{color:#6fbf8a;} .sst.closed{color:#e07070;}
 .card-meta{font-size:12.5px;color:var(--muted);margin-bottom:7px;}
 .tags{display:flex;gap:5px;flex-wrap:wrap;}
-.tag{font-family:'IBM Plex Mono';font-size:9.5px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--line);}
-.tag.hi{color:var(--y);background:var(--ydim);border-color:rgba(245,196,0,0.2);}
+.tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--line);}
+.tag.hi{color:var(--y);background:var(--ydim);border-color:rgba(230,57,70,0.2);}
 .card-right{text-align:right;display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
-.rating{font-family:'IBM Plex Mono';font-size:11.5px;color:var(--muted);margin-bottom:6px;}
+.rating{font-family:'JetBrains Mono';font-size:11.5px;color:var(--muted);margin-bottom:6px;}
 .rating b{color:var(--text);}
-.book-btn{background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:var(--radius);cursor:pointer;transition:background .15s;white-space:nowrap;}
-.book-btn:hover{background:#FFD740;}
+.book-btn{background:var(--y);color:var(--bg);border:none;font-family:'Hanken Grotesk';font-weight:600;font-size:12.5px;padding:8px 14px;border-radius:var(--radius);cursor:pointer;transition:background .15s;white-space:nowrap;}
+.book-btn:hover{background:#FF525F;}
 .book-btn-direct{background:transparent;border:1px solid var(--line2);color:var(--muted);}
-.book-btn-direct:hover{background:transparent;border-color:rgba(245,196,0,0.4);color:var(--y);}
+.book-btn-direct:hover{background:transparent;border-color:rgba(230,57,70,0.4);color:var(--y);}
 
 /* ══ TIESIOGINIS REZERVAVIMAS (registruotiems klientams) — žr. Žingsnis 6/6 santrauka.md ══ */
 .booking-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:14px;}
-.booking-day-chip{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 12px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);transition:border-color .15s;}
-.booking-day-chip:hover{border-color:rgba(245,196,0,0.4);}
+.booking-day-chip{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 12px;text-align:center;cursor:pointer;font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);transition:border-color .15s;}
+.booking-day-chip:hover{border-color:rgba(230,57,70,0.4);}
 .booking-day-chip.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
 .booking-day-chip .bd-num{font-size:15px;font-weight:700;display:block;color:inherit;margin-top:2px;}
 .booking-slots{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:6px;max-height:220px;overflow-y:auto;}
-.booking-slot{background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 4px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:12.5px;color:var(--text);transition:border-color .15s;}
-.booking-slot:hover{border-color:rgba(245,196,0,0.4);}
+.booking-slot{background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 4px;text-align:center;cursor:pointer;font-family:'JetBrains Mono';font-size:12.5px;color:var(--text);transition:border-color .15s;}
+.booking-slot:hover{border-color:rgba(230,57,70,0.4);}
 .booking-slot.busy{opacity:0.35;cursor:not-allowed;color:var(--muted);text-decoration:line-through;}
 .booking-slot.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
 
@@ -323,15 +309,15 @@ h1 em{font-style:normal;color:var(--y);}
 ══════════════════════════════════ */
 .how{padding:60px 28px;border-top:1px solid var(--line);background:var(--bg2);}
 .how-inner{max-width:1100px;margin:0 auto;}
-.sec-title{font-family:'Oswald';font-size:26px;font-weight:600;margin-bottom:28px;text-transform:uppercase;}
+.sec-title{font-family:'Sora';font-size:26px;font-weight:600;margin-bottom:28px;text-transform:uppercase;}
 .how-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
 @media(max-width:720px){.how-grid{grid-template-columns:1fr;}}
 .how-step{background:var(--bg);padding:28px 24px;}
-.how-num{font-family:'IBM Plex Mono';font-size:11px;margin-bottom:12px;}
+.how-num{font-family:'JetBrains Mono';font-size:11px;margin-bottom:12px;}
 .how-step:nth-child(1) .how-num{color:var(--y);}
 .how-step:nth-child(2) .how-num{color:#6fbf8a;}
 .how-step:nth-child(3) .how-num{color:#7ab0f0;}
-.how-step h3{font-family:'Oswald';font-size:18px;font-weight:600;margin-bottom:9px;}
+.how-step h3{font-family:'Sora';font-size:18px;font-weight:600;margin-bottom:9px;}
 .how-step p{font-size:13.5px;color:var(--muted);line-height:1.65;}
 
 /* ══════════════════════════════════
@@ -340,12 +326,12 @@ h1 em{font-style:normal;color:var(--y);}
 .diag-section{padding:60px 28px;border-top:1px solid var(--line);}
 .diag-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
 @media(max-width:760px){.diag-inner{grid-template-columns:1fr;}}
-.diag-left h2{font-family:'Oswald';font-size:28px;font-weight:700;text-transform:uppercase;margin-bottom:12px;}
+.diag-left h2{font-family:'Sora';font-size:28px;font-weight:700;text-transform:uppercase;margin-bottom:12px;}
 .diag-left h2 em{font-style:normal;color:var(--y);}
 .diag-left p{font-size:14px;color:var(--muted);line-height:1.7;margin-bottom:20px;}
 .diag-steps-preview{display:flex;flex-direction:column;gap:8px;}
 .dsp{display:flex;align-items:center;gap:12px;font-size:13.5px;color:var(--muted);}
-.dsp-num{width:24px;height:24px;border-radius:50%;background:var(--ydim);border:1px solid rgba(245,196,0,0.3);color:var(--y);font-family:'IBM Plex Mono';font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.dsp-num{width:24px;height:24px;border-radius:50%;background:var(--ydim);border:1px solid rgba(230,57,70,0.3);color:var(--y);font-family:'JetBrains Mono';font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
 
 /* ══════════════════════════════════
    SERVISAMS CTA
@@ -358,17 +344,27 @@ h1 em{font-style:normal;color:var(--y);}
   position:relative;overflow:hidden;
 }
 .cta-box::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--y) 33%,var(--g) 33%,var(--g) 66%,var(--r) 66%);}
-.cta-box h2{font-family:'Oswald';font-size:24px;font-weight:600;margin-bottom:8px;}
+.cta-box h2{font-family:'Sora';font-size:24px;font-weight:600;margin-bottom:8px;}
 .cta-box p{font-size:14px;color:var(--muted);max-width:440px;}
-.cta-box-btn{background:transparent;border:1px solid var(--y);color:var(--y);font-family:'IBM Plex Sans';font-weight:600;font-size:13.5px;padding:12px 24px;border-radius:var(--radius);cursor:pointer;transition:all .15s;white-space:nowrap;}
+.cta-box-btn{background:transparent;border:1px solid var(--y);color:var(--y);font-family:'Hanken Grotesk';font-weight:600;font-size:13.5px;padding:12px 24px;border-radius:var(--radius);cursor:pointer;transition:all .15s;white-space:nowrap;}
 .cta-box-btn:hover{background:var(--y);color:var(--bg);}
 
 /* ══════════════════════════════════
    FOOTER
 ══════════════════════════════════ */
-footer{border-top:1px solid var(--line);padding:24px 28px;font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+footer{border-top:1px solid var(--line);padding:48px 28px 24px;}
 footer a{color:var(--muted);text-decoration:none;}
 footer a:hover{color:var(--y);}
+.footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:32px;max-width:1140px;margin:0 auto 32px;}
+@media(max-width:700px){.footer-grid{grid-template-columns:1fr;}}
+.footer-brand{font-family:'Sora';font-weight:700;font-size:16px;letter-spacing:0.03em;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.footer-tagline{font-size:13px;color:var(--muted);line-height:1.6;max-width:320px;margin-bottom:16px;}
+.footer-copy{font-family:'JetBrains Mono';font-size:11px;color:var(--dim);}
+footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
+.footer-links{display:flex;flex-direction:column;gap:10px;font-size:13px;}
+.footer-links button{background:none;border:none;padding:0;text-align:left;cursor:pointer;color:var(--muted);font-family:'Hanken Grotesk';font-size:13px;}
+.footer-links button:hover,.footer-links a:hover{color:var(--y);}
+.footer-bottom{display:flex;align-items:center;justify-content:center;gap:8px;padding-top:24px;border-top:1px solid var(--line);max-width:1140px;margin:0 auto;font-family:'JetBrains Mono';font-size:10px;color:var(--dim);}
 .footer-dots{display:flex;gap:5px;}
 .footer-dot{width:8px;height:8px;border-radius:50%;}
 
@@ -379,10 +375,10 @@ footer a:hover{color:var(--y);}
   position:fixed;right:24px;bottom:28px;width:58px;height:58px;border-radius:50%;
   background:var(--y);color:var(--bg);border:none;cursor:pointer;z-index:900;
   display:flex;align-items:center;justify-content:center;font-size:26px;
-  box-shadow:0 4px 20px rgba(245,196,0,0.4);transition:all .2s;
+  box-shadow:0 4px 20px rgba(230,57,70,0.4);transition:all .2s;
 }
 .chat-fab:hover{transform:scale(1.08);}
-.chat-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--r);color:#fff;font-size:10px;font-family:'IBM Plex Mono';font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
+.chat-badge{position:absolute;top:-3px;right:-3px;width:18px;height:18px;border-radius:50%;background:var(--r);color:#fff;font-size:10px;font-family:'JetBrains Mono';font-weight:600;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg);}
 
 /* ══════════════════════════════════
    CHAT PANEL
@@ -400,48 +396,48 @@ footer a:hover{color:var(--y);}
 .chat-head-icon{width:40px;height:40px;border-radius:50%;background:var(--y);color:var(--bg);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
 .chat-head-info{flex:1;}
 .chat-head-title{font-size:14px;font-weight:600;margin-bottom:2px;}
-.chat-head-sub{font-family:'IBM Plex Mono';font-size:9.5px;color:#6fbf8a;letter-spacing:0.04em;}
+.chat-head-sub{font-family:'JetBrains Mono';font-size:9.5px;color:#6fbf8a;letter-spacing:0.04em;}
 .chat-edit-link{color:#8fa3ac;cursor:pointer;text-decoration:underline;margin-left:5px;}
 .chat-head-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
 .chat-head-close:hover{color:var(--text);}
 .chat-online{padding:10px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;overflow-x:auto;flex-shrink:0;}
 .chat-online::-webkit-scrollbar{display:none;}
 .svc-av-wrap{display:flex;flex-direction:column;align-items:center;gap:3px;flex-shrink:0;}
-.svc-av{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:2px solid #6fbf8a;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'Oswald';font-weight:700;color:var(--y);position:relative;}
+.svc-av{width:32px;height:32px;border-radius:50%;background:var(--bg3);border:2px solid #6fbf8a;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:'Sora';font-weight:700;color:var(--y);position:relative;}
 .svc-av::after{content:"";position:absolute;bottom:0;right:0;width:8px;height:8px;border-radius:50%;background:#6fbf8a;border:2px solid var(--bg2);}
 .svc-av.busy::after{background:var(--y);}
 .svc-av.off::after{background:#555;}
-.svc-av-name{font-family:'IBM Plex Mono';font-size:8px;color:#555;max-width:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.svc-av-name{font-family:'JetBrains Mono';font-size:8px;color:#555;max-width:34px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .chat-msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;}
 .chat-msgs::-webkit-scrollbar{width:3px;}
 .chat-msgs::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.07);}
-.sys-msg{text-align:center;font-family:'IBM Plex Mono';font-size:10px;color:#555;padding:5px 12px;background:rgba(255,255,255,0.03);border-radius:20px;align-self:center;}
+.sys-msg{text-align:center;font-family:'JetBrains Mono';font-size:10px;color:#555;padding:5px 12px;background:rgba(255,255,255,0.03);border-radius:20px;align-self:center;}
 .msg-c{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
 .msg-c .bubble{background:var(--y);color:var(--bg);padding:10px 14px;border-radius:14px 3px 14px 14px;max-width:82%;font-size:13.5px;line-height:1.5;}
-.msg-c .mt{font-family:'IBM Plex Mono';font-size:9px;color:#555;}
+.msg-c .mt{font-family:'JetBrains Mono';font-size:9px;color:#555;}
 .msg-s{display:flex;gap:8px;align-items:flex-end;}
-.msg-s-av{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1.5px solid rgba(245,196,0,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'Oswald';font-weight:700;color:var(--y);flex-shrink:0;}
+.msg-s-av{width:26px;height:26px;border-radius:50%;background:var(--bg3);border:1.5px solid rgba(230,57,70,0.3);display:flex;align-items:center;justify-content:center;font-size:10px;font-family:'Sora';font-weight:700;color:var(--y);flex-shrink:0;}
 .msg-s-wrap{display:flex;flex-direction:column;gap:2px;max-width:82%;}
-.msg-s-name{font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);}
+.msg-s-name{font-family:'JetBrains Mono';font-size:9px;color:var(--muted);}
 .msg-s .bubble{background:var(--bg3);color:var(--text);padding:10px 14px;border-radius:3px 14px 14px 14px;font-size:13.5px;line-height:1.5;border:1px solid var(--line);}
-.msg-s .mt{font-family:'IBM Plex Mono';font-size:9px;color:#555;}
-.offer-card{background:var(--bg2);border:1px solid rgba(245,196,0,0.25);border-radius:8px;padding:12px;margin-top:6px;cursor:pointer;transition:all .15s;}
-.offer-card:hover{background:rgba(245,196,0,0.06);}
+.msg-s .mt{font-family:'JetBrains Mono';font-size:9px;color:#555;}
+.offer-card{background:var(--bg2);border:1px solid rgba(230,57,70,0.25);border-radius:8px;padding:12px;margin-top:6px;cursor:pointer;transition:all .15s;}
+.offer-card:hover{background:rgba(230,57,70,0.06);}
 .offer-card.acc{border-color:#6fbf8a;background:rgba(74,124,89,0.07);}
 .offer-top{display:flex;justify-content:space-between;margin-bottom:4px;}
 .offer-svc-name{font-size:12px;font-weight:600;}
-.offer-price{font-family:'Oswald';font-size:20px;font-weight:700;color:var(--y);}
+.offer-price{font-family:'Sora';font-size:20px;font-weight:700;color:var(--y);}
 .offer-det{font-size:11.5px;color:var(--muted);margin-bottom:8px;}
-.offer-acc-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:600;font-size:12px;padding:7px;border-radius:4px;cursor:pointer;}
-.offer-acc-btn:hover{background:#FFD740;}
+.offer-acc-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'Hanken Grotesk';font-weight:600;font-size:12px;padding:7px;border-radius:4px;cursor:pointer;}
+.offer-acc-btn:hover{background:#FF525F;}
 .chat-input-area{padding:12px 14px;border-top:1px solid var(--line);flex-shrink:0;}
 .chat-input-row{display:flex;gap:8px;align-items:flex-end;}
-.chat-textarea{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;padding:10px 16px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;resize:none;max-height:100px;line-height:1.4;transition:border-color .15s;}
-.chat-textarea:focus{border-color:rgba(245,196,0,0.35);}
+.chat-textarea{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;padding:10px 16px;color:var(--text);font-family:'Hanken Grotesk';font-size:14px;outline:none;resize:none;max-height:100px;line-height:1.4;transition:border-color .15s;}
+.chat-textarea:focus{border-color:rgba(230,57,70,0.35);}
 .chat-textarea::placeholder{color:var(--dim);}
 .chat-send{width:40px;height:40px;border-radius:50%;background:var(--y);color:var(--bg);border:none;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
-.chat-send:hover{background:#FFD740;}
-.chat-hint-txt{font-family:'IBM Plex Mono';font-size:9.5px;color:#444;text-align:center;margin-top:7px;}
+.chat-send:hover{background:#FF525F;}
+.chat-hint-txt{font-family:'JetBrains Mono';font-size:9.5px;color:#444;text-align:center;margin-top:7px;}
 
 /* ══════════════════════════════════
    SVEČIO REGISTRACIJA
@@ -453,14 +449,14 @@ footer a:hover{color:var(--y);}
 .gm-close{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
 .gm-close:hover{color:var(--text);}
 .gm-icon{font-size:36px;margin-bottom:14px;}
-.gm-title{font-family:'Oswald';font-size:20px;font-weight:600;margin-bottom:5px;}
+.gm-title{font-family:'Sora';font-size:20px;font-weight:600;margin-bottom:5px;}
 .gm-sub{font-size:13px;color:var(--muted);line-height:1.55;margin-bottom:20px;}
-.gm-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
-.gm-field{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:11px 13px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;margin-bottom:12px;transition:border-color .15s;}
-.gm-field:focus{border-color:rgba(245,196,0,0.4);}
+.gm-label{font-family:'JetBrains Mono';font-size:10px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;display:block;}
+.gm-field{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:11px 13px;color:var(--text);font-family:'Hanken Grotesk';font-size:14px;outline:none;margin-bottom:12px;transition:border-color .15s;}
+.gm-field:focus{border-color:rgba(230,57,70,0.4);}
 .gm-field::placeholder{color:var(--dim);}
-.gm-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:700;font-size:15px;padding:13px;border-radius:var(--radius);cursor:pointer;transition:background .15s;}
-.gm-btn:hover{background:#FFD740;}
+.gm-btn{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'Hanken Grotesk';font-weight:700;font-size:15px;padding:13px;border-radius:var(--radius);cursor:pointer;transition:background .15s;}
+.gm-btn:hover{background:#FF525F;}
 .gm-note{font-size:11.5px;color:#555;text-align:center;margin-top:12px;}
 .gm-note a{color:var(--y);cursor:pointer;}
 .gm-known-row{font-size:13px;color:var(--text);background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:10px 13px;margin-bottom:16px;}
@@ -507,68 +503,59 @@ footer a:hover{color:var(--y);}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-inner">
-    <div class="hero-text">
-      <div class="hero-eyebrow">
-        <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
-        Lietuva · 340+ servisų tinkle
-      </div>
-      <h1>Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
-      <p class="hero-sub">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
+  <div class="hero-inner" style="display:block;max-width:800px;">
+    <div class="hero-eyebrow" style="justify-content:center;">
+      <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
+      Lietuva · 340+ servisų tinkle
+    </div>
+    <h1 style="text-align:center;">Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
+    <p class="hero-sub" style="text-align:center;margin-left:auto;margin-right:auto;">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
 
-      <div class="cta-wrap">
-        <div class="cta-ring-wrap">
-          <div class="cta-ring"></div>
-          <div class="cta-ring2"></div>
-          <button class="cta-btn" onclick="openChat()">
-            <span class="cta-ico">💬</span>
-            <span>Be registracijos parašyk bėdą — gauk kainas</span>
-            <span class="cta-arr">→</span>
-          </button>
-        </div>
-        <div class="cta-meta">
-          <span class="cta-dot"></span>
-          <b>12 servisų</b> dabar online &nbsp;·&nbsp; atsakas per <span>~15 min</span>
-          &nbsp;·&nbsp; ✓ Nemokama
-        </div>
+    <div class="hero-cta-card">
+      <h2>Parašyk bėdą — gauk atsakymą per 15 min</h2>
+      <div class="hero-cta-row">
+        <div class="hero-cta-note">✓ Be registracijos, visiškai nemokamai</div>
+        <button class="hero-cta-send-btn" onclick="openChat()">Siųsti užklausą →</button>
       </div>
-
-      <a class="diag-btn" href="servisucentras-diagnostika.html">
-        <span class="diag-pulse"></span>
-        <span>🔍 Nežinai kas sugedo? <em>Pabandyk nemokamą diagnostiką →</em></span>
-      </a>
     </div>
 
-    <div class="hero-visual">
-      <div class="hero-flag-bg">
-        <div class="hero-flag-sway">
-          <div class="fy"></div><div class="fg"></div><div class="fr"></div>
-          <div class="hero-flag-shine"></div>
-        </div>
-      </div>
+    <div class="hero-online-badge cta-meta" style="display:inline-flex;">
+      <span class="cta-dot"></span> <b>12 servisų</b>&nbsp;dabar online
     </div>
+
+    <div class="hero-city-label">Pasirinkite miestą</div>
+    <div class="city-chips" style="justify-content:center;">
+      <div class="city-chip on" onclick="selCity(this,'Ukmergė')">📍 Ukmergė</div>
+      <div class="city-chip" onclick="selCity(this,'Vilnius')">📍 Vilnius</div>
+      <div class="city-chip" onclick="selCity(this,'Kaunas')">📍 Kaunas</div>
+      <div class="city-chip" onclick="selCity(this,'Klaipėda')">📍 Klaipėda</div>
+      <div class="city-chip" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
+      <div class="city-chip" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
+      <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
+      <div class="city-chip" onclick="focusCityInput(this)">🗺️ Kitas</div>
+    </div>
+    <div class="city-row" style="max-width:460px;margin:0 auto 8px;">
+      <span class="city-ico">📍</span>
+      <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
+      <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
+    </div>
+
+    <a class="ai-promo-card" href="servisucentras-diagnostika.html">
+      <div class="ai-promo-icon">🔍</div>
+      <div style="flex:1;">
+        <div class="ai-promo-tag"><span class="diag-pulse" style="position:relative;top:1px;"></span> AI Funkcija</div>
+        <div class="ai-promo-title">Išmanioji diagnostika</div>
+        <div class="ai-promo-sub">Sužinok preliminarią gedimo kainą per kelias sekundes nemokamai</div>
+      </div>
+      <div class="ai-promo-arrow">→</div>
+    </a>
   </div>
 </section>
 
-<!-- KATEGORIJOS + MIESTO PAIEŠKA -->
-<div class="search-section" id="servisai">
-  <div class="board-label">Pasirink gedimo kategoriją <b id="board-active"></b></div>
-  <div class="board" id="board"></div>
-  <div class="city-row">
-    <span class="city-ico">📍</span>
-    <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
-    <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
-  </div>
-  <div class="city-chips">
-    <div class="city-chip on" onclick="selCity(this,'Ukmergė')">📍 Ukmergė</div>
-    <div class="city-chip" onclick="selCity(this,'Vilnius')">📍 Vilnius</div>
-    <div class="city-chip" onclick="selCity(this,'Kaunas')">📍 Kaunas</div>
-    <div class="city-chip" onclick="selCity(this,'Klaipėda')">📍 Klaipėda</div>
-    <div class="city-chip" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
-    <div class="city-chip" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
-    <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
-    <div class="city-chip" onclick="focusCityInput(this)">🗺️ Kitas</div>
-  </div>
+<!-- KATEGORIJOS (Stitch: "Visos Paslaugos ir Katalogas") -->
+<div class="cat-section" id="servisai">
+  <div class="cat-section-title"><span>Visos paslaugos ir katalogas</span></div>
+  <div class="cat-grid" id="board"></div>
 </div>
 
 <!-- SERVISŲ SĄRAŠAS -->
@@ -627,12 +614,12 @@ footer a:hover{color:var(--y);}
       </a>
     </div>
     <div style="background:var(--bg2);border:1px solid var(--line);border-radius:8px;padding:28px;display:flex;flex-direction:column;gap:10px;">
-      <div style="font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Populiariausi gedimai</div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🔴 Stabdžių kaladėlės <span style="font-family:'Oswald';font-size:16px;color:var(--y);">80–200€</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚡ Akumuliatorius <span style="font-family:'Oswald';font-size:16px;color:var(--y);">80–200€</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🛢️ Alyvos keitimas <span style="font-family:'Oswald';font-size:16px;color:var(--y);">30–60€</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚙️ Amortizatoriai <span style="font-family:'Oswald';font-size:16px;color:var(--y);">120–400€</span></div>
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13.5px;">🔘 Padangų keitimas <span style="font-family:'Oswald';font-size:16px;color:var(--y);">20–40€</span></div>
+      <div style="font-family:'JetBrains Mono';font-size:10.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Populiariausi gedimai</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🔴 Stabdžių kaladėlės <span style="font-family:'Sora';font-size:16px;color:var(--y);">80–200€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚡ Akumuliatorius <span style="font-family:'Sora';font-size:16px;color:var(--y);">80–200€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">🛢️ Alyvos keitimas <span style="font-family:'Sora';font-size:16px;color:var(--y);">30–60€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:13.5px;">⚙️ Amortizatoriai <span style="font-family:'Sora';font-size:16px;color:var(--y);">120–400€</span></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;font-size:13.5px;">🔘 Padangų keitimas <span style="font-family:'Sora';font-size:16px;color:var(--y);">20–40€</span></div>
     </div>
   </div>
 </section>
@@ -652,11 +639,35 @@ footer a:hover{color:var(--y);}
 
 <!-- FOOTER -->
 <footer>
-  <div>SERVISUCENTRAS.LT · LIETUVOS AUTOSERVISŲ PLATFORMA · © 2026 · <a href="mailto:servisucentras.lt@gmail.com">servisucentras.lt@gmail.com</a></div>
-  <div class="footer-dots">
-    <div class="footer-dot" style="background:var(--y)"></div>
-    <div class="footer-dot" style="background:var(--g)"></div>
-    <div class="footer-dot" style="background:var(--r)"></div>
+  <div class="footer-grid">
+    <div>
+      <div class="footer-brand">⚙️ SERVISŲ CENTRAS</div>
+      <p class="footer-tagline">Vienas langelis visiems Lietuvos autoservisams ir garažiukams. Rask meistrą per kelias minutes.</p>
+      <div class="footer-copy">© 2026 ServisuCentras.lt. Visos teisės saugomos.</div>
+    </div>
+    <div>
+      <h4>Kontaktai</h4>
+      <div class="footer-links">
+        <a href="mailto:servisucentras.lt@gmail.com">✉️ servisucentras.lt@gmail.com</a>
+      </div>
+    </div>
+    <div>
+      <h4>Nuorodos</h4>
+      <div class="footer-links">
+        <button onclick="mobileNavScroll('kaip')">Kaip veikia</button>
+        <button onclick="mobileNavScroll('servisai')">Servisai</button>
+        <a href="servisucentras-diagnostika.html">🔍 Diagnostika</a>
+        <a href="automeistrai-login.html?type=service&action=register">Registruoti servisą</a>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>LIETUVOS AUTOSERVISŲ PLATFORMA</span>
+    <div class="footer-dots">
+      <div class="footer-dot" style="background:var(--lt-yellow)"></div>
+      <div class="footer-dot" style="background:var(--g)"></div>
+      <div class="footer-dot" style="background:var(--r)"></div>
+    </div>
   </div>
 </footer>
 
@@ -768,20 +779,23 @@ function mobileNavScroll(id){
   document.getElementById(id).scrollIntoView({behavior:'smooth'});
 }
 
-/* ══ LOGO ICONS ══ */
-const ICONS = {
-  diagnostika:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="18" height="14" rx="2" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.08)"/><rect x="7" y="11" width="12" height="5" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.12)"/><circle cx="8.5" cy="19" r="1" fill="#F5C400"/><circle cx="12" cy="19" r="1" fill="#F5C400"/><circle cx="15.5" cy="19" r="1" fill="#F5C400"/><path d="M22 14h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-4" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="22" x2="13" y2="26" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="10" y1="26" x2="16" y2="26" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/></svg>`,
-  elektronika:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M18 4L8 18h8l-2 10 14-16h-8L18 4z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.1)"/><circle cx="24" cy="8" r="1.2" fill="#F5C400" opacity="0.5"/><circle cx="6" cy="22" r="0.8" fill="#F5C400" opacity="0.3"/></svg>`,
-  apsvietimas:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M6 12 Q6 8 10 8 L20 8 Q26 8 26 14 L26 18 Q26 24 20 24 L10 24 Q6 24 6 20 Z" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><line x1="26" y1="11" x2="31" y2="9" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="26" y1="16" x2="31" y2="16" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><line x1="26" y1="21" x2="31" y2="23" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round"/><circle cx="14" cy="16" r="3.5" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><circle cx="14" cy="16" r="1.5" fill="#F5C400" opacity="0.6"/></svg>`,
-  variklis:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="5" y="11" width="16" height="12" rx="1.5" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><rect x="8" y="7" width="4" height="6" rx="1" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><rect x="14" y="7" width="4" height="6" rx="1" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><path d="M21 14h4l2 2v3h-2" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><line x1="8" y1="15" x2="18" y2="15" stroke="rgba(245,196,0,0.4)" stroke-width="1"/><line x1="8" y1="18" x2="18" y2="18" stroke="rgba(245,196,0,0.4)" stroke-width="1"/></svg>`,
-  vaziuokle:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="18" r="10" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.04)"/><circle cx="16" cy="18" r="6" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)"/><circle cx="16" cy="18" r="2.5" fill="#F5C400" opacity="0.7"/><line x1="16" y1="12" x2="16" y2="15.5" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="20.5" x2="16" y2="24" stroke="#F5C400" stroke-width="1.2"/><line x1="10" y1="18" x2="13.5" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="18.5" y1="18" x2="22" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="4" x2="16" y2="8" stroke="#F5C400" stroke-width="2" stroke-linecap="round"/><rect x="13" y="6" width="6" height="4" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.1)"/></svg>`,
-  stabdziai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="12" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.04)"/><circle cx="16" cy="16" r="7" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)" stroke-dasharray="3 2"/><circle cx="16" cy="16" r="2.5" fill="#F5C400" opacity="0.6"/><path d="M22 8 L26 10 L26 22 L22 24 Q18 22 18 16 Q18 10 22 8Z" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.12)"/></svg>`,
-  kebulas:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M2 20 L2 22 L4 22 L4 24 L6 24 L6 22 L22 22 L22 24 L24 24 L24 22 L28 22 L28 18 L24 18 L22 14 L18 10 L10 10 L6 14 L2 14 Z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.07)"/><path d="M10 14 L12 10.5 L18 10.5 L21 14Z" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><circle cx="8" cy="22" r="3" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><circle cx="22" cy="22" r="3" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><circle cx="8" cy="22" r="1.2" fill="#F5C400" opacity="0.5"/><circle cx="22" cy="22" r="1.2" fill="#F5C400" opacity="0.5"/></svg>`,
-  padangos:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="13" stroke="#F5C400" stroke-width="2.5" fill="rgba(245,196,0,0.04)" stroke-dasharray="4 2"/><circle cx="16" cy="16" r="8" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.08)"/><circle cx="16" cy="16" r="5" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.12)"/><circle cx="16" cy="16" r="2" fill="#F5C400" opacity="0.7"/><line x1="16" y1="11" x2="16" y2="14" stroke="#F5C400" stroke-width="1.2"/><line x1="16" y1="18" x2="16" y2="21" stroke="#F5C400" stroke-width="1.2"/><line x1="11" y1="16" x2="14" y2="16" stroke="#F5C400" stroke-width="1.2"/><line x1="18" y1="16" x2="21" y2="16" stroke="#F5C400" stroke-width="1.2"/></svg>`,
-  kondicionierius:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="8" width="20" height="14" rx="2" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><line x1="8" y1="12" x2="20" y2="12" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.7"/><line x1="8" y1="15" x2="20" y2="15" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.5"/><line x1="8" y1="18" x2="20" y2="18" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.3"/><path d="M26 10 L26 14 M24 11 L28 13 M24 13 L28 11" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" opacity="0.6"/></svg>`,
-  stiklai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><path d="M4 20 L8 10 L24 10 L28 20 Z" stroke="#F5C400" stroke-width="1.5" stroke-linejoin="round" fill="rgba(245,196,0,0.08)"/><path d="M14 12 L18 16 L15 20" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><line x1="18" y1="16" x2="22" y2="14" stroke="#F5C400" stroke-width="1" stroke-linecap="round" opacity="0.6"/><path d="M6 22 Q16 18 26 22" stroke="#F5C400" stroke-width="1.5" stroke-linecap="round" opacity="0.5"/></svg>`,
-  plovykla:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="4" y="14" width="16" height="10" rx="3" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.06)"/><path d="M20 17 L28 14 L29 17 L21 20" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M8 14 L8 10 Q8 8 10 8 L14 8 Q16 8 16 10 L16 14" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.08)"/><circle cx="6" cy="9" r="1" fill="#F5C400" opacity="0.4"/><circle cx="18" cy="7" r="1" fill="#F5C400" opacity="0.4"/></svg>`,
-  raktai:`<svg width="26" height="26" viewBox="0 0 32 32" fill="none"><rect x="3" y="8" width="16" height="12" rx="3" stroke="#F5C400" stroke-width="1.5" fill="rgba(245,196,0,0.08)"/><rect x="6" y="11" width="4" height="3" rx="1" fill="#F5C400" opacity="0.6"/><rect x="12" y="11" width="4" height="3" rx="1" stroke="#F5C400" stroke-width="1" fill="rgba(245,196,0,0.15)"/><path d="M19 14 L28 14 L28 16 L22 16 L22 18 L20 18 L20 16 L19 16Z" stroke="#F5C400" stroke-width="1.2" fill="rgba(245,196,0,0.1)"/><line x1="23" y1="16" x2="23" y2="18" stroke="#F5C400" stroke-width="1.2"/><line x1="25.5" y1="16" x2="25.5" y2="18" stroke="#F5C400" stroke-width="1.2"/><path d="M5 6 Q8 3 11 6" stroke="#F5C400" stroke-width="1.2" stroke-linecap="round" opacity="0.5" fill="none"/></svg>`,
+/* ══ KATEGORIJŲ NUOTRAUKOS (Stitch dizainas) — vieši lh3.googleusercontent.com URL'ai,
+   sugeneruoti per Stitch. PASTABA: šie URL'ai gali būti nepatvarūs ilgalaikėje
+   perspektyvoje (AI Studio laikina talpykla) — jei kada nustos veikti, reikės
+   arba persigeneruoti Stitch'e, arba parsisiųsti ir talpinti lokaliai. */
+const CATEGORY_IMAGES = {
+  diagnostika:'https://lh3.googleusercontent.com/aida-public/AB6AXuBXA14PmXOVyr4wGQI7xa7Jpm0ejAh0NN6CWOQzczgm3F2cpqzX8BGHzhMTCAYtZV4caqclUYMVDnstToXCuJXV4JbjBhGc3vY8h3_S2tkkfmB15AABFyI89gl7OEndg65WVtzPmx5m7AJPwrWlzHGgdaxW4EYppaGYFiiDYJMgNe_qt3vgnbhWvoL6gi3Gd3NEhWAiCX2RkOCuGqgRB4mrBwU7fK9_FractHYB9mUtyslCsMAylnkt',
+  elektronika:'https://lh3.googleusercontent.com/aida-public/AB6AXuCQyt3b-KBI2DkvR_Avdpg9WpkC3sQaA31IfeM-tImHuoGpNBW0lJTbrudVC3Cst06AUxq81UKBk0GuN7Md5l-8DsF5qsdiAHja5XJexSLWazqO074vLdk4A94kv6g3bROJ_42ZhMrRS-xseqt7VaR7jWC9_NFMQp3kBM8YiqldIy3n6uh92RD-73ZoUTHmX9aqY3IT2A5vhWEXhh7nZPsjIEFlqW6a_0HjZRNVLYo0qd2tyVbTdktO',
+  apsvietimas:'https://lh3.googleusercontent.com/aida-public/AB6AXuCNLaFTf4cO7tWZsO0eIGqDx9x5qc7kvwVxwfpjbFYswk0pvfXdsDdHtzMKFLm5_ALaUiP2FmpvqgGtAUMqtuZ47FIcmrRG8O7PoBEYAq47Zqko4GCve9_03aZEwdckjz9OQeuoF8DhYmMAFCojvmdaOQnzSkHswIPJQ2kkRlik_fxPyqDXivSQrzFgRDAlr6XOWPuTgT23uBDJvJ2sKwTcSCvFXA8foplsTkDFeoAFnPlzoh_5-4sv',
+  variklis:'https://lh3.googleusercontent.com/aida-public/AB6AXuCU2MN1u-TNBZLwPvgi6h_lnWuGJGr5kxzVGnSxTO_aNvfTdeaWbRrBhXLqDRNQ3B0pM7UG4pdafwYGjS8LImorz5pxGEncSwx2N6k45wK5odZKAV50d1jKuy74Nc_T8-PDEu2-_4VcSd5MVZb-SJFL7eMQRgQCDJ6-HwF7MVV_OHqBtz3mEFaKyLaUA32lO4YvXoyMKZsqapgnY7ofXbRFsJWSJVt0wE2wxmbbdmFSpYNrX3hcJcN7',
+  vaziuokle:'https://lh3.googleusercontent.com/aida-public/AB6AXuCobTUxhipR4nW_btSlW0YFzUfx5M0HV2TsFZyEGYTJkVKRp2zBWk6h2k1XEcnETq9wP0Qrg9U86FZi7sYZCrabE319ZGKchNH7mT9Fg333xWUoObBGQbgETY1GLiWZtN_KDj-VWw36T8pJm7C2uZMazo1CvML5_B-WAQCpl52q9Xp76I9gMGvQXVzzVTtbNks-bhYyFNTgN_3JEHq6d376oJn-VH6gpw6s60F_YObPbQMPx_-8J_Cn',
+  stabdziai:'https://lh3.googleusercontent.com/aida-public/AB6AXuBmx-I9KmJCLtdL5XvUAW8rrPk31WTL3mMFEZRahFvuRUWfy5mB6V68ONy8gqHbPFbUhHrlIqpvvTEP2qcrTKjiA4_k37cvhwjkyuk3D226liT5mbWpm7x7uqJbYIpzCQU5T6RH57Q5KC_M8TknI5ncPL9P-muxAgno5-MOYXCB41k42O0I2ZTm_Cbcptsg_iQbFhkZiiDFqJo_XS9GvnFPz2-j9w12_GjIbxibld31fxG8550RqVrG',
+  kebulas:'https://lh3.googleusercontent.com/aida-public/AB6AXuDx5ijDVnHFs8irBkLjfxPoXaVAb7VUJ4wkJZ-iz1yB1z_0xwrX8INyghaAKeARiuz1gKhQO8eDMjjfr5ogxra5B6SAijObZ9hC4reEekEPPRphoxTIhBoUmNQBVmiJzAwcbqWX3hmZgnmtRFQ0mxGRNg-ebTUNHCliyNsV9-hHyoVW-fDUEyDrwwlpj_5T6keS_o6alkmRcgioYCPLvu5StBK6Yxh99Hbh7mF-8R6US8dY7Ca1nOMb',
+  padangos:'https://lh3.googleusercontent.com/aida-public/AB6AXuBeBt14R-7N5aZh3DbOIdx_NDc3IduPDLYmj_O95FB068_HGd-n0qfqbI0WgL-x15pFVjnoIQmE9vR88A8d8Tekf2gFWo9C_mUDJg7zvIIA2xJs47uQpAZnnCx1aP-v13T5_dAPcK8GFGvqaDWVbG4qXZ_0FB9rATwyjygzgiAVcKc2O05ahUvTkdM5twjmOcT6XkK88tQy09Q68z89eSYW0BCSg0tOLsL2MPDcnAsMwBNbu9JE2BaR',
+  kondicionierius:'https://lh3.googleusercontent.com/aida-public/AB6AXuAPyha8lsXDS-Z_BKZVW-IiO6V5Rg8rYm6TBAFLdH33ib1ET6LE8ZzsMWhOERWvt38pklVsezHiZhzJ4zqFfknommTg-vYzH71Lst2WK6GurujzemQbmuq6kBloV67flUAQS43n70puCZNRoTUJQldEVOuOZjz3PhfTS-soIUTiW2gx0heOkI43lfriLBMixp8azRAYvo8vAQr2B0luHi0_DZrzjN5ufcLs3lGTNwHzTENudwpM-9ZB',
+  stiklai:'https://lh3.googleusercontent.com/aida-public/AB6AXuDVYE0-t4xKN1mvTcViqGyepXZ4jjmc_5D1yseqlmM9sqoCNvcLgz3WU_dOUyGth1q7f6S5HNRxVggLqE1dIUeVwH4n_h7q7P5S3hzua8pQtLV7B86pxRdqKBhcwKk99KOSxeAsIwYuM9ZssnQDlPsNhMWQDW7kYomB_PXtBem-YTXm1wpEvSPQEmPQwQrKMx2Ucee3yl3tJlUhT07cyoThtS03Z9_sYZ9dluHDKFgIQoQBJU8cKeYM',
+  plovykla:'https://lh3.googleusercontent.com/aida-public/AB6AXuDivyAvySxlHaj6ww1rRclmxsNSl6isBkDywhOY0mvTuNLpnZw7HGSMPh_uNfjv72fWocOm7LFVi2BGWyG_cN505rJr2hXS1zKd4pL9DhyeVjHAcH-HQSSh0gUo-eEFXmy7XBLEOoxalYTmMosTnq3uG0vJRENk-5v-00rvt2s5z5wf3jrZ9kQjU47TgbaFQdeHlFab1QkuBLDZ6vMLZHU_WwAoillTuGU8SEjb8JwDi4AOMlBsA55f',
+  raktai:'https://lh3.googleusercontent.com/aida-public/AB6AXuAIHnKOAmK84CBI9oygfP2uu9WlaUezeu0YibvCfMR_9pCUl0iccwDlvU5vF7C8aHhWhQzEzCMk78L_9xihz_JA3mjvDqEN-Jt-HRX1FG8dZ3c0H8kTAUk664Q80ve0y50hw44QhdJUJI6JI9Io-0nEMB_C3QaxR0feua7cxdz70vhkMbhZlu2neDByw-leSmseJ1Kw6DxYliTDzbejA2R-Jc3YEEUHpfo0GcCBpThE4cDblWTdaxDi',
 };
 
 const API_BASE = '/api';
@@ -859,18 +873,19 @@ async function loadNetworkStats(){
 function renderBoard(){
   document.getElementById('board').innerHTML = categories.map(c=>{
     const count = cityServices.filter(s=>s.categories.some(cc=>cc.id===c.id)).length;
-    return `<div class="peg ${c.id===activeCat?'on':''}" onclick="selCat('${c.id}')">
-      <div class="peg-icon">${ICONS[c.id]||''}</div>
-      <div class="peg-name">${categoryName(c.label)}</div>
-      <div class="peg-count">${count}</div>
+    const img = CATEGORY_IMAGES[c.id] || '';
+    return `<div class="cat-card ${c.id===activeCat?'on':''}" onclick="selCat('${c.id}')" style="background-image:url('${img}')">
+      <div class="cat-card-overlay"></div>
+      <div class="cat-card-body">
+        <div class="cat-card-name">${categoryName(c.label)}</div>
+        <div class="cat-card-count">${count} servisai</div>
+      </div>
     </div>`;
   }).join('');
 }
 
 function selCat(id){
   activeCat=id;
-  const cat=categories.find(c=>c.id===id);
-  document.getElementById('board-active').textContent = cat ? '— '+categoryName(cat.label) : '';
   renderBoard();
   renderCards();
   document.getElementById('servisai').scrollIntoView({behavior:'smooth'});

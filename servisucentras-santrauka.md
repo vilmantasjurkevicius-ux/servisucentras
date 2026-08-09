@@ -1094,6 +1094,31 @@ Vartotojas paprašė admin skilties, kuri padėtų RASTI ir PAKVIESTI realius au
 
 ---
 
+## Google Stitch redizainas — pagrindinio puslapio vizualo integracija (2026-08-09)
+
+Vartotojas paruošė naują `servisucentras-pagrindinis.html` vizualą per Google Stitch (`stitch_servis_centras_web_redesign/pagrindinis_puslapis_su_fono_tekst_ra_ir_gylio_efektu/code.html`, 566 eil., grynas HTML+Tailwind CDN, ne React) ir paprašė perkelti stilių/spalvas/šriftus/sekcijų tvarką ANT esamų veikiančių elementų, IŠLAIKANT visą JS logiką (`openChat()`, `showGuestOverlay()`, `sendMsg()`, `selCat()`, `selCity()` ir kt.) nepaliestą.
+
+**Metodas**: kadangi projekto CSS jau naudojo centralizuotą kintamąjį `var(--y)` (57 vietose) prekės ženklo akcentui, dauguma spalvos pakeitimo pasiekta PAKEITUS VIENĄ `:root` reikšmę (`--y: #F5C400` → `#E63946`), ne perrašius kiekvieną taisyklę atskirai. Šriftai pakeisti globaliu `replace_all` (Oswald→Sora, IBM Plex Sans→Hanken Grotesk, IBM Plex Mono→JetBrains Mono, 57 vietos).
+
+**Svarbu — atskirtas prekės ženklo akcentas nuo TIKROS Lietuvos vėliavos spalvos**: prieš keičiant `--y` į raudoną, sukurtas NAUJAS kintamasis `--lt-yellow:#F5C400`, ir perkelti 2 vietos (mažas plevėsuojantis vėliavos ženkliukas prie "Lietuva" teksto, footer taškelis), kurios reiškia TIKRĄ vėliavos geltoną spalvą, ne prekės ženklo akcentą — kitaip jos būtų klaidingai tapusios raudonos.
+
+**Struktūriniai pakeitimai** (sekcijų tvarka pagal Stitch: hero → miesto pasirinkimas → katalogas → likusios sekcijos):
+- **Hero pertvarkytas** iš 2 stulpelių (tekstas+vėliava) į 1 centruotą stulpelį — didelė raudona CTA kortelė ("Parašyk bėdą — gauk atsakymą per 15 min" + `onclick="openChat()"`), po ja LIVE "N servisų dabar online" ženkliukas (naudoja TĄ PATĮ `.cta-meta b` selektorių, kurį atnaujina `loadNetworkStats()` — veikia be JS pakeitimų), miesto pasirinkimo lauke+čipai PERKELTI iš atskiros `.search-section` TIESIAI į hero (dabar prieš katalogą, ne po juo), nauja AI diagnostikos promo kortelė (nuoroda į `servisucentras-diagnostika.html`, pakeičia senąjį mažą `diag-btn`).
+- **Kategorijų lenta** (`.board`) pakeista iš SVG ikonų pegų į Stitch nuotraukų korteles (`.cat-grid`/`.cat-card`) — naujas `CATEGORY_IMAGES` JS lookup su 12 `lh3.googleusercontent.com` nuorodų (po vieną kiekvienai iš 12 kategorijų, ta pačia tvarka kaip Stitch faile). Paspaudimo logika (`selCat()`) ir realus servisų skaičius per kategoriją (`renderBoard()`) VISIŠKAI išsaugoti.
+- **Footer** išplėstas iš 1 eilutės į 3 stulpelius (prekės ženklas+šūkis+copyright | Kontaktai | Nuorodos) — TIK realiu turiniu (el. paštas `servisucentras.lt@gmail.com`, realios `#kaip`/`#servisai`/diagnostikos/registracijos nuorodos). Stitch makete buvusios fiktyvaus telefono ir socialinių tinklų nuorodos (Facebook/Instagram → "#") SĄMONINGAI NEPRIDĖTOS, nes tokių paskyrų realiai nėra — nekurti klaidinančių "nieko nedarančių" nuorodų.
+
+**Sąmoningai NEPERKELTA iš Stitch (aiškiai pažymima, kad vartotojas žinotų)**:
+1. **Lietuvos vėliavos didelis hero elementas** (`.hero-flag-bg`, virš kurio buvo tiek iteracijų ankstesnėje šios sesijos dalyje) — PAŠALINTAS, nes Stitch hero yra vieno centruoto stulpelio dizainas, jame nėra vietos šalutiniam vizualiniam elementui. Mažas plevėsuojantis vėliavos ženkliukas prie "Lietuva · 340+ servisų tinkle" teksto IŠLIKO nepakitęs.
+2. **Stitch "dūmų/automobilio pereinamoji sekcija"** (dekoratyvinis, ~70 eilučių inline dūmo dalelių divų + atskiras `<script>` dalelių generavimui, jokios funkcinės reikšmės) — praleista dėl apimties/patikimumo (išorinis paveikslėlis + papildoma animacijos logika be realios naudos).
+
+**Žinoma rizika**: kategorijų nuotraukų URL (`lh3.googleusercontent.com/aida-public/...`) yra Google AI Studio/Stitch laikinos talpyklos nuorodos — VISOS 12 patikrintos ir veikia ŠIANDIEN (patikrinta tiesioginiu `Image()` užkrovimu naršyklėje), bet ilgalaikėje perspektyvoje gali nustoti veikti be įspėjimo. Jei taip atsitiks, reikės arba persigeneruoti Stitch'e, arba parsisiųsti/talpinti paveikslėlius lokaliai projekte.
+
+**Kas IŠLIKO 100% nepaliesta** (funkcinė logika): `openChat()`/`showGuestOverlay()`/`showChat()`/`sendMsg()`/`chatKey()`/`autoH()` pokalbio srautas, `selCat()`/`selCity()`/`searchCity()`/`focusCityInput()` filtravimas, `loadNetworkStats()` live skaičiai, `renderCards()`/rezultatų sekcija su rūšiavimo kortelėmis, realus nav (Kaip veikia/Servisai/Diagnostika/Admin/Prisijungti/Registruotis) + hamburger mobilus meniu, "Kaip veikia"/diagnostikos promo/"Turi servisą" CTA sekcijos (struktūriškai nepakitusios, tik paveldi raudoną temą per CSS kintamuosius).
+
+**Patikrinta gyvai**: jokių console klaidų per visą procesą; miesto čipo paspaudimas → `activeCity` atsinaujina; kategorijos kortelės paspaudimas → `activeCat` atsinaujina + realus servisų skaičius; `openChat()` → teisingai atveria svečio duomenų langą (nes dar nėra `guestName`/`clientToken`); visos 12 kategorijų nuotraukų užsikrauna (512×512, patikrinta atskirai); mobilus meniu (375px) veikia, jokio horizontalaus persipildymo, `.cat-grid` teisingai susitraukia į 3 stulpelius, footer į 1 stulpelį. Backend testai 7/7 nepakitę (grynai frontend pakeitimas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
