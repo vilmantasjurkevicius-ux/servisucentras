@@ -227,9 +227,15 @@ h1 em{font-style:normal;color:var(--y);}
 @media(max-width:500px){.cat-grid{grid-template-columns:repeat(3,1fr);}}
 .cat-card{
   position:relative;height:150px;border-radius:16px;overflow:hidden;cursor:pointer;
-  border:1px solid var(--line2);background:var(--bg2) center/cover no-repeat;transition:border-color .2s,box-shadow .2s;
+  border:1px solid var(--line2);background:var(--bg2);transition:border-color .2s,box-shadow .2s;
+}
+.cat-card::before{
+  content:"";position:absolute;inset:0;
+  background-image:inherit;background-position:center;background-size:cover;background-repeat:no-repeat;
+  transform:scale(1);transition:transform .3s ease;
 }
 .cat-card:hover,.cat-card.on{border-color:var(--y);box-shadow:0 0 20px rgba(230,57,70,0.2);}
+.cat-card:hover::before,.cat-card.on::before{transform:scale(1.08);}
 .cat-card-overlay{position:absolute;inset:0;background:linear-gradient(to top,rgba(14,15,16,0.95),rgba(14,15,16,0.55) 55%,transparent);}
 .cat-card-body{position:absolute;left:0;right:0;bottom:0;padding:12px;}
 .cat-card-name{font-size:12.5px;font-weight:600;color:#fff;margin-bottom:2px;}
