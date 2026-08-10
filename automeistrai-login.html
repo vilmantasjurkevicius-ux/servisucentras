@@ -15,8 +15,8 @@
   --text:#F2EFE7;
   --muted:#8C9197;
   --dim:#4A4F55;
-  --yellow:#F5C400;
-  --yellow-dim:rgba(245,196,0,0.1);
+  --yellow:#E63946;
+  --yellow-dim:rgba(230,57,70,0.1);
   --green:#4A7C59;
   --green-dim:rgba(74,124,89,0.12);
   --red:#C0392B;
@@ -68,12 +68,12 @@ nav{
   display:flex;align-items:center;gap:14px;
 }
 .type-card:hover{border-color:var(--line2);}
-.type-card.active{border-color:rgba(245,196,0,0.4);background:var(--yellow-dim);}
+.type-card.active{border-color:rgba(230,57,70,0.4);background:var(--yellow-dim);}
 .type-icon{font-size:24px;width:36px;text-align:center;flex-shrink:0;}
 .type-text{}
 .type-name{font-size:14px;font-weight:600;margin-bottom:2px;}
 .type-desc{font-size:12px;color:var(--muted);}
-.type-card.active .type-desc{color:rgba(245,196,0,0.7);}
+.type-card.active .type-desc{color:rgba(230,57,70,0.7);}
 .type-check{margin-left:auto;width:18px;height:18px;border-radius:50%;border:1.5px solid var(--dim);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;}
 .type-card.active .type-check{background:var(--yellow);border-color:var(--yellow);color:var(--bg);}
 
@@ -108,7 +108,7 @@ nav{
   color:var(--text);font-family:'IBM Plex Sans';font-size:14px;
   outline:none;transition:border-color .15s;
 }
-.field:focus{border-color:rgba(245,196,0,0.5);}
+.field:focus{border-color:rgba(230,57,70,0.5);}
 .field::placeholder{color:var(--dim);}
 select.field{cursor:pointer;}
 
@@ -129,7 +129,7 @@ select.field{cursor:pointer;}
   padding:13px;border-radius:var(--r);cursor:pointer;transition:background .15s;
   margin-top:6px;
 }
-.submit-btn:hover{background:#FFD740;}
+.submit-btn:hover{background:#FF525F;}
 .submit-btn.outline{background:transparent;border:1px solid var(--line2);color:var(--text);}
 .submit-btn.outline:hover{border-color:var(--line2);background:var(--bg2);color:var(--text);}
 
@@ -637,7 +637,7 @@ async function loadCategories(){
   const res = await fetch(`${API_BASE}/categories`);
   const cats = res.ok ? await res.json() : [];
   document.getElementById('cat-checkboxes').innerHTML = cats.map(c=>`
-    <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-size:12.5px;background:var(--bg2);transition:all .15s;" onmouseenter="this.style.borderColor='rgba(245,196,0,0.3)'" onmouseleave="this.style.borderColor='var(--line)'">
+    <label style="display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:var(--r);cursor:pointer;font-size:12.5px;background:var(--bg2);transition:all .15s;" onmouseenter="this.style.borderColor='rgba(230,57,70,0.3)'" onmouseleave="this.style.borderColor='var(--line)'">
       <input type="checkbox" class="cat-cb" value="${c.id}" style="accent-color:var(--yellow);width:14px;height:14px;">
       ${c.label}
     </label>
@@ -808,7 +808,7 @@ async function showSuccess(type, data){
     document.getElementById('s-title').textContent='Servisas užregistruotas!';
     document.getElementById('s-text').textContent='Jūsų servisas sėkmingai užregistruotas. Peržiūrėsime informaciją ir aktyvuosime paskyrą per 24 valandas.';
     document.getElementById('s-detail').innerHTML=`
-      <div class="sd-row"><span>Statusas</span><span style="color:${pending?'var(--yellow)':'#6fbf8a'}">${pending?'⏳ Laukia patvirtinimo':'✓ Aktyvus'}</span></div>
+      <div class="sd-row"><span>Statusas</span><span style="color:${pending?'#F5C400':'#6fbf8a'}">${pending?'⏳ Laukia patvirtinimo':'✓ Aktyvus'}</span></div>
       <div class="sd-row"><span>Aktyvavimas</span><span>Per 24 val.</span></div>
       <div class="sd-row"><span>El. paštas</span><span>${data.service.email}</span></div>
       <div class="sd-row"><span>Planas</span><span style="color:#6fbf8a">Nemokamas (6 mėn. nuo šiandien)</span></div>`;

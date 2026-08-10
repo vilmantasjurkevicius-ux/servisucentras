@@ -10,7 +10,7 @@
   --bg:#0A0B0C;--bg2:#131516;--bg3:#1A1C1E;--bg4:#202325;
   --line:rgba(255,255,255,0.06);--line2:rgba(255,255,255,0.1);
   --text:#F0EDE5;--muted:#7A8088;--dim:#3A3F45;
-  --y:#F5C400;--ydim:rgba(245,196,0,0.1);
+  --y:#E63946;--ydim:rgba(230,57,70,0.1);
   --g:#4A7C59;--gdim:rgba(74,124,89,0.12);
   --r:#C0392B;--rdim:rgba(192,57,43,0.12);
   --b:#2F7EC7;--bdim:rgba(47,126,199,0.12);
@@ -32,10 +32,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .login-title{font-family:'Oswald';font-size:20px;margin-bottom:4px;}
 .login-sub{font-size:12.5px;color:var(--muted);margin-bottom:22px;}
 .lf{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:11px 13px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;margin-bottom:10px;transition:border-color .15s;}
-.lf:focus{border-color:rgba(245,196,0,0.4);}
+.lf:focus{border-color:rgba(230,57,70,0.4);}
 .lf::placeholder{color:var(--dim);}
 .lb{width:100%;background:var(--y);color:var(--bg);border:none;font-family:'IBM Plex Sans';font-weight:700;font-size:14.5px;padding:12px;border-radius:3px;cursor:pointer;margin-top:4px;transition:background .15s;}
-.lb:hover{background:#FFD740;}
+.lb:hover{background:#FF525F;}
 .login-err{color:#e07070;font-size:12px;text-align:center;margin-top:8px;display:none;}
 
 /* TOP BAR */
@@ -118,9 +118,9 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .page-sub{font-size:12px;color:var(--muted);margin-top:2px;}
 .head-actions{display:flex;gap:8px;}
 .btn{font-family:'IBM Plex Sans';font-weight:600;font-size:12px;padding:7px 14px;border-radius:3px;cursor:pointer;border:1px solid var(--line2);background:var(--bg3);color:var(--text);transition:all .15s;}
-.btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.btn:hover{border-color:rgba(230,57,70,0.3);color:var(--y);}
 .btn-y{background:var(--y);color:var(--bg);border-color:var(--y);}
-.btn-y:hover{background:#FFD740;color:var(--bg);}
+.btn-y:hover{background:#FF525F;color:var(--bg);}
 .btn:disabled{opacity:0.35;cursor:not-allowed;}
 .btn:disabled:hover{border-color:var(--line2);color:var(--text);}
 .btn-y:disabled:hover{background:var(--y);color:var(--bg);}
@@ -149,7 +149,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .table-title{font-family:'Oswald';font-size:14px;font-weight:600;}
 .search-input{background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:6px 10px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;outline:none;width:180px;}
 .search-input::placeholder{color:var(--dim);}
-.search-input:focus{border-color:rgba(245,196,0,0.3);}
+.search-input:focus{border-color:rgba(230,57,70,0.3);}
 table{width:100%;border-collapse:collapse;}
 th{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);background:var(--bg3);cursor:pointer;}
 th:hover{color:var(--y);}
@@ -158,7 +158,7 @@ tr:last-child td{border:none;}
 tr:hover td{background:rgba(255,255,255,0.015);}
 .badge{font-family:'IBM Plex Mono';font-size:9.5px;padding:2px 8px;border-radius:2px;font-weight:500;}
 .badge-active{background:var(--gdim);color:#6fbf8a;}
-.badge-pending{background:var(--ydim);color:var(--y);}
+.badge-pending{background:rgba(245,196,0,0.1);color:#F5C400;}
 .badge-banned{background:var(--rdim);color:#e07070;}
 .badge-new{background:var(--bdim);color:#7ab0f0;}
 .badge-done{background:rgba(255,255,255,0.05);color:var(--muted);}
@@ -167,7 +167,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 .ab:hover{color:var(--text);border-color:var(--line2);}
 .ab.red:hover{color:#e07070;border-color:rgba(192,57,43,0.3);}
 .ab.green:hover{color:#6fbf8a;border-color:rgba(74,124,89,0.3);}
-.ab.yellow:hover{color:var(--y);border-color:rgba(245,196,0,0.3);}
+.ab.yellow:hover{color:var(--y);border-color:rgba(230,57,70,0.3);}
 
 /* TOGGLE SWITCH */
 .sw{position:relative;display:inline-block;width:38px;height:21px;cursor:pointer;flex-shrink:0;}
@@ -225,7 +225,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <button class="sb-hamburger" id="sb-hamburger-btn" onclick="toggleSidebar()" aria-label="Meniu">☰</button>
   <div class="tb-logo">🔧 SERVISU<em>CENTRAS</em></div>
   <div class="tb-badge">GOD MODE</div>
-  <a href="servisucentras-pagrindinis.html" class="tb-back-link" style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);text-decoration:none;margin-left:8px;transition:color .15s;" onmouseover="this.style.color='#F5C400'" onmouseout="this.style.color='var(--muted)'">← Grįžti į puslapį</a>
+  <a href="servisucentras-pagrindinis.html" class="tb-back-link" style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);text-decoration:none;margin-left:8px;transition:color .15s;" onmouseover="this.style.color='#E63946'" onmouseout="this.style.color='var(--muted)'">← Grįžti į puslapį</a>
   <div class="tb-right">
     <div class="tb-time" id="tb-time"></div>
     <div class="tb-notif">🔔<div class="tb-notif-dot"></div></div>
@@ -237,7 +237,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 </div>
 
 <!-- Laikino slaptažodžio rodinys — VIENĄ kartą po reset, niekada nepersaugomas -->
-<div id="temp-password-box" style="display:none;position:sticky;top:52px;z-index:90;background:var(--ydim,rgba(245,196,0,0.12));border-bottom:1px solid rgba(245,196,0,0.3);padding:12px 20px;"></div>
+<div id="temp-password-box" style="display:none;position:sticky;top:52px;z-index:90;background:var(--ydim,rgba(230,57,70,0.12));border-bottom:1px solid rgba(230,57,70,0.3);padding:12px 20px;"></div>
 
 <div class="shell">
 <div class="sidebar-backdrop" id="sidebar-backdrop" onclick="closeSidebar()"></div>
@@ -473,7 +473,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     <div class="content">
       <div class="table-wrap" style="padding:20px;">
         <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="background:var(--ydim);border:1px solid rgba(245,196,0,0.25);border-radius:5px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+          <div style="background:var(--ydim);border:1px solid rgba(230,57,70,0.25);border-radius:5px;padding:16px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
             <div>
               <div class="stat-lbl" style="margin-bottom:4px;color:var(--y);">⚡ God Mode — mokesčio surinkimas</div>
               <div style="font-size:12px;color:var(--muted);max-width:420px;">Kai ĮJUNGTA: servisai, kurių 6 mėn. nemokamas laikotarpis pasibaigęs, moka fiksuotą mokestį už kiekvieną priimtą klientą. Kai IŠJUNGTA: visiems servisams laikinai nemokama, nepriklausomai nuo registracijos datos.</div>
@@ -967,7 +967,7 @@ function renderWeekChart(){
     const height = Math.max(6, Math.round(sums[i]/max*100));
     const isToday = i===todayIdx;
     return `<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;">
-      <div style="flex:1;display:flex;align-items:flex-end;"><div style="background:${isToday?'rgba(245,196,0,0.25)':'var(--ydim)'};border:1px solid ${isToday?'rgba(245,196,0,0.4)':'rgba(245,196,0,0.2)'};border-radius:2px 2px 0 0;width:100%;height:${height}%"></div></div>
+      <div style="flex:1;display:flex;align-items:flex-end;"><div style="background:${isToday?'rgba(230,57,70,0.25)':'var(--ydim)'};border:1px solid ${isToday?'rgba(230,57,70,0.4)':'rgba(230,57,70,0.2)'};border-radius:2px 2px 0 0;width:100%;height:${height}%"></div></div>
       <div style="font-family:'IBM Plex Mono';font-size:9px;color:${isToday?'var(--y)':'var(--muted)'};font-weight:${isToday?600:400};">${days[i]}${isToday?' ←':''}</div>
       <div style="font-family:'IBM Plex Mono';font-size:10px;color:${isToday?'var(--y)':'var(--muted)'};font-weight:${isToday?600:400};">${sums[i].toFixed(0)}€</div>
     </div>`;

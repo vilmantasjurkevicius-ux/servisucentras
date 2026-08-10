@@ -16,8 +16,8 @@
   --text:#F0EDE5;
   --muted:#7A8088;
   --dim:#3A3F45;
-  --yellow:#F5C400;
-  --yellow-dim:rgba(245,196,0,0.1);
+  --yellow:#E63946;
+  --yellow-dim:rgba(230,57,70,0.1);
   --green:#3D6B4A;
   --green-dim:rgba(61,107,74,0.14);
   --red:#8B1A1A;
@@ -167,9 +167,9 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   border:1px solid var(--line2);background:var(--bg2);color:var(--text);
   transition:all .15s;
 }
-.btn:hover{border-color:rgba(245,196,0,0.3);color:var(--yellow);}
+.btn:hover{border-color:rgba(230,57,70,0.3);color:var(--yellow);}
 .btn-primary{background:var(--yellow);color:var(--bg);border-color:var(--yellow);}
-.btn-primary:hover{background:#FFD740;color:var(--bg);}
+.btn-primary:hover{background:#FF525F;color:var(--bg);}
 
 /* STATS ROW */
 .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border-bottom:1px solid var(--line);}
@@ -219,14 +219,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .ocard-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
 .ocard-cat{font-family:'IBM Plex Mono';font-size:10px;padding:2px 7px;border-radius:2px;font-weight:500;}
 .cat-diagnostika{background:rgba(58,123,213,0.15);color:#7ab0f0;}
-.cat-elektronika{background:rgba(245,196,0,0.12);color:var(--yellow);}
+.cat-elektronika{background:rgba(230,57,70,0.12);color:var(--yellow);}
 .cat-variklis{background:rgba(200,100,50,0.15);color:#e09060;}
 .cat-vaziuokle{background:rgba(150,100,200,0.15);color:#c0a0f0;}
 .cat-stabdziai{background:rgba(192,57,43,0.15);color:#c97a72;}
 .cat-padangos{background:rgba(74,124,89,0.15);color:#6fa382;}
 .cat-kebulas{background:rgba(100,150,200,0.15);color:#80b0e0;}
 .cat-prieziura{background:rgba(180,160,80,0.15);color:#d0c060;}
-.cat-apsvietimas{background:rgba(245,196,0,0.12);color:var(--yellow);}
+.cat-apsvietimas{background:rgba(230,57,70,0.12);color:var(--yellow);}
 .cat-kondicionierius{background:rgba(58,180,213,0.15);color:#7ad0e0;}
 .cat-stiklai{background:rgba(150,180,200,0.15);color:#a0c0d0;}
 .cat-plovykla{background:rgba(58,123,213,0.15);color:#7ab0f0;}
@@ -262,7 +262,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 .ochat-price-box{
   display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-  background:var(--yellow-dim);border:1px solid rgba(245,196,0,0.25);border-radius:3px;
+  background:var(--yellow-dim);border:1px solid rgba(230,57,70,0.25);border-radius:3px;
   padding:9px 12px;
 }
 .ochat-price-box label{font-size:10.5px;color:var(--muted);white-space:nowrap;}
@@ -275,7 +275,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   background:var(--yellow);color:var(--bg);border:none;border-radius:3px;padding:6px 12px;
   font-weight:600;font-size:11px;cursor:pointer;white-space:nowrap;
 }
-.ochat-price-box button:hover{background:#FFD740;}
+.ochat-price-box button:hover{background:#FF525F;}
 .ochat-price-error{color:#e07a6b;font-size:10px;font-family:'IBM Plex Mono';}
 
 .ochat-text-row{display:flex;gap:8px;}
@@ -299,7 +299,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .action-btn.accept:hover{background:var(--green-dim);}
 .action-btn.decline{color:#c97a72;border-color:rgba(192,57,43,0.3);}
 .action-btn.decline:hover{background:var(--red-dim);}
-.action-btn.call{color:var(--yellow);border-color:rgba(245,196,0,0.3);}
+.action-btn.call{color:var(--yellow);border-color:rgba(230,57,70,0.3);}
 .action-btn.call:hover{background:var(--yellow-dim);}
 .action-btn.done{color:var(--muted);border-color:var(--line2);}
 
@@ -321,7 +321,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .tl-time{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);width:36px;flex-shrink:0;padding-top:3px;}
 .tl-bar{width:3px;border-radius:2px;flex-shrink:0;margin-top:4px;}
 .tl-content{flex:1;background:var(--bg2);border-radius:var(--r);padding:10px 12px;border:1px solid var(--line);}
-.tl-content.active{border-color:rgba(245,196,0,0.25);background:var(--yellow-dim);}
+.tl-content.active{border-color:rgba(230,57,70,0.25);background:var(--yellow-dim);}
 .tl-content.free{border-style:dashed;background:transparent;}
 .tl-car{font-size:12.5px;font-weight:600;margin-bottom:2px;}
 .tl-detail{font-size:11px;color:var(--muted);}
@@ -334,7 +334,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   background:var(--bg2);cursor:pointer;text-align:center;transition:all .15s;
   font-family:'IBM Plex Sans';color:var(--text);
 }
-.qa-btn:hover{border-color:rgba(245,196,0,0.3);}
+.qa-btn:hover{border-color:rgba(230,57,70,0.3);}
 .qa-icon{font-size:22px;margin-bottom:6px;}
 .qa-label{font-size:11.5px;font-weight:500;}
 .qa-sub{font-size:10px;color:var(--muted);margin-top:2px;}
@@ -342,8 +342,8 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 /* Savaitės mini stats */
 .week-bars{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:4px;}
 .wbar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;}
-.wbar{background:var(--yellow-dim);border-radius:2px 2px 0 0;width:100%;transition:height .3s;border:1px solid rgba(245,196,0,0.2);}
-.wbar.today{background:rgba(245,196,0,0.4);border-color:rgba(245,196,0,0.5);}
+.wbar{background:var(--yellow-dim);border-radius:2px 2px 0 0;width:100%;transition:height .3s;border:1px solid rgba(230,57,70,0.2);}
+.wbar.today{background:rgba(230,57,70,0.4);border-color:rgba(230,57,70,0.5);}
 .wbar-label{font-family:'IBM Plex Mono';font-size:9px;color:var(--dim);}
 .wbar-label.today{color:var(--yellow);}
 
@@ -352,7 +352,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .dash-page.show{display:block;}
 .pf-label{font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);letter-spacing:0.06em;text-transform:uppercase;display:block;margin-bottom:6px;}
 .pf-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--r);padding:10px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:14px;outline:none;transition:border-color .15s;}
-.pf-input:focus{border-color:rgba(245,196,0,0.4);}
+.pf-input:focus{border-color:rgba(230,57,70,0.4);}
 .pf-row{display:flex;gap:10px;}
 .pf-group{flex:1;margin-bottom:14px;}
 
@@ -370,12 +370,12 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 /* AUTO-ATNAUJINIMAS — naujo įrašo dėmesio atkreipimas */
 @keyframes newOrderPulse{
-  0%{background:rgba(245,196,0,0.4);}
+  0%{background:rgba(230,57,70,0.4);}
   100%{background:transparent;}
 }
 .ocard.new-highlight{animation:newOrderPulse 2.6s ease-out;}
 @keyframes tabFlash{
-  0%{background:rgba(245,196,0,0.55);color:var(--bg);}
+  0%{background:rgba(230,57,70,0.55);color:var(--bg);}
   100%{background:transparent;color:var(--yellow);}
 }
 .ptab.tab-flash{animation:tabFlash 2.6s ease-out;}
@@ -835,7 +835,7 @@ function renderOrders(){
           <span class="ocard-time">${timeAgo(o.created_at)}</span>
         </div>
         <div class="ocard-car">${clientName}</div>
-        ${o.car_info ? `<div class="ocard-car" style="color:var(--y,#F5C400);font-weight:500;">🚗 ${o.car_info}</div>` : ''}
+        ${o.car_info ? `<div class="ocard-car" style="color:var(--yellow);font-weight:500;">🚗 ${o.car_info}</div>` : ''}
         <div class="ocard-desc">${o.description||''}</div>
         ${o.order_type==='direct' && o.scheduled_time ? `<div class="ocard-car" style="color:#7ab0f0;">📅 Prašomas laikas: ${formatSchedule(o.scheduled_time)}</div>` : ''}
         <div class="ocard-footer">

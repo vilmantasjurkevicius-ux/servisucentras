@@ -1130,6 +1130,24 @@ Vartotojas Stitch projekto papildomų paveikslėlių aplanke rado `small_minimal
 
 ---
 
+## Vieninga raudona spalvų schema visame projekte (2026-08-10)
+
+Pagrindinis puslapis jau turėjo raudoną akcentinę spalvą (Google Stitch redizainas). Vartotojas paprašė tą pačią raudoną (`#E63946`) suvienodinti VISUOSE likusiuose puslapiuose vietoj senos geltonos (`#F5C400`), aiškiai palikus nepakeistą Lietuvos vėliavos trispalvę ir funkcinius statusų spalvų kodus.
+
+- **Atnaujinti failai**: `servisucentras-diagnostika.html`, `automeistrai-login.html`, `automeistrai-dashboard.html`, `servisucentras-admin.html` (kiekvienas turi savo nepriklausomą `<style>` bloką — nėra bendro CSS failo, tad kiekvienas keistas atskirai).
+- **Metodas**: kiekviename faile prekės ženklo akcentinė spalva apibrėžta per vieną CSS kintamąjį (`--y`/`--ydim` arba `--yellow`/`--yellow-dim`, priklausomai nuo failo) — pakeitus jo reikšmę `#F5C400`→`#E63946` (ir `rgba(245,196,0,`→`rgba(230,57,70,`), automatiškai persidažo dauguma mygtukų/nuorodų/aktyvių elementų. Papildomai išvalyti "paklydę" hardcoded atvejai (`#FFD740`→`#FF525F` hover atspalviui, pavieniai `#F5C400` inline stiliai).
+- **IŠIMTYS — palikta TIKRA Lietuvos vėliavos geltona (`#F5C400`)**:
+  - `automeistrai-login.html` ir `automeistrai-dashboard.html`: `.tribar` juostelė (3 hardcoded `<span>` su geltona/žalia/raudona) — jau buvo literal hex, nesusiję su kintamuoju, paliesta nebuvo.
+  - `servisucentras-diagnostika.html`: naujas `--lt-yellow:#F5C400` kintamasis įvestas `.logo-icon .ly` ir `.logo-bar` elementams (ta pati logika kaip anksčiau pritaikyta `servisucentras-pagrindinis.html`).
+  - **Bonus fix**: patikrinant `servisucentras-pagrindinis.html` kaip pavyzdį, paaiškėjo, kad ORIGINALIOS Stitch integracijos metu `.logo-icon .ly` ir inline `.logo-bar` pirmas `<span>` liko klaidingai susieti su `var(--y)` (dabar raudona) vietoj `--lt-yellow` — retroaktyviai ištaisyta ir patikrinta gyvai (`rgb(245, 196, 0)`).
+- **IŠIMTYS — palikti funkciniai statusų kodai (nepakeisti į raudoną)**:
+  - `automeistrai-login.html`: "⏳ Laukia patvirtinimo" tekstas hardcoded į literal `#F5C400` (buvo `var(--yellow)`), kad liktų vizualiai atskirtas nuo naujo raudono prekės ženklo.
+  - `servisucentras-admin.html`: `.badge-pending` (naudojamas "Laukia patvirt.", "Siūloma", "Neapmokėta", "Svečias" ir kt. ženkleliams) hardcoded į literal geltoną, kad neatrodytų identiškai `.badge-banned` (kuris naudoja atskirą `--r:#C0392B` kintamąjį — NE tą patį, kaip prekės ženklo `--y`).
+  - `automeistrai-dashboard.html`: `var(--y,#F5C400)` fallback (kur `--y` faile net nebuvo apibrėžtas, tad visada rodė hardcoded geltoną) pataisytas į `var(--yellow)` — automobilio info tekstas užsakymo kortelėje dabar teisingai paveldi raudoną.
+- Patikrinta gyvai visuose 4 failuose (JWT injection į `localStorage`, autentifikuota kaip servisas/adminas be slaptažodžio rodymo) — nulis konsolės klaidų, `getComputedStyle` patvirtino kintamųjų reikšmes ir vėliavos elementų nepakitusią spalvą.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
