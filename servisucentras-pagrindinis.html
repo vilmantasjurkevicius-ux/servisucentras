@@ -188,8 +188,9 @@ h1 em{font-style:normal;color:var(--y);}
 .ai-promo-card:hover{border-color:var(--y);}
 .ai-promo-icon{
   width:64px;height:64px;border-radius:16px;background:var(--ydim);border:1px solid rgba(230,57,70,0.3);
-  display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;
 }
+.ai-promo-icon img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;}
 .ai-promo-tag{
   display:inline-flex;align-items:center;gap:6px;background:var(--ydim);color:var(--y);
   padding:2px 10px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase;
@@ -541,7 +542,7 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
     </div>
 
     <a class="ai-promo-card" href="servisucentras-diagnostika.html">
-      <div class="ai-promo-icon">🔍</div>
+      <div class="ai-promo-icon"><img src="ai-diagnostika-icon.png" alt="" aria-hidden="true"></div>
       <div style="flex:1;">
         <div class="ai-promo-tag"><span class="diag-pulse" style="position:relative;top:1px;"></span> AI Funkcija</div>
         <div class="ai-promo-title">Išmanioji diagnostika</div>

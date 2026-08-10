@@ -1119,6 +1119,17 @@ Vartotojas paruošė naują `servisucentras-pagrindinis.html` vizualą per Googl
 
 ---
 
+## AI diagnostikos ikona — savarankiškai talpinamas paveikslėlis (2026-08-09)
+
+Vartotojas Stitch projekto papildomų paveikslėlių aplanke rado `small_minimalistic_high_tech_icon_of_a_futuristic_car_with_a_digital_brain_or/screen.png` — neoninę raudoną automobilio+smegenų ikoną — ir paprašė ją naudoti kaip "Išmanioji diagnostika" promo kortelės logotipą (vietoj 🔍 emoji).
+
+- Failas nukopijuotas į projekto šaknį kaip `ai-diagnostika-icon.png` (SAVARANKIŠKAS projekto failas, ne išorinė nuoroda — skirtingai nuo kategorijų nuotraukų, kurios tebėra `lh3.googleusercontent.com` nuorodos).
+- Paveikslėlis turi TIKRĄ juodą foną (ne skaidrų PNG) — panaudotas `mix-blend-mode:screen` CSS trikas (ta pati technika, kaip anksčiau šioje sesijoje su hero automobilio ikona): juodi pikseliai tampa nematomi, lieka tik švytinti raudona linija, nepriklausomai nuo to, kas už jos.
+- `.ai-promo-icon` CSS papildyta `overflow:hidden` (apvaliems kampams apkirpti) + `.ai-promo-icon img{object-fit:cover;mix-blend-mode:screen;}`.
+- Patikrinta gyvai: paveikslėlis užsikrauna (1024×1024 originalas), `mix-blend-mode:screen` pritaikytas teisingai.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
