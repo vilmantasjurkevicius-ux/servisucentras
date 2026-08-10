@@ -33,18 +33,13 @@ nav{
 .logo{display:flex;align-items:center;gap:12px;cursor:pointer;text-decoration:none;}
 .logo-icon{
   width:36px;height:36px;border-radius:4px;overflow:hidden;
-  display:flex;flex-direction:column;position:relative;
-  border:1px solid rgba(255,255,255,0.1);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border:1px solid rgba(255,255,255,0.1);flex-shrink:0;background:var(--bg);
 }
-.logo-icon .ly{flex:1;background:var(--lt-yellow);}
-.logo-icon .lg{flex:1;background:var(--g);}
-.logo-icon .lr{flex:1;background:var(--r);}
-.logo-icon .lw{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;}
+.logo-icon img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;}
 .logo-text{display:flex;flex-direction:column;gap:1px;}
 .logo-name{font-family:'Sora';font-size:18px;font-weight:700;letter-spacing:0.05em;color:var(--text);line-height:1;}
 .logo-name em{font-style:normal;color:var(--y);}
-.logo-bar{display:flex;height:2px;border-radius:1px;overflow:hidden;}
-.logo-bar span{flex:1;}
 .nav-links{display:flex;gap:4px;}
 .nav-link{color:var(--muted);text-decoration:none;font-size:13px;font-weight:500;padding:6px 12px;border-radius:var(--radius);transition:all .15s;cursor:pointer;background:none;border:none;font-family:'Hanken Grotesk';}
 .nav-link:hover{color:var(--text);background:rgba(255,255,255,0.04);}
@@ -490,17 +485,9 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
 <!-- NAV -->
 <nav>
   <a class="logo" href="#">
-    <div class="logo-icon">
-      <div class="ly"></div><div class="lg"></div><div class="lr"></div>
-      <div class="lw">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="rgba(0,0,0,0.3)"/>
-        </svg>
-      </div>
-    </div>
+    <div class="logo-icon"><img src="logo-icon-cropped.png" alt=""></div>
     <div class="logo-text">
-      <div class="logo-name">SERVISU<em>CENTRAS</em></div>
-      <div class="logo-bar"><span style="background:var(--lt-yellow)"></span><span style="background:var(--g)"></span><span style="background:var(--r)"></span></div>
+      <div class="logo-name">SERVISŲ<em>CENTRAS</em></div>
     </div>
   </a>
   <div class="nav-links">
