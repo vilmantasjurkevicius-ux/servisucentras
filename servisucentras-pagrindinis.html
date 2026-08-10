@@ -162,8 +162,20 @@ h1 em{font-style:normal;color:var(--y);}
    HERO CTA KORTELĖ + AI DIAGNOSTIKOS PROMO (Stitch dizainas)
 ══════════════════════════════════ */
 .hero-cta-card{
-  background:var(--y);border-radius:24px;padding:28px 32px;margin:0 auto 24px;max-width:640px;
+  background:var(--y);border-radius:24px;padding:28px 32px;
   color:#fff;box-shadow:0 10px 40px rgba(230,57,70,0.25);position:relative;overflow:hidden;
+}
+.hero-split{display:flex;gap:24px;align-items:stretch;max-width:920px;margin:0 auto 24px;}
+.hero-split-left{flex:1 1 0;min-width:280px;display:flex;flex-direction:column;gap:16px;}
+.hero-split-left .hero-cta-card{margin:0;}
+.hero-car-visual{
+  flex:1 1 0;min-width:220px;border-radius:24px;
+  background:url('hero-car-bg.png') center/cover no-repeat;
+  box-shadow:0 10px 40px rgba(0,0,0,0.35);
+}
+@media (max-width:760px){
+  .hero-split{flex-direction:column;max-width:460px;}
+  .hero-car-visual{min-height:180px;order:-1;}
 }
 .hero-cta-card h2{font-family:'Sora';font-size:clamp(20px,3vw,26px);font-weight:700;margin-bottom:18px;line-height:1.25;}
 .hero-cta-row{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;}
@@ -181,7 +193,7 @@ h1 em{font-style:normal;color:var(--y);}
 }
 .hero-city-label{text-align:center;color:var(--muted);font-family:'JetBrains Mono';text-transform:uppercase;letter-spacing:0.14em;font-size:12px;margin-bottom:16px;}
 .ai-promo-card{
-  max-width:640px;margin:28px auto 0;display:flex;align-items:center;gap:20px;
+  max-width:640px;margin:0 auto;display:flex;align-items:center;gap:20px;
   background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(230,57,70,0.3);
   border-radius:24px;padding:20px;cursor:pointer;transition:border-color .15s;text-decoration:none;
 }
@@ -504,7 +516,7 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
 
 <!-- HERO -->
 <section class="hero">
-  <div class="hero-inner" style="display:block;max-width:800px;">
+  <div class="hero-inner" style="display:block;max-width:960px;">
     <div class="hero-eyebrow" style="justify-content:center;">
       <span class="lt-flag-wave" aria-hidden="true"><span class="fy"></span><span class="fg"></span><span class="fr"></span></span>
       Lietuva · 340+ servisų tinkle
@@ -512,12 +524,26 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
     <h1 style="text-align:center;">Sugedo jūsų <em>automobilis?</em><br>Rask meistrą<br>per kelias minutes.</h1>
     <p class="hero-sub" style="text-align:center;margin-left:auto;margin-right:auto;">Vienas langelis visiems Lietuvos autoservisams ir garažiukams — per visą Lietuvą.</p>
 
-    <div class="hero-cta-card">
-      <h2>Parašyk bėdą — gauk atsakymą per 15 min</h2>
-      <div class="hero-cta-row">
-        <div class="hero-cta-note">✓ Be registracijos, visiškai nemokamai</div>
-        <button class="hero-cta-send-btn" onclick="openChat()">Siųsti užklausą →</button>
+    <div class="hero-split">
+      <div class="hero-split-left">
+        <div class="hero-cta-card">
+          <h2>Parašyk bėdą — gauk atsakymą per 15 min</h2>
+          <div class="hero-cta-row">
+            <div class="hero-cta-note">✓ Be registracijos, visiškai nemokamai</div>
+            <button class="hero-cta-send-btn" onclick="openChat()">Siųsti užklausą →</button>
+          </div>
+        </div>
+        <a class="ai-promo-card" href="servisucentras-diagnostika.html">
+          <div class="ai-promo-icon"><img src="ai-diagnostika-icon.png" alt="" aria-hidden="true"></div>
+          <div style="flex:1;">
+            <div class="ai-promo-tag"><span class="diag-pulse" style="position:relative;top:1px;"></span> AI Funkcija</div>
+            <div class="ai-promo-title">Išmanioji diagnostika</div>
+            <div class="ai-promo-sub">Sužinok preliminarią gedimo kainą per kelias sekundes nemokamai</div>
+          </div>
+          <div class="ai-promo-arrow">→</div>
+        </a>
       </div>
+      <div class="hero-car-visual" aria-hidden="true"></div>
     </div>
 
     <div class="hero-online-badge cta-meta" style="display:inline-flex;">
@@ -540,16 +566,6 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
       <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
       <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
     </div>
-
-    <a class="ai-promo-card" href="servisucentras-diagnostika.html">
-      <div class="ai-promo-icon"><img src="ai-diagnostika-icon.png" alt="" aria-hidden="true"></div>
-      <div style="flex:1;">
-        <div class="ai-promo-tag"><span class="diag-pulse" style="position:relative;top:1px;"></span> AI Funkcija</div>
-        <div class="ai-promo-title">Išmanioji diagnostika</div>
-        <div class="ai-promo-sub">Sužinok preliminarią gedimo kainą per kelias sekundes nemokamai</div>
-      </div>
-      <div class="ai-promo-arrow">→</div>
-    </a>
   </div>
 </section>
 
