@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Mano paskyra — ServisuCentras.lt</title>
+<link rel="icon" type="image/png" href="logo-icon-cropped.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -26,8 +27,8 @@ nav{
   border-bottom:1px solid var(--line);
 }
 .logo{display:flex;align-items:center;gap:10px;cursor:pointer;text-decoration:none;}
-.logo-icon{width:32px;height:32px;border-radius:4px;overflow:hidden;display:flex;flex-direction:column;border:1px solid rgba(255,255,255,0.1);flex-shrink:0;}
-.logo-icon .ly{flex:1;background:var(--y);} .logo-icon .lg{flex:1;background:var(--g);} .logo-icon .lr{flex:1;background:var(--r);}
+.logo-icon{width:32px;height:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.logo-icon img{width:100%;height:100%;object-fit:contain;}
 .logo-name{font-family:'Oswald';font-size:16px;font-weight:700;letter-spacing:0.05em;color:var(--text);}
 .logo-name em{font-style:normal;color:var(--y);}
 .nav-right{display:flex;align-items:center;gap:14px;}
@@ -161,8 +162,8 @@ nav{
 
 <nav>
   <a class="logo" href="servisucentras-pagrindinis.html">
-    <div class="logo-icon"><div class="ly"></div><div class="lg"></div><div class="lr"></div></div>
-    <div class="logo-name">SERVISU<em>CENTRAS</em></div>
+    <div class="logo-icon"><img src="logo-icon-cropped.png" alt=""></div>
+    <div class="logo-name">SERVISŲ<em>CENTRAS</em></div>
   </a>
   <div class="nav-right">
     <span class="nav-greeting" id="nav-greeting">Sveiki!</span>

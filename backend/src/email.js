@@ -28,7 +28,7 @@ function layout(title, bodyHtml) {
   return `
 <div style="font-family:Arial,Helvetica,sans-serif;max-width:520px;margin:0 auto;padding:28px 24px;background:#0E0F10;color:#F0EDE5;">
   <div style="font-family:Arial,sans-serif;font-weight:700;font-size:18px;letter-spacing:0.03em;margin-bottom:24px;">
-    SERVISU<span style="color:#F5C400;">CENTRAS</span>
+    SERVISŲ<span style="color:#E63946;">CENTRAS</span>
   </div>
   <h2 style="font-size:18px;margin:0 0 14px;color:#F0EDE5;">${title}</h2>
   <div style="font-size:14px;line-height:1.6;color:#F0EDE5;">${bodyHtml}</div>

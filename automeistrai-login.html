@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <title>ServisuCentras — Prisijungimas</title>
+<link rel="icon" type="image/png" href="logo-icon-cropped.png">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -34,7 +35,9 @@ nav{
   display:flex;align-items:center;justify-content:space-between;
   padding:0 28px;height:52px;border-bottom:1px solid var(--line);flex-shrink:0;
 }
-.logo{font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.04em;text-decoration:none;color:var(--text);}
+.logo{display:flex;align-items:center;gap:10px;font-family:'Oswald';font-size:18px;font-weight:700;letter-spacing:0.04em;text-decoration:none;color:var(--text);}
+.logo-icon{width:32px;height:32px;flex-shrink:0;}
+.logo-icon img{width:100%;height:100%;object-fit:contain;}
 .logo em{font-style:normal;color:var(--yellow);}
 .nav-back{font-size:13px;color:var(--muted);cursor:pointer;background:none;border:none;font-family:'IBM Plex Sans';display:flex;align-items:center;gap:6px;}
 .nav-back:hover{color:var(--text);}
@@ -195,7 +198,7 @@ select.field{cursor:pointer;}
 
 <nav>
   <button class="nav-back" onclick="location.href='servisucentras-pagrindinis.html'">← Grįžti</button>
-  <a class="logo" href="servisucentras-pagrindinis.html">SERVISU<em>CENTRAS</em></a>
+  <a class="logo" href="servisucentras-pagrindinis.html"><div class="logo-icon"><img src="logo-icon-cropped.png" alt=""></div>SERVISŲ<em>CENTRAS</em></a>
   <div style="width:80px"></div>
 </nav>
 
