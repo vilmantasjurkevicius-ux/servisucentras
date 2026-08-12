@@ -265,13 +265,24 @@ h1 em{font-style:normal;color:var(--y);}
 .city-chip:hover{border-color:rgba(230,57,70,0.3);color:var(--text);}
 .city-chip.on{background:var(--ydim);border-color:var(--y);color:var(--y);}
 
-.city-all-toggle{background:none;border:none;color:var(--muted);font-family:'Hanken Grotesk';font-size:12.5px;font-weight:500;cursor:pointer;text-decoration:underline;padding:0;transition:color .15s;}
-.city-all-toggle:hover{color:var(--y);}
-.city-all-table{max-width:460px;margin:10px auto 8px;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);max-height:260px;overflow-y:auto;text-align:left;}
-.city-all-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);transition:background .15s,color .15s;}
-.city-all-row:last-child{border-bottom:none;}
+.city-search-wrap{max-width:560px;margin:0 auto 8px;display:flex;gap:8px;align-items:stretch;position:relative;}
+.city-search-wrap .city-row{flex:1;min-width:0;}
+.city-all-square{
+  flex-shrink:0;width:64px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);cursor:pointer;
+  color:var(--muted);font-size:18px;transition:all .15s;
+}
+.city-all-square span{font-family:'Hanken Grotesk';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
+.city-all-square:hover,.city-all-square.on{border-color:rgba(230,57,70,0.4);color:var(--y);background:var(--ydim);}
+.city-all-table{
+  position:absolute;top:calc(100% + 8px);right:0;z-index:20;width:300px;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);
+  max-height:320px;overflow-y:auto;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.city-all-row{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13px;color:var(--text);transition:background .15s,color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .city-all-row:hover{background:var(--ydim);color:var(--y);}
-.city-all-row .n{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
+@media(max-width:600px){.city-all-table{width:260px;grid-template-columns:1fr;}}
 
 /* ══════════════════════════════════
    SERVISŲ SĄRAŠAS
@@ -577,15 +588,15 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
       <div class="city-chip" data-city="Alytus" onclick="selCity(this,'Alytus')">📍 Alytus</div>
       <div class="city-chip" onclick="focusCityInput(this)">🗺️ Kitas</div>
     </div>
-    <div class="city-row" style="max-width:460px;margin:0 auto 8px;">
-      <span class="city-ico">📍</span>
-      <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
-      <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
+    <div class="city-search-wrap">
+      <div class="city-row" style="margin:0;">
+        <span class="city-ico">📍</span>
+        <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
+        <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
+      </div>
+      <button type="button" class="city-all-square" onclick="toggleAllCitiesTable()" id="city-all-toggle-btn" title="Visi Lietuvos miestai" aria-label="Visi Lietuvos miestai">🗂️<span>Visi</span></button>
+      <div class="city-all-table" id="city-all-table" style="display:none;"></div>
     </div>
-    <div style="text-align:center;">
-      <button type="button" class="city-all-toggle" onclick="toggleAllCitiesTable()" id="city-all-toggle-btn">🗂️ Visi miestai ▾</button>
-    </div>
-    <div class="city-all-table" id="city-all-table" style="display:none;"></div>
   </div>
 </section>
 
@@ -895,16 +906,19 @@ async function loadCityServices(city){
   cityServices = res.ok ? await res.json() : [];
 }
 
-// "Visi miestai" lentelė — miestai išvedami iš VISŲ aktyvių servisų (be miesto filtro),
-// ne hardcode'inti, kad nauji miestai automatiškai atsirastų sąraše.
-let allCities = []; // [{city, count}]
-async function loadAllCities(){
-  const res = await fetch(`${API_BASE}/services`);
-  const all = res.ok ? await res.json() : [];
-  const counts = {};
-  all.forEach(s=>{ if(s.city) counts[s.city] = (counts[s.city]||0) + 1; });
-  allCities = Object.keys(counts).sort((a,b)=>a.localeCompare(b,'lt')).map(city=>({city, count:counts[city]}));
-}
+// "Visi miestai" langelis — VISŲ Lietuvos savivaldybių centrų sąrašas (ne tik tų,
+// kur jau yra aktyvių servisų), kad klientas iš bet kurio miesto galėtų pabandyti
+// ieškoti. Tas pats sąrašas kaip automeistrai-login.html serviso registracijoje.
+const LT_CITIES = [
+  'Akmenė','Alytus','Anykščiai','Birštonas','Biržai','Druskininkai','Elektrėnai',
+  'Ignalina','Jonava','Joniškis','Jurbarkas','Kaišiadorys','Kalvarija','Kaunas',
+  'Kazlų Rūda','Kėdainiai','Kelmė','Klaipėda','Kretinga','Kupiškis','Lazdijai',
+  'Marijampolė','Mažeikiai','Molėtai','Neringa','Pagėgiai','Pakruojis','Palanga',
+  'Panevėžys','Pasvalys','Plungė','Prienai','Radviliškis','Raseiniai','Rietavas',
+  'Rokiškis','Skuodas','Šakiai','Šalčininkai','Šiauliai','Šilalė','Šilutė',
+  'Širvintos','Švenčionys','Tauragė','Telšiai','Trakai','Ukmergė','Utena',
+  'Varėna','Vilkaviškis','Vilnius','Visaginas','Zarasai',
+];
 
 // Bendras aktyvių servisų skaičius visoje platformoje (chat ženkliukui ir pan.)
 async function loadNetworkStats(){
@@ -996,29 +1010,17 @@ async function searchCity(){
 
 function renderAllCitiesTable(){
   const el = document.getElementById('city-all-table');
-  if(!allCities.length){
-    el.innerHTML = `<div class="city-all-row" style="cursor:default;">Miestų sąrašas kraunamas...</div>`;
-    return;
-  }
-  el.innerHTML = allCities.map(c=>
-    `<div class="city-all-row" onclick="selCityFromTable('${c.city.replace(/'/g,"\\'")}')">
-      <span>📍 ${escapeHtml(c.city)}</span><span class="n">${c.count} ${c.count===1?'servisas':'servisai'}</span>
-    </div>`
+  el.innerHTML = LT_CITIES.map(city=>
+    `<div class="city-all-row" onclick="selCityFromTable('${city.replace(/'/g,"\\'")}')">📍 ${escapeHtml(city)}</div>`
   ).join('');
 }
-async function toggleAllCitiesTable(){
+function toggleAllCitiesTable(){
   const el = document.getElementById('city-all-table');
   const btn = document.getElementById('city-all-toggle-btn');
   const show = el.style.display === 'none';
-  el.style.display = show ? 'block' : 'none';
-  btn.textContent = show ? '🗂️ Visi miestai ▴' : '🗂️ Visi miestai ▾';
-  if(show){
-    if(!allCities.length){
-      renderAllCitiesTable();
-      await loadAllCities();
-    }
-    renderAllCitiesTable();
-  }
+  el.style.display = show ? 'grid' : 'none';
+  btn.classList.toggle('on', show);
+  if(show) renderAllCitiesTable();
 }
 async function selCityFromTable(city){
   document.querySelectorAll('.city-chip').forEach(c=>{
