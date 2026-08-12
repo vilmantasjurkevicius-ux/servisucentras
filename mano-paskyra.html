@@ -108,6 +108,8 @@ nav{
 .order-card-date{font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);}
 .order-card-meta{font-size:12.5px;color:var(--muted);margin-top:6px;display:flex;flex-wrap:wrap;gap:6px 14px;}
 .order-card-meta span b{color:var(--text);font-weight:500;}
+.order-map-link{color:var(--muted);text-decoration:none;font-weight:500;transition:color .15s;}
+.order-map-link:hover{color:var(--y);text-decoration:underline;}
 .order-card-desc{font-size:13px;color:var(--text);margin-top:8px;line-height:1.5;}
 .order-status{font-family:'IBM Plex Mono';font-size:10.5px;font-weight:600;padding:3px 10px;border-radius:12px;white-space:nowrap;}
 .os-new{background:rgba(122,176,240,0.15);color:#7ab0f0;}
@@ -773,6 +775,7 @@ function renderOrderHistory(){
         </div>
         <div class="order-card-meta">
           <span>Servisas: <b>${o.service_name || '— dar nepriskirta —'}</b></span>
+          ${(o.service_address || o.service_city) ? `<a class="order-map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.service_address || o.service_city)}" target="_blank" rel="noopener noreferrer">📍 Rodyti žemėlapyje</a>` : ''}
           ${o.car_info ? `<span>Automobilis: <b>${o.car_info}</b></span>` : ''}
         </div>
         <div class="order-card-desc">${o.description||''}</div>

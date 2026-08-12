@@ -41,7 +41,7 @@ router.patch('/me', authRequired, requireRole('client'), (req, res) => {
 // order.service_id/status jau rodo NAUJĄ būseną, o last_decline_* laukai lieka istoriniu įrašu).
 router.get('/me/orders', authRequired, requireRole('client'), (req, res) => {
   const orders = db.prepare(`
-    SELECT o.*, s.name AS service_name,
+    SELECT o.*, s.name AS service_name, s.address AS service_address, s.city AS service_city,
       (SELECT reason FROM order_declines WHERE order_id = o.id ORDER BY declined_at DESC LIMIT 1) AS last_decline_reason,
       (SELECT ds.name FROM order_declines od JOIN services ds ON ds.id = od.service_id WHERE od.order_id = o.id ORDER BY od.declined_at DESC LIMIT 1) AS last_decline_service_name,
       (SELECT declined_at FROM order_declines WHERE order_id = o.id ORDER BY declined_at DESC LIMIT 1) AS last_decline_at

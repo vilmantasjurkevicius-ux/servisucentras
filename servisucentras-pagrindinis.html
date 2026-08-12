@@ -297,6 +297,8 @@ h1 em{font-style:normal;color:var(--y);}
 .sst{font-family:'JetBrains Mono';font-size:10px;}
 .sst.open{color:#6fbf8a;} .sst.closed{color:#e07070;}
 .card-meta{font-size:12.5px;color:var(--muted);margin-bottom:7px;}
+.card-map-link{color:var(--muted);text-decoration:none;font-weight:500;transition:color .15s;}
+.card-map-link:hover{color:var(--y);text-decoration:underline;}
 .tags{display:flex;gap:5px;flex-wrap:wrap;}
 .tag{font-family:'JetBrains Mono';font-size:9.5px;padding:2px 7px;border-radius:2px;background:rgba(255,255,255,0.05);color:var(--muted);border:1px solid var(--line);}
 .tag.hi{color:var(--y);background:var(--ydim);border-color:rgba(230,57,70,0.2);}
@@ -925,7 +927,7 @@ function renderCards(){
       <div><div class="dist-num">${s.rating!=null ? s.rating.toFixed(1) : '—'}</div><div class="dist-unit">reitingas</div></div>
       <div>
         <div class="card-name">${s.name} <span class="sdot ${avail.cls}"></span><span class="sst ${avail.cls}">${avail.label}</span></div>
-        <div class="card-meta">${s.service_type||'Servisas'} · ${s.address || s.city}</div>
+        <div class="card-meta">${s.service_type||'Servisas'} · ${escapeHtml(s.address || s.city)}${(s.address || s.city) ? ` · <a class="card-map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.address || s.city)}" target="_blank" rel="noopener noreferrer">📍 Rodyti žemėlapyje</a>` : ''}</div>
         <div class="tags">${tags.map((t,i)=>`<span class="tag ${i===0?'hi':''}">${t}</span>`).join('')}</div>
       </div>
       <div class="card-right">
