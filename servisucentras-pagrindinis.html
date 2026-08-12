@@ -794,23 +794,20 @@ function mobileNavScroll(id){
   document.getElementById(id).scrollIntoView({behavior:'smooth'});
 }
 
-/* ══ KATEGORIJŲ NUOTRAUKOS (Stitch dizainas) — vieši lh3.googleusercontent.com URL'ai,
-   sugeneruoti per Stitch. PASTABA: šie URL'ai gali būti nepatvarūs ilgalaikėje
-   perspektyvoje (AI Studio laikina talpykla) — jei kada nustos veikti, reikės
-   arba persigeneruoti Stitch'e, arba parsisiųsti ir talpinti lokaliai. */
+/* ══ KATEGORIJŲ NUOTRAUKOS — savarankiškai talpinami failai (cat-*.png), pašviesinta versija. */
 const CATEGORY_IMAGES = {
-  diagnostika:'https://lh3.googleusercontent.com/aida-public/AB6AXuBXA14PmXOVyr4wGQI7xa7Jpm0ejAh0NN6CWOQzczgm3F2cpqzX8BGHzhMTCAYtZV4caqclUYMVDnstToXCuJXV4JbjBhGc3vY8h3_S2tkkfmB15AABFyI89gl7OEndg65WVtzPmx5m7AJPwrWlzHGgdaxW4EYppaGYFiiDYJMgNe_qt3vgnbhWvoL6gi3Gd3NEhWAiCX2RkOCuGqgRB4mrBwU7fK9_FractHYB9mUtyslCsMAylnkt',
-  elektronika:'https://lh3.googleusercontent.com/aida-public/AB6AXuCQyt3b-KBI2DkvR_Avdpg9WpkC3sQaA31IfeM-tImHuoGpNBW0lJTbrudVC3Cst06AUxq81UKBk0GuN7Md5l-8DsF5qsdiAHja5XJexSLWazqO074vLdk4A94kv6g3bROJ_42ZhMrRS-xseqt7VaR7jWC9_NFMQp3kBM8YiqldIy3n6uh92RD-73ZoUTHmX9aqY3IT2A5vhWEXhh7nZPsjIEFlqW6a_0HjZRNVLYo0qd2tyVbTdktO',
-  apsvietimas:'https://lh3.googleusercontent.com/aida-public/AB6AXuCNLaFTf4cO7tWZsO0eIGqDx9x5qc7kvwVxwfpjbFYswk0pvfXdsDdHtzMKFLm5_ALaUiP2FmpvqgGtAUMqtuZ47FIcmrRG8O7PoBEYAq47Zqko4GCve9_03aZEwdckjz9OQeuoF8DhYmMAFCojvmdaOQnzSkHswIPJQ2kkRlik_fxPyqDXivSQrzFgRDAlr6XOWPuTgT23uBDJvJ2sKwTcSCvFXA8foplsTkDFeoAFnPlzoh_5-4sv',
-  variklis:'https://lh3.googleusercontent.com/aida-public/AB6AXuCU2MN1u-TNBZLwPvgi6h_lnWuGJGr5kxzVGnSxTO_aNvfTdeaWbRrBhXLqDRNQ3B0pM7UG4pdafwYGjS8LImorz5pxGEncSwx2N6k45wK5odZKAV50d1jKuy74Nc_T8-PDEu2-_4VcSd5MVZb-SJFL7eMQRgQCDJ6-HwF7MVV_OHqBtz3mEFaKyLaUA32lO4YvXoyMKZsqapgnY7ofXbRFsJWSJVt0wE2wxmbbdmFSpYNrX3hcJcN7',
-  vaziuokle:'https://lh3.googleusercontent.com/aida-public/AB6AXuCobTUxhipR4nW_btSlW0YFzUfx5M0HV2TsFZyEGYTJkVKRp2zBWk6h2k1XEcnETq9wP0Qrg9U86FZi7sYZCrabE319ZGKchNH7mT9Fg333xWUoObBGQbgETY1GLiWZtN_KDj-VWw36T8pJm7C2uZMazo1CvML5_B-WAQCpl52q9Xp76I9gMGvQXVzzVTtbNks-bhYyFNTgN_3JEHq6d376oJn-VH6gpw6s60F_YObPbQMPx_-8J_Cn',
-  stabdziai:'https://lh3.googleusercontent.com/aida-public/AB6AXuBmx-I9KmJCLtdL5XvUAW8rrPk31WTL3mMFEZRahFvuRUWfy5mB6V68ONy8gqHbPFbUhHrlIqpvvTEP2qcrTKjiA4_k37cvhwjkyuk3D226liT5mbWpm7x7uqJbYIpzCQU5T6RH57Q5KC_M8TknI5ncPL9P-muxAgno5-MOYXCB41k42O0I2ZTm_Cbcptsg_iQbFhkZiiDFqJo_XS9GvnFPz2-j9w12_GjIbxibld31fxG8550RqVrG',
-  kebulas:'https://lh3.googleusercontent.com/aida-public/AB6AXuDx5ijDVnHFs8irBkLjfxPoXaVAb7VUJ4wkJZ-iz1yB1z_0xwrX8INyghaAKeARiuz1gKhQO8eDMjjfr5ogxra5B6SAijObZ9hC4reEekEPPRphoxTIhBoUmNQBVmiJzAwcbqWX3hmZgnmtRFQ0mxGRNg-ebTUNHCliyNsV9-hHyoVW-fDUEyDrwwlpj_5T6keS_o6alkmRcgioYCPLvu5StBK6Yxh99Hbh7mF-8R6US8dY7Ca1nOMb',
-  padangos:'https://lh3.googleusercontent.com/aida-public/AB6AXuBeBt14R-7N5aZh3DbOIdx_NDc3IduPDLYmj_O95FB068_HGd-n0qfqbI0WgL-x15pFVjnoIQmE9vR88A8d8Tekf2gFWo9C_mUDJg7zvIIA2xJs47uQpAZnnCx1aP-v13T5_dAPcK8GFGvqaDWVbG4qXZ_0FB9rATwyjygzgiAVcKc2O05ahUvTkdM5twjmOcT6XkK88tQy09Q68z89eSYW0BCSg0tOLsL2MPDcnAsMwBNbu9JE2BaR',
-  kondicionierius:'https://lh3.googleusercontent.com/aida-public/AB6AXuAPyha8lsXDS-Z_BKZVW-IiO6V5Rg8rYm6TBAFLdH33ib1ET6LE8ZzsMWhOERWvt38pklVsezHiZhzJ4zqFfknommTg-vYzH71Lst2WK6GurujzemQbmuq6kBloV67flUAQS43n70puCZNRoTUJQldEVOuOZjz3PhfTS-soIUTiW2gx0heOkI43lfriLBMixp8azRAYvo8vAQr2B0luHi0_DZrzjN5ufcLs3lGTNwHzTENudwpM-9ZB',
-  stiklai:'https://lh3.googleusercontent.com/aida-public/AB6AXuDVYE0-t4xKN1mvTcViqGyepXZ4jjmc_5D1yseqlmM9sqoCNvcLgz3WU_dOUyGth1q7f6S5HNRxVggLqE1dIUeVwH4n_h7q7P5S3hzua8pQtLV7B86pxRdqKBhcwKk99KOSxeAsIwYuM9ZssnQDlPsNhMWQDW7kYomB_PXtBem-YTXm1wpEvSPQEmPQwQrKMx2Ucee3yl3tJlUhT07cyoThtS03Z9_sYZ9dluHDKFgIQoQBJU8cKeYM',
-  plovykla:'https://lh3.googleusercontent.com/aida-public/AB6AXuDivyAvySxlHaj6ww1rRclmxsNSl6isBkDywhOY0mvTuNLpnZw7HGSMPh_uNfjv72fWocOm7LFVi2BGWyG_cN505rJr2hXS1zKd4pL9DhyeVjHAcH-HQSSh0gUo-eEFXmy7XBLEOoxalYTmMosTnq3uG0vJRENk-5v-00rvt2s5z5wf3jrZ9kQjU47TgbaFQdeHlFab1QkuBLDZ6vMLZHU_WwAoillTuGU8SEjb8JwDi4AOMlBsA55f',
-  raktai:'https://lh3.googleusercontent.com/aida-public/AB6AXuAIHnKOAmK84CBI9oygfP2uu9WlaUezeu0YibvCfMR_9pCUl0iccwDlvU5vF7C8aHhWhQzEzCMk78L_9xihz_JA3mjvDqEN-Jt-HRX1FG8dZ3c0H8kTAUk664Q80ve0y50hw44QhdJUJI6JI9Io-0nEMB_C3QaxR0feua7cxdz70vhkMbhZlu2neDByw-leSmseJ1Kw6DxYliTDzbejA2R-Jc3YEEUHpfo0GcCBpThE4cDblWTdaxDi',
+  diagnostika:'cat-diagnostika.png',
+  elektronika:'cat-elektronika.png',
+  apsvietimas:'cat-apsvietimas.png',
+  variklis:'cat-variklis.png',
+  vaziuokle:'cat-vaziuokle.png',
+  stabdziai:'cat-stabdziai.png',
+  kebulas:'cat-kebulas.png',
+  padangos:'cat-padangos.png',
+  kondicionierius:'cat-kondicionierius.png',
+  stiklai:'cat-stiklai.png',
+  plovykla:'cat-plovykla.png',
+  raktai:'cat-raktai.png',
 };
 
 const API_BASE = '/api';
