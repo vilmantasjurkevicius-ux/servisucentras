@@ -265,6 +265,14 @@ h1 em{font-style:normal;color:var(--y);}
 .city-chip:hover{border-color:rgba(230,57,70,0.3);color:var(--text);}
 .city-chip.on{background:var(--ydim);border-color:var(--y);color:var(--y);}
 
+.city-all-toggle{background:none;border:none;color:var(--muted);font-family:'Hanken Grotesk';font-size:12.5px;font-weight:500;cursor:pointer;text-decoration:underline;padding:0;transition:color .15s;}
+.city-all-toggle:hover{color:var(--y);}
+.city-all-table{max-width:460px;margin:10px auto 8px;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);max-height:260px;overflow-y:auto;text-align:left;}
+.city-all-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13.5px;color:var(--text);transition:background .15s,color .15s;}
+.city-all-row:last-child{border-bottom:none;}
+.city-all-row:hover{background:var(--ydim);color:var(--y);}
+.city-all-row .n{font-family:'JetBrains Mono';font-size:11px;color:var(--muted);}
+
 /* ══════════════════════════════════
    SERVISŲ SĄRAŠAS
 ══════════════════════════════════ */
@@ -560,13 +568,13 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
 
     <div class="hero-city-label">Pasirinkite miestą</div>
     <div class="city-chips" style="justify-content:center;">
-      <div class="city-chip on" onclick="selCity(this,'Ukmergė')">📍 Ukmergė</div>
-      <div class="city-chip" onclick="selCity(this,'Vilnius')">📍 Vilnius</div>
-      <div class="city-chip" onclick="selCity(this,'Kaunas')">📍 Kaunas</div>
-      <div class="city-chip" onclick="selCity(this,'Klaipėda')">📍 Klaipėda</div>
-      <div class="city-chip" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
-      <div class="city-chip" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
-      <div class="city-chip" onclick="selCity(this,'Alytus')">📍 Alytus</div>
+      <div class="city-chip on" data-city="Ukmergė" onclick="selCity(this,'Ukmergė')">📍 Ukmergė</div>
+      <div class="city-chip" data-city="Vilnius" onclick="selCity(this,'Vilnius')">📍 Vilnius</div>
+      <div class="city-chip" data-city="Kaunas" onclick="selCity(this,'Kaunas')">📍 Kaunas</div>
+      <div class="city-chip" data-city="Klaipėda" onclick="selCity(this,'Klaipėda')">📍 Klaipėda</div>
+      <div class="city-chip" data-city="Šiauliai" onclick="selCity(this,'Šiauliai')">📍 Šiauliai</div>
+      <div class="city-chip" data-city="Panevėžys" onclick="selCity(this,'Panevėžys')">📍 Panevėžys</div>
+      <div class="city-chip" data-city="Alytus" onclick="selCity(this,'Alytus')">📍 Alytus</div>
       <div class="city-chip" onclick="focusCityInput(this)">🗺️ Kitas</div>
     </div>
     <div class="city-row" style="max-width:460px;margin:0 auto 8px;">
@@ -574,6 +582,10 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
       <input class="city-input" id="city-input" type="text" placeholder="Įvesk miestą arba adresą..." onkeydown="if(event.key==='Enter')searchCity()">
       <button class="city-search-btn" onclick="searchCity()">Ieškoti</button>
     </div>
+    <div style="text-align:center;">
+      <button type="button" class="city-all-toggle" onclick="toggleAllCitiesTable()" id="city-all-toggle-btn">🗂️ Visi miestai ▾</button>
+    </div>
+    <div class="city-all-table" id="city-all-table" style="display:none;"></div>
   </div>
 </section>
 
@@ -883,6 +895,17 @@ async function loadCityServices(city){
   cityServices = res.ok ? await res.json() : [];
 }
 
+// "Visi miestai" lentelė — miestai išvedami iš VISŲ aktyvių servisų (be miesto filtro),
+// ne hardcode'inti, kad nauji miestai automatiškai atsirastų sąraše.
+let allCities = []; // [{city, count}]
+async function loadAllCities(){
+  const res = await fetch(`${API_BASE}/services`);
+  const all = res.ok ? await res.json() : [];
+  const counts = {};
+  all.forEach(s=>{ if(s.city) counts[s.city] = (counts[s.city]||0) + 1; });
+  allCities = Object.keys(counts).sort((a,b)=>a.localeCompare(b,'lt')).map(city=>({city, count:counts[city]}));
+}
+
 // Bendras aktyvių servisų skaičius visoje platformoje (chat ženkliukui ir pan.)
 async function loadNetworkStats(){
   const res = await fetch(`${API_BASE}/services`);
@@ -967,6 +990,43 @@ async function searchCity(){
   activeCity=v;
   document.querySelectorAll('.city-chip').forEach(c=>c.classList.remove('on'));
   await loadCityServices(v);
+  renderBoard();
+  renderCards();
+}
+
+function renderAllCitiesTable(){
+  const el = document.getElementById('city-all-table');
+  if(!allCities.length){
+    el.innerHTML = `<div class="city-all-row" style="cursor:default;">Miestų sąrašas kraunamas...</div>`;
+    return;
+  }
+  el.innerHTML = allCities.map(c=>
+    `<div class="city-all-row" onclick="selCityFromTable('${c.city.replace(/'/g,"\\'")}')">
+      <span>📍 ${escapeHtml(c.city)}</span><span class="n">${c.count} ${c.count===1?'servisas':'servisai'}</span>
+    </div>`
+  ).join('');
+}
+async function toggleAllCitiesTable(){
+  const el = document.getElementById('city-all-table');
+  const btn = document.getElementById('city-all-toggle-btn');
+  const show = el.style.display === 'none';
+  el.style.display = show ? 'block' : 'none';
+  btn.textContent = show ? '🗂️ Visi miestai ▴' : '🗂️ Visi miestai ▾';
+  if(show){
+    if(!allCities.length){
+      renderAllCitiesTable();
+      await loadAllCities();
+    }
+    renderAllCitiesTable();
+  }
+}
+async function selCityFromTable(city){
+  document.querySelectorAll('.city-chip').forEach(c=>{
+    c.classList.toggle('on', c.dataset.city === city);
+  });
+  activeCity = city;
+  toggleAllCitiesTable();
+  await loadCityServices(city);
   renderBoard();
   renderCards();
 }
