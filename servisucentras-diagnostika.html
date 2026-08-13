@@ -18,7 +18,12 @@
   --radius:4px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;position:relative;}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;
+  background:url('logo-watermark.png') repeat;background-size:70px 70px;
+  opacity:0.045;pointer-events:none;
+}
 
 /* ══ NAV (ta pati struktūra kaip pagrindiniame puslapyje) ══ */
 nav{
@@ -82,7 +87,7 @@ nav{
 }
 
 /* ══ PUSLAPIO TURINYS ══ */
-.wrap{max-width:720px;margin:0 auto;padding:40px 20px 80px;}
+.wrap{max-width:720px;margin:0 auto;padding:40px 20px 80px;position:relative;z-index:1;}
 
 h1{font-family:'Oswald';font-size:clamp(26px,4vw,34px);font-weight:600;margin-bottom:8px;}
 .sub{color:var(--muted);font-size:13.5px;margin-bottom:28px;line-height:1.5;}
