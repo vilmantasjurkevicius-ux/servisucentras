@@ -579,7 +579,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <!-- ════ PAKVIETIMAI — realių servisų paieška (Places API) + laiško juodraštis (Gemini) ════ -->
   <div class="page" id="p-invitations">
     <div class="page-head">
-      <div><div class="page-title">📨 Pakvietimai</div><div class="page-sub">Suranda realius autoservisus mieste (Google Places) ir paruošia laiško juodraštį (Gemini). NIEKAS nesiunčiama automatiškai — el. paštą įrašai pats, siųsti spausk pats.</div></div>
+      <div><div class="page-title">📨 Pakvietimai</div><div class="page-sub">Suranda realius autoservisus mieste (Google Places) ir paruošia standartinį pakvietimo laišką. NIEKAS nesiunčiama automatiškai — el. paštą įrašai pats, siųsti spausk pats.</div></div>
     </div>
     <div style="padding:16px 20px;">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
@@ -1304,7 +1304,7 @@ async function searchInvitations(){
   const status = document.getElementById('inv-status');
   btn.disabled = true;
   status.style.display = 'block';
-  status.textContent = `Ieškoma servisų mieste "${city}" ir ruošiami laiškai — tai gali užtrukti iki ~2 min (Gemini nemokamo plano limitas), nekraukite puslapio iš naujo...`;
+  status.textContent = `Ieškoma servisų mieste "${city}"...`;
   try{
     invitationsCache = await apiPost('/admin/invitations/search', { city });
     status.textContent = `Rasta ${invitationsCache.length} servisų mieste "${city}".`;

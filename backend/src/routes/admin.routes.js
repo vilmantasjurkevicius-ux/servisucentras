@@ -7,7 +7,7 @@ const { trialEndDate } = require('../utils/commission');
 const { authLimiter } = require('../middleware/rateLimit');
 const { refreshInvoices, currentPeriod, periodLabelLt } = require('../utils/invoices');
 const { disableOverlappingBots } = require('../utils/bots');
-const { searchServicesInCity, draftInvitationLetter } = require('../utils/invitations');
+const { searchServicesInCity, buildInvitationLetter } = require('../utils/invitations');
 const { sendInvitationEmail } = require('../email');
 
 const router = express.Router();
@@ -386,13 +386,6 @@ router.get('/invitations', (req, res) => {
   res.json(rows);
 });
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-// Gemini nemokamas planas leidžia tik 5 kvietimus/min šiam modeliui — kiekvienam
-// NAUJAM servisui reikia atskiro kvietimo (laiško juodraščiui), tad tarp jų būtina
-// palaukti, kitaip 429 (RESOURCE_EXHAUSTED) po penkto rezultato. ~13s saugu tilpti
-// į 5/60s limitą su atsarga. Todėl paieška naujame mieste gali užtrukti iki ~2 min.
-const GEMINI_FREE_TIER_DELAY_MS = 13000;
-
 router.post('/invitations/search', async (req, res) => {
   const { city } = req.body;
   if (!city || !city.trim()) return res.status(400).json({ error: 'Trūksta miesto' });
@@ -413,18 +406,9 @@ router.post('/invitations/search', async (req, res) => {
   const existingStmt = db.prepare('SELECT * FROM service_invitations WHERE place_id = ?');
 
   const newPlaces = places.filter((p) => !existingStmt.get(p.placeId));
-  for (let i = 0; i < newPlaces.length; i += 1) {
-    const place = newPlaces[i];
-    let letterText = null;
-    try {
-      const letter = await draftInvitationLetter(place.name, cityName);
-      letterText = JSON.stringify(letter);
-    } catch (err) {
-      console.error(`Nepavyko sugeneruoti laiško "${place.name}":`, err.message);
-      // vis tiek įrašome servisą be laiško — admin galės pamatyti sąraše, laiškas tuščias
-    }
+  for (const place of newPlaces) {
+    const letterText = JSON.stringify(buildInvitationLetter(place.name));
     insertStmt.run(place.placeId, place.name, place.address, place.phone, place.website, cityName, letterText);
-    if (i < newPlaces.length - 1) await sleep(GEMINI_FREE_TIER_DELAY_MS);
   }
 
   const rows = db.prepare('SELECT * FROM service_invitations WHERE city = ? ORDER BY created_at DESC').all(cityName);

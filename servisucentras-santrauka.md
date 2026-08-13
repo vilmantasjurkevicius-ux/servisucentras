@@ -1148,6 +1148,27 @@ Pagrindinis puslapis jau turėjo raudoną akcentinę spalvą (Google Stitch redi
 
 ---
 
+## Logotipo watermark + Pakvietimų patobulinimai (2026-08-13)
+
+**Watermark raštas išplėstas**: ta pati pasikartojanti `logo-watermark.png` fono technika (`::before`/`body::before`, `repeat`, `70px` plytelė, `opacity:0.045`, `z-index:0` + turinio `position:relative;z-index:1`) pritaikyta dar dviem vietoms:
+- `servisucentras-diagnostika.html` — VISAM puslapiui (`body::before`, `position:fixed`), ne tik vienai sekcijai.
+- `automeistrai-login.html` — taip pat visam puslapiui (`body::before` + `nav`/`.page` gavo `position:relative;z-index:1`, kad neliktų po raštu — ta pati stacking-context problema, su kuria susidurta anksčiau šioje sesijoje).
+
+**Pakvietimai — miestų lentelė paieškai**: prie miesto įvesties lauko pridėtas kvadratinis 🗂️ mygtukas, atidarantis visų 54 Lietuvos miestų lentelę (tas pats komponentas/`LT_CITIES` sąrašas kaip pagrindinio puslapio "Visi miestai", nukopijuotas kaip `INV_LT_CITIES`, nes kiekvienas HTML failas turi savo nepriklausomą JS). Paspaudus miestą, jis įrašomas į lauką ir iškart paleidžiama paieška.
+
+**Pakvietimai — "📤 Kam jau siųsta"**: naujas mygtukas šalia "Siųsti visiems matomiems", kuris užkrauna VISUS pakvietimus (visų miestų, ne tik dabar rodomo) ir filtruoja tik tuos, kuriems `sent_at` jau užpildytas — rodo "Iš viso išsiųsta laiškų: N" ir sąrašą su išsiuntimo data/laiku. Anksčiau šią informaciją matydavai tik atidarius puslapį pirmą kartą (prieš bet kokią naują paiešką); po paieškos ji pasimesdavo, nes `invitationsCache` persirašydavo tik naujo miesto rezultatais.
+
+**Pakvietimo laiškas — pakeistas iš Gemini generuojamo į FIKSUOTĄ šabloną**: vartotojas pateikė tikslų norimą laiško tekstą, tad `draftInvitationLetter()` (Gemini `generateContent` kvietimas kiekvienam NAUJAM servisui) pakeista `buildInvitationLetter(serviceName)` — grynas JS šablonas su `${serviceName}` įterpimu ir `REGISTER_URL` "Registracija:" eilutėje, JOKIŲ išorinių API kvietimų. Kartu pašalinta:
+- `PLATFORM_FACTS` (nebenaudojama, nes nebėra Gemini prompt'o).
+- `GEMINI_FREE_TIER_DELAY_MS`/`sleep()` 13s pauzė tarp naujų servisų paieškoje (`admin.routes.js`) — nebereikalinga, nes nebėra Gemini rate limito. Nauja miesto paieška dabar greita (tik Places API), ne iki ~2 min kaip anksčiau.
+- Atnaujintas UI tekstas (`servisucentras-admin.html`): pašalinta "(Gemini)" ir "gali užtrukti iki ~2 min" nuoroda paieškos būsenos pranešime ir puslapio aprašyme.
+
+`GEMINI_API_KEY`/`GOOGLE_PLACES_API_KEY` env kintamieji nepašalinti — Places API tebenaudojamas realių servisų paieškai, tik laiško TEKSTAS nebe Gemini generuojamas.
+
+**Patikrinta gyvai**: watermark abiejuose puslapiuose (desktop+mobile, tekstas/mygtukai išliko interaktyvūs), miestų lentelė pakvietimų puslapyje (desktop+mobile), "Kam jau siųsta" filtras (rodo tikrus 3 anksčiau išsiųstus laiškus su datomis). Testuojant miesto lentelę netyčia paleista reali "Vilnius" paieška (Places API) — rado 10 realių servisų, laiškai NEIŠSIŲSTI (tik surasti+paruošti, kaip ir numatyta dizaino). Backend testai nepaliesti (7/7 nekeista logika, tik pati laiško generavimo funkcija).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

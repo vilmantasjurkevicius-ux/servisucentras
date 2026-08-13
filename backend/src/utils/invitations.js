@@ -1,20 +1,29 @@
 // "Pakvietimai" įrankis — admin panelėje leidžia rasti REALIUS autoservisus
 // mieste (per Google Places API — pavadinimas/adresas/telefonas/svetainė) ir
-// sugeneruoti personalizuotą pakvietimo laišką (per Gemini — TIK teksto
-// rašymui, ne faktų paieškai, žr. santrauka.md dėl priežasčių).
+// paruošia standartinį pakvietimo laišką prisijungti prie platformos.
 
 const REGISTER_URL = 'https://servisucentras-production.up.railway.app/automeistrai-login.html?type=service&action=register';
 
-// Šie faktai vieninteliai leidžiami Gemini naudoti laiške — apsaugo nuo
-// išgalvotų teiginių apie platformą (pvz. "jau 10000 klientų").
-const PLATFORM_FACTS = `
-- ServisuCentras.lt — internetinė platforma, jungianti automobilių savininkus Lietuvoje su autoservisais/garažiukais.
-- Klientai gali be registracijos parašyti savo automobilio bėdą ir gauti kainų pasiūlymus iš kelių servisų.
-- Prisijungęs servisas gauna užklausas iš klientų iš viso miesto/regiono, be tarpininkų ir be skambučių centro.
-- Servisas gali nurodyti savo specializacijas ir darbo laiką.
-- Pirmus 6 mėnesius naudojimasis platforma nemokamas.
-- Registracijos nuoroda: ${REGISTER_URL}
-`.trim();
+function buildInvitationLetter(serviceName) {
+  return {
+    subject: 'Kvietimas prisijungti prie ServisuCentras.lt',
+    paragraphs: [
+      `Sveiki, ${serviceName} komanda,`,
+      'Kviečiame Jūsų servisą prisijungti prie ServisuCentras.lt – naujos Lietuvos platformos, padedančios automobilių savininkams greitai rasti tinkamą servisą.',
+      'Klientai platformoje gali aprašyti automobilio gedimą ar reikalingą paslaugą, o tinkami servisai gauna galimybę pateikti savo pasiūlymus.',
+      'Šiuo metu ServisuCentras.lt aktyviai reklamuojama, todėl siekiame pritraukti pirmuosius klientus ir servisus visoje Lietuvoje. Prisijungę būsite matomi platformoje ir galėsite gauti užklausas iš savo miesto bei aplinkinių rajonų.',
+      'Prisijungę galėsite:',
+      '• gauti klientų užklausas;',
+      '• nurodyti savo specializacijas ir teikiamas paslaugas;',
+      '• patys pasirinkti, kurias užklausas priimti.',
+      'Prisijungimas ir platformos išbandymas šiuo metu nemokamas.',
+      `Registracija: ${REGISTER_URL}`,
+      'Jeigu turite klausimų – mielai atsakysime.',
+      'Pagarbiai,',
+      'ServisuCentras.lt komanda',
+    ],
+  };
+}
 
 async function searchServicesInCity(city) {
   const apiKey = process.env.GOOGLE_PLACES_API_KEY;
@@ -56,64 +65,4 @@ async function searchServicesInCity(city) {
   }));
 }
 
-async function draftInvitationLetter(serviceName, city) {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    const err = new Error('GEMINI_API_KEY nenustatytas');
-    err.code = 'NO_GEMINI_KEY';
-    throw err;
-  }
-
-  const prompt = `Tu rašai trumpą, draugišką pakvietimo laišką lietuvių kalba realiam automobilių servisui/garažiukui, kviesdamas jį prisijungti prie ServisuCentras.lt platformos.
-
-FAKTAI apie ServisuCentras.lt (naudok TIK šiuos faktus, NIEKO nepridėk nuo savęs — jokių statistikų, vartotojų skaičių ar kitų teiginių, kurių čia nėra):
-${PLATFORM_FACTS}
-
-Parašyk TRUMPĄ (3-4 trumpos pastraipos), draugišką, profesionalų laišką servisui pavadinimu "${serviceName}" (miestas: ${city}). Kreipkis į juos pagal pavadinimą. Nenaudok perdėtų pardavimo frazių. Paskutinė pastraipa — kvietimas užsiregistruoti su nuoroda.`;
-
-  const res = await fetch(
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent',
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: 'OBJECT',
-            properties: {
-              subject: { type: 'STRING' },
-              paragraphs: { type: 'ARRAY', items: { type: 'STRING' } },
-            },
-            required: ['subject', 'paragraphs'],
-          },
-        },
-      }),
-    }
-  );
-
-  if (!res.ok) {
-    const errText = await res.text();
-    console.error('Gemini API klaida (pakvietimas):', res.status, errText);
-    const err = new Error('Nepavyko sugeneruoti laiško (Gemini)');
-    err.code = 'GEMINI_API_ERROR';
-    throw err;
-  }
-
-  const data = await res.json();
-  const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!rawText) {
-    const err = new Error('Gemini negrąžino turinio');
-    err.code = 'GEMINI_EMPTY';
-    throw err;
-  }
-
-  const parsed = JSON.parse(rawText);
-  return {
-    subject: parsed.subject,
-    paragraphs: parsed.paragraphs || [],
-  };
-}
-
-module.exports = { searchServicesInCity, draftInvitationLetter, REGISTER_URL };
+module.exports = { searchServicesInCity, buildInvitationLetter, REGISTER_URL };
