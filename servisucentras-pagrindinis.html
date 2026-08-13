@@ -204,18 +204,11 @@ h1 em{font-style:normal;color:var(--y);}
   max-width:640px;margin:0 auto;display:flex;align-items:center;gap:20px;
   background:linear-gradient(135deg,var(--bg2),var(--bg3));border:1px solid rgba(230,57,70,0.3);
   border-radius:24px;padding:20px;cursor:pointer;transition:border-color .15s;text-decoration:none;
-  position:relative;overflow:hidden;
-}
-.ai-promo-card::before{
-  content:"";position:absolute;inset:0;z-index:0;
-  background:url('logo-watermark.png') repeat;background-size:70px 70px;
-  opacity:0.05;pointer-events:none;
 }
 .ai-promo-card:hover{border-color:var(--y);}
 .ai-promo-icon{
   width:64px;height:64px;border-radius:16px;background:var(--ydim);border:1px solid rgba(230,57,70,0.3);
   display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;overflow:hidden;
-  position:relative;z-index:1;
 }
 .ai-promo-icon img{width:100%;height:100%;object-fit:cover;mix-blend-mode:screen;}
 .ai-promo-tag{
@@ -225,7 +218,7 @@ h1 em{font-style:normal;color:var(--y);}
 }
 .ai-promo-title{font-family:'Sora';font-size:18px;font-weight:700;color:var(--text);margin-bottom:2px;}
 .ai-promo-sub{font-size:13px;color:var(--muted);}
-.ai-promo-arrow{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:16px;position:relative;z-index:1;}
+.ai-promo-arrow{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.05);display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--muted);font-size:16px;}
 
 /* ══════════════════════════════════
    KATEGORIJŲ KORTELĖS SU NUOTRAUKOMIS (Stitch dizainas)
@@ -383,8 +376,13 @@ h1 em{font-style:normal;color:var(--y);}
 /* ══════════════════════════════════
    DIAGNOSTIKA SEKCIJA
 ══════════════════════════════════ */
-.diag-section{padding:60px 28px;border-top:1px solid var(--line);}
-.diag-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;}
+.diag-section{padding:60px 28px;border-top:1px solid var(--line);position:relative;overflow:hidden;}
+.diag-section::before{
+  content:"";position:absolute;inset:0;z-index:0;
+  background:url('logo-watermark.png') repeat;background-size:70px 70px;
+  opacity:0.045;pointer-events:none;
+}
+.diag-inner{max-width:1100px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center;position:relative;z-index:1;}
 @media(max-width:760px){.diag-inner{grid-template-columns:1fr;}}
 .diag-left h2{font-family:'Sora';font-size:28px;font-weight:700;text-transform:uppercase;margin-bottom:12px;}
 .diag-left h2 em{font-style:normal;color:var(--y);}
@@ -574,7 +572,7 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
         </div>
         <a class="ai-promo-card" href="servisucentras-diagnostika.html">
           <div class="ai-promo-icon"><img src="ai-diagnostika-icon.png" alt="" aria-hidden="true"></div>
-          <div style="flex:1;position:relative;z-index:1;">
+          <div style="flex:1;">
             <div class="ai-promo-tag"><span class="diag-pulse" style="position:relative;top:1px;"></span> AI Funkcija</div>
             <div class="ai-promo-title">Išmanioji diagnostika</div>
             <div class="ai-promo-sub">Sužinok preliminarią gedimo kainą per kelias sekundes nemokamai</div>
