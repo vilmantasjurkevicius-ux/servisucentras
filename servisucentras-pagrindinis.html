@@ -1041,9 +1041,13 @@ function toggleAllCitiesTable(){
   }
   btn.classList.toggle('on', show);
 }
-window.addEventListener('scroll', ()=>{
+window.addEventListener('scroll', (e)=>{
   const el = document.getElementById('city-all-table');
-  if(el && el.style.display !== 'none') el.style.display = 'none';
+  if(!el || el.style.display === 'none') return;
+  // e.target gali būti "window" (bendras puslapio slinkimas), o Node.contains() meta
+  // TypeError, jei paduosime ne-Node — todėl tikriname instanceof Node prieš .contains().
+  if(e.target instanceof Node && el.contains(e.target)) return; // langelio vidinis slinkimas — jo neuždarome
+  el.style.display = 'none';
   const btn = document.getElementById('city-all-toggle-btn');
   if(btn) btn.classList.remove('on');
 }, true);
