@@ -186,9 +186,14 @@ h1 em{font-style:normal;color:var(--y);}
 .hero-cta-send-btn{
   background:#fff;color:var(--y);border:none;padding:14px 24px;border-radius:12px;
   font-family:'Hanken Grotesk';font-weight:700;font-size:13px;letter-spacing:0.04em;text-transform:uppercase;
-  cursor:pointer;transition:background .15s;white-space:nowrap;
+  cursor:pointer;transition:background .15s;white-space:nowrap;position:relative;
 }
 .hero-cta-send-btn:hover{background:#f0f0f0;}
+.hero-cta-send-btn::after{
+  content:"";position:absolute;inset:0;border-radius:12px;border:2px solid #fff;
+  animation:cta-btn-pulse-ring 1.8s infinite;pointer-events:none;
+}
+@keyframes cta-btn-pulse-ring{0%{transform:scale(1);opacity:0.7;}100%{transform:scale(1.15);opacity:0;}}
 .hero-online-badge{
   display:inline-flex;align-items:center;gap:8px;border:1px solid var(--line2);border-radius:999px;
   padding:6px 16px;margin:0 auto 28px;background:var(--bg2);font-family:'JetBrains Mono';
