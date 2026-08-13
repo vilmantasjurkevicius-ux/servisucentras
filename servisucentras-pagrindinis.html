@@ -275,7 +275,7 @@ h1 em{font-style:normal;color:var(--y);}
 .city-all-square span{font-family:'Hanken Grotesk';font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;}
 .city-all-square:hover,.city-all-square.on{border-color:rgba(230,57,70,0.4);color:var(--y);background:var(--ydim);}
 .city-all-table{
-  position:absolute;top:calc(100% + 8px);right:0;z-index:20;width:300px;
+  position:fixed;z-index:200;width:300px;
   background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);
   max-height:320px;overflow-y:auto;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,0.4);
   display:grid;grid-template-columns:1fr 1fr;
@@ -1014,14 +1014,39 @@ function renderAllCitiesTable(){
     `<div class="city-all-row" onclick="selCityFromTable('${city.replace(/'/g,"\\'")}')">📍 ${escapeHtml(city)}</div>`
   ).join('');
 }
+// position:fixed (ne absolute), nes hero sekcija turi overflow:hidden (dekoratyviems
+// fono sluoksniams) — absoliuti pozicija ten butu apkirpta ir langelis "palistu" po
+// zemiau esancia sekcija. Fixed isvengia sio apkirpimo, pozicija skaiciuojama pagal
+// mygtuko realia vieta ekrane.
+function positionCityAllTable(){
+  const el = document.getElementById('city-all-table');
+  const btn = document.getElementById('city-all-toggle-btn');
+  const rect = btn.getBoundingClientRect();
+  const panelWidth = el.offsetWidth || 300;
+  let left = rect.right - panelWidth;
+  left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+  el.style.top = (rect.bottom + 8) + 'px';
+  el.style.left = left + 'px';
+}
 function toggleAllCitiesTable(){
   const el = document.getElementById('city-all-table');
   const btn = document.getElementById('city-all-toggle-btn');
   const show = el.style.display === 'none';
-  el.style.display = show ? 'grid' : 'none';
+  if(show){
+    renderAllCitiesTable();
+    el.style.display = 'grid';
+    positionCityAllTable();
+  } else {
+    el.style.display = 'none';
+  }
   btn.classList.toggle('on', show);
-  if(show) renderAllCitiesTable();
 }
+window.addEventListener('scroll', ()=>{
+  const el = document.getElementById('city-all-table');
+  if(el && el.style.display !== 'none') el.style.display = 'none';
+  const btn = document.getElementById('city-all-toggle-btn');
+  if(btn) btn.classList.remove('on');
+}, true);
 async function selCityFromTable(city){
   document.querySelectorAll('.city-chip').forEach(c=>{
     c.classList.toggle('on', c.dataset.city === city);
