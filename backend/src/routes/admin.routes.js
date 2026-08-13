@@ -7,7 +7,7 @@ const { trialEndDate } = require('../utils/commission');
 const { authLimiter } = require('../middleware/rateLimit');
 const { refreshInvoices, currentPeriod, periodLabelLt } = require('../utils/invoices');
 const { disableOverlappingBots } = require('../utils/bots');
-const { searchServicesInCity, buildInvitationLetter } = require('../utils/invitations');
+const { searchServicesInCity, buildInvitationLetter, findEmailOnWebsite } = require('../utils/invitations');
 const { sendInvitationEmail } = require('../email');
 
 const router = express.Router();
@@ -400,16 +400,19 @@ router.post('/invitations/search', async (req, res) => {
   }
 
   const insertStmt = db.prepare(`
-    INSERT INTO service_invitations (place_id, name, address, phone, website, city, letter_text)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO service_invitations (place_id, name, address, phone, website, email, city, letter_text)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const existingStmt = db.prepare('SELECT * FROM service_invitations WHERE place_id = ?');
 
   const newPlaces = places.filter((p) => !existingStmt.get(p.placeId));
-  for (const place of newPlaces) {
+  const foundEmails = await Promise.all(
+    newPlaces.map((p) => (p.website ? findEmailOnWebsite(p.website) : Promise.resolve(null)))
+  );
+  newPlaces.forEach((place, i) => {
     const letterText = JSON.stringify(buildInvitationLetter(place.name));
-    insertStmt.run(place.placeId, place.name, place.address, place.phone, place.website, cityName, letterText);
-  }
+    insertStmt.run(place.placeId, place.name, place.address, place.phone, place.website, foundEmails[i], cityName, letterText);
+  });
 
   const rows = db.prepare('SELECT * FROM service_invitations WHERE city = ? ORDER BY created_at DESC').all(cityName);
   res.json(rows);

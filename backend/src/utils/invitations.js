@@ -43,7 +43,7 @@ async function searchServicesInCity(city) {
     body: JSON.stringify({
       textQuery: `autoservisas ${city}`,
       languageCode: 'lt',
-      maxResultCount: 10, // ribojame, nes kiekvienam naujam rezultatui reikės atskiro Gemini kvietimo (žr. admin.routes.js — Gemini nemokamas planas leidžia tik 5/min)
+      maxResultCount: 10,
     }),
   });
 
@@ -65,4 +65,59 @@ async function searchServicesInCity(city) {
   }));
 }
 
-module.exports = { searchServicesInCity, buildInvitationLetter, REGISTER_URL };
+// Google Places negrąžina el. pašto (tokio lauko jo duomenų modelyje nėra), tad
+// bandome patys rasti jį serviso svetainės HTML'e — pirmiausia ieškome mailto:
+// nuorodos (patikimiausias signalas), jei nėra — bendro el. pašto formato teksto.
+// Ne visos svetainės turi el. paštą matomoje vietoje, tad tai tik geriausios
+// pastangos: nepavykus liks tuščia, adminas gali įrašyti ranka.
+const EMAIL_LOOKALIKE_FILE_EXT = /\.(png|jpe?g|gif|svg|webp|ico|css|js)$/i;
+
+// Google Places kartais grąžina "website" lauke NE paties serviso svetainę, o
+// verslo katalogo/registro/socialinio tinklo profilį (kai servisas neturi
+// savo svetainės). Iš tokių puslapių scrap'inti PAVOJINGA — gautume KATALOGO,
+// ne serviso, el. paštą (realiai nutiko: rekvizitai.vz.lt grąžino CreditInfo
+// kontaktinį adresą vietoj serviso). Tokiems domenams paieška praleidžiama.
+const NON_OWNED_WEBSITE_HOSTS = new Set([
+  'rekvizitai.vz.lt', 'rekvizitai.lt', 'imones.lt', 'info.lt',
+  'manoreitingas.lt', 'facebook.com', 'instagram.com',
+]);
+
+function isLikelyOwnedWebsite(url) {
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    return !NON_OWNED_WEBSITE_HOSTS.has(host);
+  } catch {
+    return false;
+  }
+}
+
+function extractEmailFromHtml(html) {
+  const mailtoMatch = html.match(/href=["']mailto:([^"'?]+)["']/i);
+  if (mailtoMatch) return mailtoMatch[1].trim();
+
+  const matches = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+  return matches.find((m) => !EMAIL_LOOKALIKE_FILE_EXT.test(m)) || null;
+}
+
+async function findEmailOnWebsite(url) {
+  if (!isLikelyOwnedWebsite(url)) return null;
+  try {
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ServisuCentrasBot/1.0)' },
+      signal: AbortSignal.timeout(6000),
+    });
+    if (!res.ok) return null;
+    return extractEmailFromHtml(await res.text());
+  } catch (err) {
+    return null;
+  }
+}
+
+module.exports = {
+  searchServicesInCity,
+  buildInvitationLetter,
+  findEmailOnWebsite,
+  extractEmailFromHtml,
+  isLikelyOwnedWebsite,
+  REGISTER_URL,
+};

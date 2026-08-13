@@ -1169,6 +1169,20 @@ Pagrindinis puslapis jau turėjo raudoną akcentinę spalvą (Google Stitch redi
 
 ---
 
+## Pakvietimai: automatinis el. pašto radimas serviso svetainėje (2026-08-13)
+
+Vartotojas paklausė, kodėl reikia patiems ieškoti ir įrašyti serviso el. paštą — paaiškinta, kad Google Places API tokio lauko negrąžina (jo nėra duomenų modelyje), ir pasiūlyta pabandyti automatiškai jį rasti serviso svetainės HTML'e. Vartotojas patvirtino ("pamėgink").
+
+**`backend/src/utils/invitations.js`** — nauja `findEmailOnWebsite(url)`: atsisiunčia svetainės homepage (6s timeout, `User-Agent` antraštė), ieško el. pašto per `extractEmailFromHtml(html)` — pirmenybė `mailto:` nuorodai (patikimiausias signalas), jei nėra — bendro el. pašto formato regex, atmetant `@2x.png`/`@3x.jpg` stiliaus paveikslėlių pavadinimus (klaidingai atitinka email regex). `admin.routes.js` `/invitations/search` maršrutas kviečia šią funkciją LYGIAGREČIAI (`Promise.all`) visiems NAUJIEMS servisams su svetaine — saugu, nes tai skirtingi hostai, ne vienas rate-limitinamas API.
+
+**Rastas ir ištaisytas realus klaidingas teigiamas rezultatas (false positive) testuojant gyvai**: paieška "Kėdainiai" servisui "Savas servisas" (kurio Google Places "website" laukas buvo `rekvizitai.vz.lt` — LT verslo registro/rekvizitų katalogo puslapis, NE paties serviso svetainė) automatiškai įrašė el. paštą `ltu.info@creditinfo.com` — tai CreditInfo (katalogo savininko) kontaktinis adresas, ne serviso. **Sprendimas**: `NON_OWNED_WEBSITE_HOSTS` blokavimo sąrašas (`rekvizitai.vz.lt`, `rekvizitai.lt`, `imones.lt`, `info.lt`, `manoreitingas.lt`, `facebook.com`, `instagram.com`) + `isLikelyOwnedWebsite(url)` patikra prieš bandant skrap'inti — tokiems domenams el. pašto paieška praleidžiama, laukas lieka tuščias adminui užpildyti ranka. Klaidingas įrašas duomenų bazėje ištaisytas (PATCH email→null), laiškas NEBUVO išsiųstas (`sent_at` buvo null).
+
+**Testai**: naujas `backend/test/invitations.test.js` (8 testai) — `extractEmailFromHtml` (mailto pirmenybė, paprastas regex, @2x.png atmetimas, null kai nieko nerasta) ir `isLikelyOwnedWebsite` (žinomi katalogų domenai atmetami, tikros serviso svetainės praleidžiamos). Iš viso backend testų: 13/13.
+
+**Patikrinta gyvai**: reali paieška "Kėdainiai" (10 servisų, 4 su svetaine) — po pataisymo nė vienas neturi klaidingo el. pašto; realios svetainės (pvz. `damiva.lt`) patikrintos, bet neturėjo matomo el. pašto homepage'yje (liko tuščia, kaip ir numatyta — adminas užpildys ranka). Paieška išliko greita (~1.5s).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
