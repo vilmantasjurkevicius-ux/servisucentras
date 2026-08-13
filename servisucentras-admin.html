@@ -146,6 +146,25 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .mini-chart{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:6px;}
 .mc-bar{border-radius:1px 1px 0 0;min-width:4px;transition:height .3s;}
 
+/* PAKVIETIMŲ MIESTŲ PASIRINKIMAS */
+.inv-city-wrap{position:relative;flex:1;min-width:220px;display:flex;gap:8px;}
+.inv-city-wrap input{flex:1;min-width:0;}
+.city-all-square{
+  flex-shrink:0;width:38px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:3px;cursor:pointer;
+  color:var(--muted);font-size:15px;transition:all .15s;
+}
+.city-all-square:hover,.city-all-square.on{border-color:rgba(230,57,70,0.4);color:var(--y);background:var(--ydim);}
+.city-all-table{
+  position:fixed;z-index:200;width:300px;
+  background:var(--bg2);border:1px solid var(--line2);border-radius:3px;
+  max-height:320px;overflow-y:auto;text-align:left;box-shadow:0 10px 30px rgba(0,0,0,0.4);
+  display:grid;grid-template-columns:1fr 1fr;
+}
+.city-all-row{padding:9px 14px;cursor:pointer;border-bottom:1px solid var(--line);font-size:13px;color:var(--text);transition:background .15s,color .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.city-all-row:hover{background:var(--ydim);color:var(--y);}
+@media(max-width:600px){.city-all-table{width:260px;grid-template-columns:1fr;}}
+
 /* TABLE */
 .table-wrap{background:var(--bg2);border:1px solid var(--line);border-radius:3px;overflow:hidden;}
 .table-head{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line);gap:12px;}
@@ -564,9 +583,14 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     </div>
     <div style="padding:16px 20px;">
       <div style="display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-        <input id="inv-city-input" type="text" placeholder="Miestas, pvz. Ukmergė" style="flex:1;min-width:220px;background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:8px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;" onkeydown="if(event.key==='Enter')searchInvitations()">
+        <div class="inv-city-wrap">
+          <input id="inv-city-input" type="text" placeholder="Miestas, pvz. Ukmergė" style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:8px 12px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;" onkeydown="if(event.key==='Enter')searchInvitations()">
+          <button type="button" class="city-all-square" onclick="toggleInvCitiesTable()" id="inv-city-all-btn" title="Visi Lietuvos miestai" aria-label="Visi Lietuvos miestai">🗂️</button>
+          <div class="city-all-table" id="inv-city-all-table" style="display:none;"></div>
+        </div>
         <button class="btn btn-y" id="inv-search-btn" onclick="searchInvitations()">🔍 Ieškoti</button>
         <button class="btn" onclick="sendAllVisibleInvitations()">✉️ Siųsti visiems matomiems</button>
+        <button class="btn" onclick="showSentInvitations()">📤 Kam jau siųsta</button>
       </div>
       <div id="inv-status" style="color:var(--muted);font-size:12px;margin-bottom:10px;display:none;"></div>
       <div class="table-wrap">
@@ -1208,6 +1232,69 @@ let expandedInvId = null;
 async function loadInvitations(){
   invitationsCache = await apiGet('/admin/invitations');
   renderInvitations();
+}
+
+async function showSentInvitations(){
+  const status = document.getElementById('inv-status');
+  const all = await apiGet('/admin/invitations');
+  invitationsCache = all.filter(r => r.sent_at);
+  status.style.display = 'block';
+  status.textContent = `Iš viso išsiųsta laiškų: ${invitationsCache.length}.`;
+  renderInvitations();
+}
+
+// ── MIESTŲ PASIRINKIMO LENTELĖ (pakvietimų paieškai) ──
+const INV_LT_CITIES = [
+  'Akmenė','Alytus','Anykščiai','Birštonas','Biržai','Druskininkai','Elektrėnai',
+  'Ignalina','Jonava','Joniškis','Jurbarkas','Kaišiadorys','Kalvarija','Kaunas',
+  'Kazlų Rūda','Kėdainiai','Kelmė','Klaipėda','Kretinga','Kupiškis','Lazdijai',
+  'Marijampolė','Mažeikiai','Molėtai','Neringa','Pagėgiai','Pakruojis','Palanga',
+  'Panevėžys','Pasvalys','Plungė','Prienai','Radviliškis','Raseiniai','Rietavas',
+  'Rokiškis','Skuodas','Šakiai','Šalčininkai','Šiauliai','Šilalė','Šilutė',
+  'Širvintos','Švenčionys','Tauragė','Telšiai','Trakai','Ukmergė','Utena',
+  'Varėna','Vilkaviškis','Vilnius','Visaginas','Zarasai',
+];
+function renderInvCitiesTable(){
+  const el = document.getElementById('inv-city-all-table');
+  el.innerHTML = INV_LT_CITIES.map(city=>
+    `<div class="city-all-row" onclick="selInvCityFromTable('${city.replace(/'/g,"\\'")}')">📍 ${escapeHtml(city)}</div>`
+  ).join('');
+}
+function positionInvCitiesTable(){
+  const el = document.getElementById('inv-city-all-table');
+  const btn = document.getElementById('inv-city-all-btn');
+  const rect = btn.getBoundingClientRect();
+  const panelWidth = el.offsetWidth || 300;
+  let left = rect.right - panelWidth;
+  left = Math.max(8, Math.min(left, window.innerWidth - panelWidth - 8));
+  el.style.top = (rect.bottom + 8) + 'px';
+  el.style.left = left + 'px';
+}
+function toggleInvCitiesTable(){
+  const el = document.getElementById('inv-city-all-table');
+  const btn = document.getElementById('inv-city-all-btn');
+  const show = el.style.display === 'none';
+  if(show){
+    renderInvCitiesTable();
+    el.style.display = 'grid';
+    positionInvCitiesTable();
+  } else {
+    el.style.display = 'none';
+  }
+  btn.classList.toggle('on', show);
+}
+window.addEventListener('scroll', (e)=>{
+  const el = document.getElementById('inv-city-all-table');
+  if(!el || el.style.display === 'none') return;
+  if(e.target instanceof Node && el.contains(e.target)) return;
+  el.style.display = 'none';
+  const btn = document.getElementById('inv-city-all-btn');
+  if(btn) btn.classList.remove('on');
+}, true);
+function selInvCityFromTable(city){
+  document.getElementById('inv-city-input').value = city;
+  toggleInvCitiesTable();
+  searchInvitations();
 }
 
 async function searchInvitations(){
