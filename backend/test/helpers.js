@@ -20,6 +20,7 @@ function spawnServer() {
         ADMIN_USERNAME: 'admin',
         ADMIN_PASSWORD: TEST_ADMIN_PASSWORD,
         ALLOWED_ORIGINS: 'http://localhost:5500',
+        AUTH_RATE_LIMIT_MAX: '1000',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
@@ -41,6 +42,7 @@ function spawnServer() {
         resolve({
           baseUrl: `http://localhost:${port}`,
           adminPassword: TEST_ADMIN_PASSWORD,
+          dbPath,
           async stop() {
             child.kill();
             await new Promise((r) => child.once('exit', r));

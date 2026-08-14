@@ -49,6 +49,8 @@ function migrate() {
   if (!settingsCols.includes('bank_receiver')) db.exec('ALTER TABLE admin_settings ADD COLUMN bank_receiver TEXT');
   if (!settingsCols.includes('bank_iban')) db.exec('ALTER TABLE admin_settings ADD COLUMN bank_iban TEXT');
   if (!settingsCols.includes('contact_fee')) db.exec('ALTER TABLE admin_settings ADD COLUMN contact_fee REAL NOT NULL DEFAULT 2.0');
+  if (!settingsCols.includes('admin_email')) db.exec('ALTER TABLE admin_settings ADD COLUMN admin_email TEXT');
+  // password_reset_tokens — visai nauja lentelė, CREATE TABLE IF NOT EXISTS aukščiau (schema.sql) jau ją sukuria.
   // service_invoices — visai nauja lentelė, CREATE TABLE IF NOT EXISTS aukščiau (schema.sql) jau ją sukuria.
 
   const bookCols = db.prepare("PRAGMA table_info(service_book)").all().map((c) => c.name);

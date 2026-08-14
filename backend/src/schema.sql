@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS admin_settings (
   bank_iban TEXT,
   contact_fee REAL NOT NULL DEFAULT 2.0, -- fiksuotas mokestis servisui už kliento kontakto atskleidimą (pakeičia % komisinį modelį, žr. santrauka.md)
   admin_username TEXT NOT NULL DEFAULT 'admin',
-  admin_password_hash TEXT NOT NULL
+  admin_password_hash TEXT NOT NULL,
+  admin_email TEXT -- reikalingas "pamiršau slaptažodį" laiškui; jei tuščias, tas srautas admin'ui neveikia
 );
 
 CREATE TABLE IF NOT EXISTS categories (
@@ -168,8 +169,8 @@ CREATE TABLE IF NOT EXISTS service_invoices (
 );
 
 -- Admin "Pakvietimai" įrankis — realūs servisai, surasti per Google Places API,
--- su Gemini sugeneruotu laiško juodraščiu. Niekas nesiunčiama automatiškai —
--- admin peržiūri, pats įrašo el. paštą ir spaudžia "Siųsti" kiekvienam atskirai.
+-- su fiksuotu laiško šablonu. Niekas nesiunčiama automatiškai — admin peržiūri,
+-- pats įrašo/patikrina el. paštą ir spaudžia "Siųsti" kiekvienam atskirai.
 -- place_id (Google) UNIQUE — apsaugo nuo pakartotinio to paties serviso įrašymo,
 -- jei admin ieško to paties miesto kelis kartus.
 CREATE TABLE IF NOT EXISTS service_invitations (
@@ -183,6 +184,20 @@ CREATE TABLE IF NOT EXISTS service_invitations (
   city TEXT NOT NULL,
   letter_text TEXT,
   sent_at TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+-- "Pamiršau slaptažodį" — token_hash (SHA-256 žaliavinio tokeno), NE pats tokenas,
+-- kad DB nutekėjimo atveju įrašai būtų nenaudingi be originalaus, tik el. laiške
+-- buvusio tokeno. role+account_id nurodo, kurią lentelę (services/clients/admin_settings)
+-- atnaujinti patvirtinus. Vienkartinis (used_at) ir laikinas (expires_at).
+CREATE TABLE IF NOT EXISTS password_reset_tokens (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  role TEXT NOT NULL, -- 'service' | 'client' | 'admin'
+  account_id INTEGER NOT NULL,
+  token_hash TEXT NOT NULL UNIQUE,
+  expires_at TEXT NOT NULL,
+  used_at TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 

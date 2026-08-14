@@ -272,12 +272,13 @@ router.get('/settings', (req, res) => {
 
 router.patch('/settings', (req, res) => {
   const {
-    platformName, commissionMasterEnabled, commissionPercent, trialMonths, adminPassword,
+    platformName, commissionMasterEnabled, commissionPercent, trialMonths, adminPassword, adminEmail,
     collectionMode, bankReceiver, bankIban, contactFee,
   } = req.body;
   const fields = [];
   const params = [];
   if (platformName !== undefined) { fields.push('platform_name = ?'); params.push(platformName); }
+  if (adminEmail !== undefined) { fields.push('admin_email = ?'); params.push(adminEmail || null); }
   if (commissionMasterEnabled !== undefined) { fields.push('commission_master_enabled = ?'); params.push(commissionMasterEnabled ? 1 : 0); }
   if (commissionPercent !== undefined) { fields.push('commission_percent = ?'); params.push(commissionPercent); }
   if (trialMonths !== undefined) { fields.push('trial_months = ?'); params.push(trialMonths); }

@@ -4,7 +4,10 @@ const db = require('../db');
 const { signToken } = require('../middleware/auth');
 const { authLimiter } = require('../middleware/rateLimit');
 const { disableOverlappingBots } = require('../utils/bots');
-const { sendServiceRegistrationEmail } = require('../email');
+const { sendServiceRegistrationEmail, sendPasswordResetEmail } = require('../email');
+const { generateResetToken, hashToken, RESET_TOKEN_TTL_MINUTES } = require('../utils/passwordReset');
+
+const RESET_URL_BASE = 'https://servisucentras-production.up.railway.app/automeistrai-login.html';
 
 const router = express.Router();
 
@@ -132,6 +135,70 @@ router.post('/guest', (req, res) => {
     }
     throw err;
   }
+});
+
+// ── PAMIRŠAU SLAPTAŽODĮ ──
+function findAccountForReset(role, email) {
+  if (role === 'service') return db.prepare('SELECT id, email FROM services WHERE email = ?').get(email);
+  if (role === 'client') return db.prepare('SELECT id, email FROM clients WHERE email = ?').get(email);
+  if (role === 'admin') {
+    const settings = db.prepare('SELECT admin_email FROM admin_settings WHERE id = 1').get();
+    return settings && settings.admin_email && settings.admin_email === email
+      ? { id: 1, email: settings.admin_email }
+      : null;
+  }
+  return null;
+}
+
+router.post('/forgot-password', authLimiter, (req, res) => {
+  const { role, email } = req.body;
+  if (!['service', 'client', 'admin'].includes(role) || !email) {
+    return res.status(400).json({ error: 'Trūksta rolės arba el. pašto' });
+  }
+
+  // Visada ta pati žinutė, nepriklausomai ar paskyra rasta — apsauga nuo el. pašto
+  // adresų "enumeration" (kad negalima būtų sužinoti, ar adresas registruotas,
+  // stebint atsakymo skirtumus).
+  const response = { message: 'Jei toks el. paštas registruotas, netrukus gausite laišką su nuoroda slaptažodžiui atstatyti.' };
+
+  const account = findAccountForReset(role, email);
+  if (!account) return res.json(response);
+
+  const token = generateResetToken();
+  db.prepare(`
+    INSERT INTO password_reset_tokens (role, account_id, token_hash, expires_at)
+    VALUES (?, ?, ?, datetime('now', '+${RESET_TOKEN_TTL_MINUTES} minutes'))
+  `).run(role, account.id, hashToken(token));
+
+  const resetLink = `${RESET_URL_BASE}?resetToken=${token}&role=${role}`;
+  sendPasswordResetEmail({ to: account.email, resetLink }); // fire-and-forget
+
+  res.json(response);
+});
+
+router.post('/reset-password', authLimiter, (req, res) => {
+  const { token, newPassword } = req.body;
+  if (!token || !newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Trūksta tokeno arba slaptažodis per trumpas (min. 8 simboliai)' });
+  }
+
+  const record = db.prepare(`
+    SELECT * FROM password_reset_tokens
+    WHERE token_hash = ? AND used_at IS NULL AND expires_at > datetime('now')
+  `).get(hashToken(token));
+  if (!record) return res.status(400).json({ error: 'Nuoroda negalioja arba pasibaigusi — paprašykite naujos' });
+
+  const passwordHash = bcrypt.hashSync(newPassword, 10);
+  if (record.role === 'service') {
+    db.prepare('UPDATE services SET password_hash = ? WHERE id = ?').run(passwordHash, record.account_id);
+  } else if (record.role === 'client') {
+    db.prepare('UPDATE clients SET password_hash = ? WHERE id = ?').run(passwordHash, record.account_id);
+  } else if (record.role === 'admin') {
+    db.prepare('UPDATE admin_settings SET admin_password_hash = ? WHERE id = 1').run(passwordHash);
+  }
+  db.prepare("UPDATE password_reset_tokens SET used_at = datetime('now') WHERE id = ?").run(record.id);
+
+  res.json({ message: 'Slaptažodis sėkmingai pakeistas — galite prisijungti.' });
 });
 
 module.exports = router;

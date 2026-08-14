@@ -233,10 +233,25 @@ nav{
     <div class="acc-page" id="acc-page-profile">
       <div class="acc-page-title">👤 Profilis</div>
       <div class="acc-page-sub">Jūsų paskyros duomenys.</div>
-      <div class="acc-empty">
-        <div class="acc-empty-icon">🚧</div>
-        <div class="acc-empty-title">Ši funkcija bus pridėta netrukus</div>
-        <div class="acc-empty-sub">Netrukus čia galėsite peržiūrėti ir keisti savo vardą, telefoną ir el. paštą.</div>
+      <div class="car-form" style="max-width:420px;">
+        <div class="car-card-title" style="margin-bottom:16px;">Keisti slaptažodį</div>
+        <div class="car-form-grid" style="grid-template-columns:1fr;">
+          <div>
+            <label class="car-label">Dabartinis slaptažodis</label>
+            <input class="car-input" type="password" id="pw-current" placeholder="••••••••">
+          </div>
+          <div>
+            <label class="car-label">Naujas slaptažodis</label>
+            <input class="car-input" type="password" id="pw-new1" placeholder="min. 8 simboliai">
+          </div>
+          <div>
+            <label class="car-label">Pakartok naują slaptažodį</label>
+            <input class="car-input" type="password" id="pw-new2" placeholder="min. 8 simboliai">
+          </div>
+        </div>
+        <div id="pw-err" style="display:none;color:#e07070;font-size:12.5px;margin-bottom:12px;"></div>
+        <div id="pw-ok" style="display:none;color:#6fbf8a;font-size:12.5px;margin-bottom:12px;">✓ Slaptažodis pakeistas</div>
+        <button class="car-btn car-btn-pri" id="pw-submit-btn" onclick="changeClientPassword()">Keisti slaptažodį</button>
       </div>
     </div>
   </div>
@@ -296,6 +311,33 @@ const apiGet = (path) => apiRequest('GET', path);
 const apiPost = (path, body) => apiRequest('POST', path, body || {});
 const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
 const apiDelete = (path) => apiRequest('DELETE', path);
+
+async function changeClientPassword(){
+  const currentPassword = document.getElementById('pw-current').value;
+  const newPassword = document.getElementById('pw-new1').value;
+  const newPassword2 = document.getElementById('pw-new2').value;
+  const errEl = document.getElementById('pw-err');
+  const okEl = document.getElementById('pw-ok');
+  errEl.style.display = 'none';
+  okEl.style.display = 'none';
+  if(!newPassword || newPassword.length < 8){ errEl.textContent = 'Naujas slaptažodis turi būti bent 8 simbolių'; errEl.style.display = 'block'; return; }
+  if(newPassword !== newPassword2){ errEl.textContent = 'Slaptažodžiai nesutampa'; errEl.style.display = 'block'; return; }
+
+  const btn = document.getElementById('pw-submit-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Keičiama...';
+  try{
+    await apiPatch('/clients/me/password', { currentPassword, newPassword });
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new1').value = '';
+    document.getElementById('pw-new2').value = '';
+    okEl.style.display = 'block';
+  } catch(err){
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
 
 /* ══ MANO AUTOMOBILIAI (Serviso knyga, Žingsnis 2/7) ══ */
 const FUEL_LABELS = { benzinas:'Benzinas', dyzelinas:'Dyzelinas', elektra:'Elektra', hibridas:'Hibridas', dujos:'Dujos (SUP)' };

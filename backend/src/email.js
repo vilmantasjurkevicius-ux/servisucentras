@@ -110,7 +110,20 @@ async function sendInvitationEmail({ to, subject, paragraphs }) {
   });
 }
 
+async function sendPasswordResetEmail({ to, resetLink }) {
+  await sendEmail({
+    to,
+    subject: 'Slaptažodžio atstatymas — ServisuCentras.lt',
+    html: layout('Slaptažodžio atstatymas', `
+      <p>Gavome prašymą atstatyti jūsų paskyros slaptažodį.</p>
+      <p><a href="${resetLink}" style="color:#E63946;">Spauskite čia, kad nustatytumėte naują slaptažodį</a></p>
+      <p>Nuoroda galioja 1 valandą. Jei šio prašymo nesiuntėte, laišką galite ignoruoti — jūsų slaptažodis nepasikeis.</p>
+    `),
+  });
+}
+
 module.exports = {
   sendServiceRegistrationEmail, sendNewOrderEmail, sendQuoteEmail,
   sendServiceDeclinedEmail, sendOrderReopenedEmail, sendInvitationEmail,
+  sendPasswordResetEmail,
 };

@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { trialEndDate } = require('../utils/commission');
@@ -76,6 +77,19 @@ router.patch('/me', authRequired, requireRole('service'), (req, res) => {
   }
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
   res.json(withCategories(service));
+});
+
+router.patch('/me/password', authRequired, requireRole('service'), (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Naujas slaptažodis per trumpas (min. 8 simboliai)' });
+  }
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
+  if (!service.password_hash || !bcrypt.compareSync(currentPassword || '', service.password_hash)) {
+    return res.status(401).json({ error: 'Neteisingas dabartinis slaptažodis' });
+  }
+  db.prepare('UPDATE services SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), req.user.id);
+  res.json({ message: 'Slaptažodis pakeistas' });
 });
 
 // ── PASLAUGOS: visos 12 kategorijų + šio serviso kaina/aktyvumas kiekvienai ──

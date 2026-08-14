@@ -281,7 +281,7 @@ select.field{cursor:pointer;}
 
           <button class="submit-btn" id="svc-login-btn" onclick="serviceLogin()">Prisijungti →</button>
           <div class="form-footer">
-            Pamiršai slaptažodį? <a>Atstatyti</a>
+            Pamiršai slaptažodį? <a onclick="openForgotPassword('service')">Atstatyti</a>
           </div>
         </div>
 
@@ -443,7 +443,7 @@ select.field{cursor:pointer;}
             <input class="field" type="password" id="client-login-pass" placeholder="••••••••">
           </div>
           <button class="submit-btn" id="client-login-btn" onclick="clientLogin()">Prisijungti →</button>
-          <div class="form-footer">Pamiršai slaptažodį? <a>Atstatyti</a></div>
+          <div class="form-footer">Pamiršai slaptažodį? <a onclick="openForgotPassword('client')">Atstatyti</a></div>
         </div>
 
         <!-- CLIENT REGISTER -->
@@ -474,6 +474,39 @@ select.field{cursor:pointer;}
           </div>
           <button class="submit-btn" id="client-reg-btn" onclick="clientRegister()">Registruotis →</button>
         </div>
+      </div>
+
+      <!-- FORGOT PASSWORD -->
+      <div id="panel-forgot" class="panel">
+        <button class="nav-back" style="margin-bottom:14px;" onclick="closeForgotPassword()">← Atgal</button>
+        <div class="form-title">Pamiršai slaptažodį?</div>
+        <div class="form-sub">Įrašyk el. paštą — atsiųsime nuorodą naujam slaptažodžiui susikurti.</div>
+        <div id="forgot-form">
+          <div class="field-group">
+            <label class="field-label">El. paštas</label>
+            <input class="field" type="email" id="forgot-email" placeholder="vardas@gmail.com" onkeydown="if(event.key==='Enter')submitForgotPassword()">
+          </div>
+          <button class="submit-btn" id="forgot-submit-btn" onclick="submitForgotPassword()">Siųsti nuorodą →</button>
+        </div>
+        <div id="forgot-sent" style="display:none;">
+          <div class="check-item">✓ Jei šis el. paštas registruotas, laiškas su nuoroda jau pakeliui.</div>
+          <div class="form-footer">Patikrink ir šlamšto (spam) aplanką.</div>
+        </div>
+      </div>
+
+      <!-- RESET PASSWORD (iš el. laiško nuorodos) -->
+      <div id="panel-reset" class="panel">
+        <div class="form-title">Naujas slaptažodis</div>
+        <div class="form-sub">Susikurk naują slaptažodį savo paskyrai.</div>
+        <div class="field-group">
+          <label class="field-label">Naujas slaptažodis</label>
+          <input class="field" type="password" id="reset-pass1" placeholder="min. 8 simboliai">
+        </div>
+        <div class="field-group">
+          <label class="field-label">Pakartok slaptažodį</label>
+          <input class="field" type="password" id="reset-pass2" placeholder="min. 8 simboliai" onkeydown="if(event.key==='Enter')submitResetPassword()">
+        </div>
+        <button class="submit-btn" id="reset-submit-btn" onclick="submitResetPassword()">Nustatyti naują slaptažodį →</button>
       </div>
 
       <!-- SUCCESS -->
@@ -672,6 +705,73 @@ async function withBusyButton(btn, busyLabel, fn){
   btn.disabled = true; btn.textContent = busyLabel;
   try { await fn(); }
   finally { btn.disabled = false; btn.textContent = orig; }
+}
+
+// PAMIRŠAU SLAPTAŽODĮ
+let forgotRole = null;
+function openForgotPassword(role){
+  clearError();
+  forgotRole = role;
+  document.getElementById('panel-picker').classList.remove('show');
+  document.getElementById('panel-service').classList.remove('show');
+  document.getElementById('panel-client').classList.remove('show');
+  document.getElementById('forgot-email').value = '';
+  document.getElementById('forgot-form').style.display = '';
+  document.getElementById('forgot-sent').style.display = 'none';
+  document.getElementById('panel-forgot').classList.add('show');
+}
+function closeForgotPassword(){
+  document.getElementById('panel-forgot').classList.remove('show');
+  document.getElementById(forgotRole === 'service' ? 'panel-service' : 'panel-client').classList.add('show');
+}
+async function submitForgotPassword(){
+  clearError();
+  const email = document.getElementById('forgot-email').value.trim();
+  if(!email){ showError('Įveskite el. paštą'); return; }
+
+  await withBusyButton(document.getElementById('forgot-submit-btn'), 'Siunčiama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/forgot-password`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ role: forgotRole, email })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko išsiųsti');
+      document.getElementById('forgot-form').style.display = 'none';
+      document.getElementById('forgot-sent').style.display = 'block';
+    } catch(err){ showError(err.message); }
+  });
+}
+
+// NAUJO SLAPTAŽODŽIO NUSTATYMAS (iš el. laiško nuorodos ?resetToken=...&role=...)
+let resetTokenValue = null;
+async function submitResetPassword(){
+  clearError();
+  const p1 = document.getElementById('reset-pass1').value;
+  const p2 = document.getElementById('reset-pass2').value;
+  if(!p1 || p1.length < 8){ showError('Slaptažodis turi būti bent 8 simbolių'); return; }
+  if(p1 !== p2){ showError('Slaptažodžiai nesutampa'); return; }
+
+  await withBusyButton(document.getElementById('reset-submit-btn'), 'Keičiama...', async () => {
+    try{
+      const res = await fetch(`${API_BASE}/auth/reset-password`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ token: resetTokenValue, newPassword: p1 })
+      });
+      const data = await res.json();
+      if(!res.ok) throw new Error(data.error || 'Nepavyko pakeisti slaptažodžio');
+
+      document.getElementById('panel-reset').classList.remove('show');
+      document.getElementById('s-icon').textContent = '✅';
+      document.getElementById('s-title').textContent = 'Slaptažodis pakeistas!';
+      document.getElementById('s-text').textContent = 'Dabar gali prisijungti su nauju slaptažodžiu.';
+      document.getElementById('s-detail').innerHTML = '';
+      const actionBtn = document.getElementById('s-action-btn');
+      actionBtn.textContent = 'Prisijungti →';
+      actionBtn.onclick = () => location.href = 'automeistrai-login.html?action=login';
+      document.getElementById('panel-success').classList.add('show');
+    } catch(err){ showError(err.message); }
+  });
 }
 
 async function serviceLogin(){
@@ -879,6 +979,14 @@ function initFromQuery(){
   const type = params.get('type');
   const action = params.get('action');
   const legacyTab = params.get('tab');
+  const resetToken = params.get('resetToken');
+
+  if(resetToken){
+    resetTokenValue = resetToken;
+    document.getElementById('panel-picker').classList.remove('show');
+    document.getElementById('panel-reset').classList.add('show');
+    return;
+  }
 
   if(action === 'login' || action === 'register'){
     pendingAction = action;

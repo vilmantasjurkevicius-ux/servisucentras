@@ -624,6 +624,23 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
               <button class="btn" onclick="playNewOrderSound()" style="border:1px solid var(--line2);background:var(--bg2);color:var(--text);">🔊 Bandyti garsą</button>
               <span style="font-size:11.5px;color:var(--muted);">Paspauskite, kad išgirstumėte, kaip skamba pranešimas.</span>
             </div>
+            <div style="padding-top:20px;margin-top:20px;border-top:1px solid var(--line);">
+              <label class="pf-label" style="display:block;margin-bottom:12px;">Keisti slaptažodį</label>
+              <div class="pf-group">
+                <label class="pf-label">Dabartinis slaptažodis</label>
+                <input class="pf-input" type="password" id="pw-current" placeholder="••••••••">
+              </div>
+              <div class="pf-group">
+                <label class="pf-label">Naujas slaptažodis</label>
+                <input class="pf-input" type="password" id="pw-new1" placeholder="min. 8 simboliai">
+              </div>
+              <div class="pf-group">
+                <label class="pf-label">Pakartok naują slaptažodį</label>
+                <input class="pf-input" type="password" id="pw-new2" placeholder="min. 8 simboliai">
+              </div>
+              <div id="pw-msg" style="display:none;font-size:12.5px;margin-bottom:12px;"></div>
+              <button class="btn btn-primary" id="pw-submit-btn" onclick="changeServicePassword()">Keisti slaptažodį</button>
+            </div>
           </div>
         </div>
       </div>
@@ -1314,6 +1331,28 @@ function showFormMsg(elId, text, ok){
   el.style.color = ok ? '#6fa382' : '#c97a72';
   el.style.display = 'block';
   if(ok) setTimeout(()=>{ el.style.display='none'; }, 2500);
+}
+
+async function changeServicePassword(){
+  const currentPassword = document.getElementById('pw-current').value;
+  const newPassword = document.getElementById('pw-new1').value;
+  const newPassword2 = document.getElementById('pw-new2').value;
+  if(!newPassword || newPassword.length < 8){ showFormMsg('pw-msg', 'Naujas slaptažodis turi būti bent 8 simbolių', false); return; }
+  if(newPassword !== newPassword2){ showFormMsg('pw-msg', 'Slaptažodžiai nesutampa', false); return; }
+
+  const btn = document.getElementById('pw-submit-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Keičiama...';
+  try{
+    await apiPatch('/services/me/password', { currentPassword, newPassword });
+    document.getElementById('pw-current').value = '';
+    document.getElementById('pw-new1').value = '';
+    document.getElementById('pw-new2').value = '';
+    showFormMsg('pw-msg', '✓ Slaptažodis pakeistas', true);
+  } catch(err){
+    showFormMsg('pw-msg', err.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
 }
 
 async function saveProfile(){

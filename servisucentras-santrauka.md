@@ -1183,6 +1183,34 @@ Vartotojas paklausė, kodėl reikia patiems ieškoti ir įrašyti serviso el. pa
 
 ---
 
+## Slaptažodžio atstatymas ir keitimas (2026-08-14)
+
+Vartotojas pastebėjo, kad servisai/klientai/adminas neturi būdo atsistatyti pamiršto slaptažodžio (el. paštu) nei pakeisti žinomo slaptažodžio būdami prisijungę — abu srautai anksčiau buvo neįgyvendinti (`automeistrai-login.html` "Atstatyti" nuorodos buvo mirusios placeholder'ės be `onclick`).
+
+**DB**: nauja lentelė `password_reset_tokens` (`role`, `account_id`, `token_hash` — SHA-256 žaliavinio tokeno, NE pats tokenas, `expires_at`, `used_at`) + `admin_settings.admin_email` stulpelis (reikalingas, kad admin galėtų gauti reset laišką — anksčiau admin neturėjo jokio el. pašto lauko).
+
+**`backend/src/utils/passwordReset.js`** (naujas): `generateResetToken()` (32 baitai atsitiktinių, hex), `hashToken()` (SHA-256), `RESET_TOKEN_TTL_MINUTES=60`.
+
+**`backend/src/routes/auth.routes.js`**: `POST /forgot-password` (`role`, `email`) — VISADA grąžina tą pačią bendrą žinutę, nepriklausomai ar paskyra rasta (apsauga nuo el. pašto enumeration), sukuria tokeną TIK jei rasta; `POST /reset-password` (`token`, `newPassword`) — tikrina `used_at IS NULL AND expires_at > now()`, atnaujina teisingą lentelę pagal `role`, pažymi tokeną panaudotu. Abu už `authLimiter`.
+
+**Keisti slaptažodį (prisijungus)**: `PATCH /clients/me/password` ir `PATCH /services/me/password` (naujos), abu reikalauja `currentPassword` + `newPassword` (min. 8 simboliai), tikrina esamą hash prieš leisdami keisti. Admin analogas (`PATCH /admin/settings {adminPassword}`) JAU EGZISTAVO iš anksčiau — tik pridėtas `adminEmail` laukas tam pačiam endpoint'ui.
+
+**`backend/src/email.js`**: nauja `sendPasswordResetEmail({to, resetLink})`.
+
+**Frontend**:
+- `automeistrai-login.html` — dvi naujos panelės: `panel-forgot` (el. pašto įvedimas, `openForgotPassword('service'|'client')` iš anksčiau mirusių "Atstatyti" nuorodų) ir `panel-reset` (naujo slaptažodžio + pakartojimo laukai, atsidaro automatiškai per `initFromQuery()`, kai URL turi `?resetToken=...&role=...` — tokia nuoroda ateina laiške, bendra visoms 3 rolėms).
+- `servisucentras-admin.html` — prisijungimo lange naujas "Pamiršai slaptažodį?" mini-srautas (`admin-forgot-box`, atskirtas nuo `admin-login-fields`); Nustatymai puslapyje naujas "Admin el. paštas" laukas (`loadSettings()`/`saveSettings()` papildyti).
+- `mano-paskyra.html` — Profilis puslapis (anksčiau buvo tuščias "🚧 bus pridėta netrukus" placeholder) pakeistas realia "Keisti slaptažodį" forma.
+- `automeistrai-dashboard.html` — Nustatymai puslapyje nauja "Keisti slaptažodį" sekcija (po garso pranešimo nustatymu).
+
+**Testai**: naujas `backend/test/password-reset.test.js` (14 testų) — token generavimas/maiša, forgot-password (nežinomas/žinomas el. paštas, anti-enumeration), reset-password (galiojantis/pasibaigęs/panaudotas/neegzistuojantis tokenas, per trumpas slaptažodis), change-password klientui ir servisui (teisingas/neteisingas dabartinis slaptažodis, be tokeno). Iš viso backend testų: **25/25**.
+
+**Pastaba dėl testų infrastruktūros**: naujas testų failas iš karto viršijo `authLimiter` (10 kvietimų/15 min) vienam IP per vieną paleidimą — `authLimiter` `max` reikšmė padaryta konfigūruojama per `AUTH_RATE_LIMIT_MAX` env kintamąjį (production numatytoji reikšmė nepakito), `test/helpers.js` testams nustato jį į 1000.
+
+**Patikrinta gyvai** (JWT/token injection į `localStorage`, be slaptažodžių rodymo): pilnas forgot→reset srautas servisui (tikras token'as sugeneruotas ir įrašytas DB, panaudotas per `panel-reset`, senas slaptažodis atmestas, naujas priimtas), admin "Pamiršai slaptažodį?" mini-srautas prisijungimo lange, kliento "Keisti slaptažodį" `mano-paskyra.html` (senas atmestas/naujas priimtas), serviso "Keisti slaptažodį" `automeistrai-dashboard.html` (sėkmės pranešimas + `PATCH .../me/password → 200` tinklo užklausoje). Visi testiniai `zz-test-*` įrašai išvalyti iš dev DB po patikrinimo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

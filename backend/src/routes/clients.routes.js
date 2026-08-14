@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 
@@ -33,6 +34,19 @@ router.patch('/me', authRequired, requireRole('client'), (req, res) => {
   }
   const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.user.id);
   res.json(publicClient(client));
+});
+
+router.patch('/me/password', authRequired, requireRole('client'), (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!newPassword || newPassword.length < 8) {
+    return res.status(400).json({ error: 'Naujas slaptažodis per trumpas (min. 8 simboliai)' });
+  }
+  const client = db.prepare('SELECT * FROM clients WHERE id = ?').get(req.user.id);
+  if (!client.password_hash || !bcrypt.compareSync(currentPassword || '', client.password_hash)) {
+    return res.status(401).json({ error: 'Neteisingas dabartinis slaptažodis' });
+  }
+  db.prepare('UPDATE clients SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), req.user.id);
+  res.json({ message: 'Slaptažodis pakeistas' });
 });
 
 // Užsakymų istorija (Serviso knyga, Žingsnis 3/7) — jei servisas atsisakė šios užklausos
