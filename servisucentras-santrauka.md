@@ -1231,6 +1231,20 @@ Po slaptažodžio atstatymo funkcijos vartotojas pastebėjo, kad realiu adresu l
 
 ---
 
+## Bug: reset-password/registracijos nuorodos rodė į Railway subdomeną, ne servisucentras.lt (2026-08-14)
+
+Po Resend rakto pataisymo laiškas pagaliau atėjo, bet vartotojas paspaudęs "Nustatytyti naują slaptažodį" gavo klaidą **"CORS: šis domenas neleidžiamas"**. Ekrano nuotraukoje matėsi URL: `servisucentras-production.up.railway.app/automeistrai-login.html?resetToken=...` — t.y. pati nuoroda laiške vedė į ŽALIĄ Railway subdomeną, o ne į tikrą `servisucentras.lt`.
+
+**Priežastis**: `RESET_URL_BASE` (`backend/src/routes/auth.routes.js`) ir `REGISTER_URL` (`backend/src/utils/invitations.js`, naudojamas "Pakvietimai" laiškuose) buvo hardcodinti kaip `https://servisucentras-production.up.railway.app/...` — dar iš laikų, kai `servisucentras.lt` domenas nebuvo sutvarkytas. Railway `ALLOWED_ORIGINS` env kintamasis (CORS whitelist) leidžia tik `https://servisucentras.lt`, tad puslapis, atidarytas per Railway subdomeną, VISADA gaus CORS klaidą bandydamas kviesti `/api/...` (net jei tai TAS PATS serveris — `cors` paketas tikrina `Origin` antraštę pagal tikslų sąrašą, ne pagal tai, ar tai "tas pats backend").
+
+**Sprendimas**: abu konstantos pakeistos į `https://servisucentras.lt/...`.
+
+**Svarbu**: vartotojo turėtas reset-token'as NEBUVO panaudotas (CORS klaida sustabdė užklausą PRIEŠ pasiekiant serverio logiką) — jei jis vis dar galioja (1 val. nuo sukūrimo), po šio deploy'aus TA PATI nuoroda iš laiško turėtų suveikti be papildomo prašymo.
+
+**Testai**: 25/25 (nepakitę — tai grynai URL string pakeitimas, be logikos).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

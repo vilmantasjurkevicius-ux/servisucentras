@@ -2,7 +2,7 @@
 // mieste (per Google Places API — pavadinimas/adresas/telefonas/svetainė) ir
 // paruošia standartinį pakvietimo laišką prisijungti prie platformos.
 
-const REGISTER_URL = 'https://servisucentras-production.up.railway.app/automeistrai-login.html?type=service&action=register';
+const REGISTER_URL = 'https://servisucentras.lt/automeistrai-login.html?type=service&action=register';
 
 function buildInvitationLetter(serviceName) {
   return {

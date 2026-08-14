@@ -7,7 +7,7 @@ const { disableOverlappingBots } = require('../utils/bots');
 const { sendServiceRegistrationEmail, sendPasswordResetEmail } = require('../email');
 const { generateResetToken, hashToken, RESET_TOKEN_TTL_MINUTES } = require('../utils/passwordReset');
 
-const RESET_URL_BASE = 'https://servisucentras-production.up.railway.app/automeistrai-login.html';
+const RESET_URL_BASE = 'https://servisucentras.lt/automeistrai-login.html';
 
 const router = express.Router();
 
