@@ -1245,6 +1245,23 @@ Po Resend rakto pataisymo laiškas pagaliau atėjo, bet vartotojas paspaudęs "N
 
 ---
 
+## Bug #2: bazinis servisucentras.lt (be www) neturi JOKIO DNS įrašo (2026-08-14)
+
+Iškart po praeito pataisymo (Railway subdomenas → `servisucentras.lt`) vartotojas gavo `DNS_PROBE_FINISHED_NXDOMAIN` paspaudęs nuorodą. Patikrinta NEPRIKLAUSOMAI per Cloudflare DoH resolverį (`cloudflare-dns.com/dns-query`), ne tik pasitikėta naršykle:
+
+- `servisucentras.lt` (be www): NS įrašai TAIP (`ns1-4.serveriai.lt` — domenas registruotas, delegacija veikia), bet **A/AAAA/CNAME įrašų NĖRA APSKRITAI** (`ENODATA`/tuščias `Answer`). Bazinis domenas niekada nebuvo pasiekiamas per HTTP — tai nesusiję su šia sesija, tiesiog domeno DNS zonoje trūksta apex įrašo (dažna problema — CNAME negali koegzistuoti apex lygyje su MX/TXT, kurie čia jau yra, tad reikėtų A/ALIAS/ANAME įrašo, jei serveriai.lt tai palaiko).
+- `www.servisucentras.lt`: CNAME → `5hf2tiyk.up.railway.app` → veikiantis A įrašas. **Tai vienintelis realiai pasiekiamas variantas.**
+
+CORS PATIKRINTA ir NEBUVO problema antru kartu — `OPTIONS` užklausa su abiem `Origin` variantais (`https://servisucentras.lt` IR `https://www.servisucentras.lt`) grąžino `204` su teisingu `access-control-allow-origin` — Railway `ALLOWED_ORIGINS` leidžia abu. Problema buvo GRYNAI DNS, ne CORS.
+
+**Sprendimas**: `RESET_URL_BASE` ir `REGISTER_URL` pakeisti iš `https://servisucentras.lt/...` į `https://www.servisucentras.lt/...`. Patikrinta `curl -I https://www.servisucentras.lt/automeistrai-login.html` → `200`.
+
+**Pastaba ateičiai**: jei vartotojas kada nors norės, kad bazinis `servisucentras.lt` (be www) irgi veiktų (pvz. kažkas įves adresą be www), reikės arba pridėti A/ALIAS įrašą domeno DNS zonoje (serveriai.lt valdymo skydelyje), arba susikonfigūruoti domain forwarding/redirect registratoriaus pusėje — tai NĖRA kažkas, ką galima ištaisyti kodo pusėje.
+
+**Testai**: 25/25 (nepakitę).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
