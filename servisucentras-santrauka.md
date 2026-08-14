@@ -1262,6 +1262,20 @@ CORS PATIKRINTA ir NEBUVO problema antru kartu — `OPTIONS` užklausa su abiem 
 
 ---
 
+## Bug #3: "Keisti slaptažodį" (prisijungus) tyliai atjungdavo vartotoją (2026-08-14)
+
+Vartotojas pastebėjo: bandant pakeisti slaptažodį savo paskyroje (jau prisijungus), niekas neišsisaugo — senas slaptažodis lieka veikiantis. Jokios klaidos ekrane nesimatė.
+
+**Priežastis**: `PATCH /clients/me/password` ir `PATCH /services/me/password` grąžindavo `401`, kai `currentPassword` neteisingas. Bet frontend'o bendras `apiRequest()` apvalkalas (naudojamas VISUR — `mano-paskyra.html`, `automeistrai-dashboard.html`, sukurtas GEROKAI anksčiau šioje sesijoje) bet kokį `401` atsakymą interpretuoja kaip "sesija baigėsi" ir IŠKART tyliai atjungia vartotoją (`localStorage.removeItem(...)` + `location.href = 'automeistrai-login.html'`) — PRIEŠ callerio kodui suspėjant pamatyti klaidos žinutę. Vartotojas niekada nematydavo "Neteisingas dabartinis slaptažodis" — tiesiog netikėtai atsidurdavo prisijungimo lange, ir grįžęs prisijungdavo su SENU slaptažodžiu (nes jis niekada nepasikeitė), kas sustiprindavo įspūdį "niekas neįvyko".
+
+**Sprendimas**: abu endpoint'ai dabar grąžina `400` (ne `401`) klaidingam `currentPassword` — atitinka jau anksčiau šioje funkcijoje nusistovėjusią konvenciją (`reset-password` endpoint'as savo validacijos klaidoms irgi naudoja `400`, ne `401`; `401` visame projekte REZERVUOTAS TIK pačiam autentifikacijos tokenui).
+
+**Testai**: pataisytas esamas testas (`401`→`400`) + pridėtas analogiškas servisui trūkstamas testas. Iš viso **26/26**.
+
+**Patikrinta gyvai**: neteisingas dabartinis slaptažodis → vartotojas LIEKA puslapyje, mato aiškų "Neteisingas dabartinis slaptažodis" pranešimą, `localStorage` tokenas NEIŠTRINAMAS; teisingas dabartinis slaptažodis → sėkmės pranešimas, `PATCH → 200`, senas slaptažodis atmetamas prisijungiant, naujas priimamas.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

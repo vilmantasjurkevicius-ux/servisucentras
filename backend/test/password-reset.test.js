@@ -122,14 +122,29 @@ test('reset-password: per trumpas naujas slaptažodis atmetamas', async () => {
   assert.equal(status, 400);
 });
 
-test('change-password (client): neteisingas dabartinis slaptažodis atmetamas', async () => {
+test('change-password (client): neteisingas dabartinis slaptažodis atmetamas su 400, ne 401', async () => {
+  // 401 čia BŪTŲ KLAIDA — frontend'o bendras apiRequest() bet kokį 401 supranta kaip
+  // "sesija baigėsi" ir IŠKART atjungia vartotoją (žr. mano-paskyra.html/automeistrai-
+  // dashboard.html redirectToLogin()), taigi vartotojas niekada nepamatytų šios klaidos
+  // žinutės — tik būtų tyliai išmestas atgal į prisijungimo langą. Realus bug'as,
+  // rastas vartotojo gyvai: "keičiu slaptažodį, jis neišsaugo, lieka senas".
   const email = `chpw-client-${Date.now()}@example.com`;
   const reg = await api('POST', '/api/auth/client/register', { body: { email, password: 'pirmasSlaptas1' } });
   const { status } = await api('PATCH', '/api/clients/me/password', {
     token: reg.data.token,
     body: { currentPassword: 'neteisingas', newPassword: 'naujasSlaptas2' },
   });
-  assert.equal(status, 401);
+  assert.equal(status, 400);
+});
+
+test('change-password (service): neteisingas dabartinis slaptažodis atmetamas su 400, ne 401', async () => {
+  const email = `chpw-service-wrong-${Date.now()}@example.com`;
+  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Wrong PW Servisas', email, password: 'pirmasSlaptas1', city: 'Šiauliai' } });
+  const { status } = await api('PATCH', '/api/services/me/password', {
+    token: reg.data.token,
+    body: { currentPassword: 'neteisingas', newPassword: 'naujasSlaptas2' },
+  });
+  assert.equal(status, 400);
 });
 
 test('change-password (client): teisingas srautas pakeičia slaptažodį', async () => {

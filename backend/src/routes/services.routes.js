@@ -86,7 +86,7 @@ router.patch('/me/password', authRequired, requireRole('service'), (req, res) =>
   }
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
   if (!service.password_hash || !bcrypt.compareSync(currentPassword || '', service.password_hash)) {
-    return res.status(401).json({ error: 'Neteisingas dabartinis slaptažodis' });
+    return res.status(400).json({ error: 'Neteisingas dabartinis slaptažodis' });
   }
   db.prepare('UPDATE services SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), req.user.id);
   res.json({ message: 'Slaptažodis pakeistas' });
