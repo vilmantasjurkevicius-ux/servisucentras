@@ -1211,6 +1211,26 @@ Vartotojas pastebėjo, kad servisai/klientai/adminas neturi būdo atsistatyti pa
 
 ---
 
+## Resend domeno patvirtinimas — FROM adresas grąžintas į info@servisucentras.lt (2026-08-14)
+
+Po slaptažodžio atstatymo funkcijos vartotojas pastebėjo, kad realiu adresu laiškas neateina. Diagnozė: `FROM` buvo `onboarding@resend.dev` (Resend numatytasis testinis adresas), kuris sandbox režime siunčia TIK į paskyros savo el. paštą (`servisucentras.lt@gmail.com`) — bet koks kitas gavėjas tyliai atmetamas (`sendEmail()` niekada nemeta klaidos, tad vartotojas nematydavo jokios klaidos, tik bendrą "sėkmės" pranešimą).
+
+**Dvi klaidingos "domenas patvirtintas" pretenzijos prieš realų sprendimą** — abu kartus PATIKRINTA REALIU siuntimu prieš darant kodo pakeitimą (ne pasitikėta žodžiu):
+1. Vartotojas pirmą kartą pasakė "domenas jau patvirtintas" — realus siuntimo bandymas su `info@servisucentras.lt` grąžino `403 domain is not verified`.
+2. Vartotojas atsiuntė ekrano nuotrauką su žaliais DKIM/SPF įrašais Resend dashboard'e — bandymas VĖL grąžino tą pačią `403` klaidą su TUO PAČIU `.env` esančiu `RESEND_API_KEY`.
+
+**Tikroji priežastis**: `backend/.env` esantis `RESEND_API_KEY` buvo susietas su KITA Resend komanda/projektu nei ta, kurioje domenas realiai patvirtintas (Resend palaiko kelias komandas po vienu account'u — API raktas priklauso konkrečiai komandai, ne visai paskyrai). Patikrinta per `GET https://api.resend.com/domains` su senuoju raktu → `401 restricted_api_key` (jis buvo "send-only", negalėjo nė peržiūrėti domenų sąrašo). Vartotojas atsiuntė NAUJĄ API raktą iš teisingos komandos → `GET /domains` su juo parodė `"status":"verified"` → realus testinis laiškas sėkmingai pasiekė asmeninę pašto dėžutę.
+
+**Pakeitimai**:
+- `backend/.env`: `RESEND_API_KEY` pakeistas nauju raktu (gitignored, niekada nepateko į git).
+- `backend/src/email.js`: `FROM` grąžintas į `'ServisuCentras <info@servisucentras.lt>'` (pašalintas paaiškinamasis komentaras apie neveikiantį domeną).
+
+**⚠️ SVARBU sekančiam pokalbiui**: Railway aplinkoje `RESEND_API_KEY` env kintamasis TURI BŪTI RANKINIU BŪDU atnaujintas tuo pačiu naujuoju raktu Railway dashboard'e — lokalaus `.env` pakeitimas produkcijos NEPALIEČIA. Jei po šio commit'o Railway'aus el. laiškai vis dar neišeina realiems adresams (tik `servisucentras.lt@gmail.com`), tikėtina priežastis — Railway env kintamasis dar turi SENĄ raktą.
+
+**Testai**: 25/25 (nepakitę — šis pakeitimas nesusijęs su logika, tik konfigūracija).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

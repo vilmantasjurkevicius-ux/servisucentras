@@ -1,10 +1,6 @@
 const { Resend } = require('resend');
 
-// Kol nėra patvirtinto domeno (žr. santrauka.md), siunčiama iš Resend numatytojo
-// testinio adreso — jis veikia be jokio papildomo nustatymo, bet gavėjas matys
-// "onboarding@resend.dev" kaip siuntėją. Patvirtinus savo domeną Resend'e, pakeisti
-// FROM į pvz. "ServisuCentras <pranesimai@servisucentras.lt>".
-const FROM = 'ServisuCentras <onboarding@resend.dev>';
+const FROM = 'ServisuCentras <info@servisucentras.lt>';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
