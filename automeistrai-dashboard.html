@@ -1177,9 +1177,10 @@ function renderConversationList(){
 function cpThreadHeaderHtml(o){
   const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
   const guestBadge = o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
-  // Ta pati sąlyga kaip backend GET /orders (orders.routes.js) — telefonas atsiskleidžia
-  // tik TAM servisui, kuriam priskirta, ir tik priėmus klientą (client_accepted_at).
-  const phoneRevealed = o.service_id === serviceProfile.id && !!o.client_accepted_at;
+  // Pasitikime backend'o sprendimu (GET /orders jau redaguoja o.phone į null, kai neleista —
+  // žr. orders.routes.js: priėmus klientą ARBA kai mokesčio surinkimas globaliai išjungtas),
+  // ne perkuriame tą pačią sąlygą čia iš naujo — taip išvengiama dviejų vietų išsiderinimo.
+  const phoneRevealed = !!o.phone;
   const desc = [o.car_info, o.description].filter(Boolean).join(' — ');
   return `
     <div class="cp-thread-name">${escapeHtml(clientName)} ${guestBadge}</div>

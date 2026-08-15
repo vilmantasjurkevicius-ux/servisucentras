@@ -126,10 +126,14 @@ router.get('/', authRequired, requireRole('service'), (req, res) => {
     ORDER BY o.created_at DESC
   `).all(req.user.id, req.user.id, service.city);
 
-  // Telefonas/el.paštas — KONTAKTAI, atskleidžiami tik priėmus klientą (client_accepted_at,
-  // žr. POST /:id/accept-client). Vardas kontaktu nelaikomas — lieka matomas visada, visiems.
+  // Telefonas/el.paštas — KONTAKTAI, atskleidžiami priėmus klientą (client_accepted_at,
+  // žr. POST /:id/accept-client) — ARBA IŠKART, jei komisinio/kontaktų mokesčio surinkimas
+  // globaliai išjungtas (commission_master_enabled=0). Kol mokestis neįjungtas, nėra už ką
+  // "mokėti" priimant klientą, tad dirbtinis papildomas žingsnis prieš kontaktą tik trukdo.
+  // Vardas kontaktu nelaikomas — lieka matomas visada, visiems.
+  const settings = db.prepare('SELECT commission_master_enabled FROM admin_settings WHERE id = 1').get();
   const withHiddenContacts = orders.map((o) => {
-    if (o.service_id === req.user.id && o.client_accepted_at) return o;
+    if (o.service_id === req.user.id && (o.client_accepted_at || !settings.commission_master_enabled)) return o;
     return { ...o, phone: null, email: null };
   });
   res.json(withHiddenContacts);
@@ -298,8 +302,12 @@ router.get('/:id/messages', authRequired, (req, res) => {
   if (req.user.role === 'service') {
     // Kontaktų (telefono/el.pašto) filtras LAISVAME kliento žinutės tekste — apsauga nuo
     // platformos apėjimo (žr. Žingsnis 4/6 santrauka.md). Taikoma tik servisui, kuris DAR
-    // NEPRIĖMĖ šio kliento; priėmus (client_accepted_at) tekstas rodomas pilnas, nefiltruotas.
-    const hasAcceptedClient = order.service_id === req.user.id && !!order.client_accepted_at;
+    // NEPRIĖMĖ šio kliento IR kol mokesčio surinkimas įjungtas; priėmus (client_accepted_at)
+    // ARBA mokesčiui globaliai išjungtam (žr. GET / aukščiau — ta pati taisyklė) tekstas
+    // rodomas pilnas, nefiltruotas.
+    const settings = db.prepare('SELECT commission_master_enabled FROM admin_settings WHERE id = 1').get();
+    const hasAcceptedClient = order.service_id === req.user.id
+      && (!!order.client_accepted_at || !settings.commission_master_enabled);
     messages = messages.map((m) => {
       let result = m;
       if (m.sender_type === 'service' && m.sender_id !== req.user.id) {

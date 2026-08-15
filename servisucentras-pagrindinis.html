@@ -1114,6 +1114,7 @@ function chatSubHtml(name){
 }
 
 function openChat(){
+  unlockClientAudio(); // tikras click — atrakina garsą ANKSTI, žr. komentarą prie funkcijos
   // Grįžtama į broadcast chromą — jei prieš tai buvo atidarytas tiesioginės rezervacijos
   // pokalbis (žr. submitBooking()), jo pakeitimai (paslėptas chat-online, kita antraštė) čia atstatomi.
   chatMode = 'broadcast';
@@ -1305,6 +1306,7 @@ function autoH(el){ el.style.height='auto'; el.style.height=Math.min(el.scrollHe
 function chatKey(e){ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendMsg();} }
 
 async function sendMsg(){
+  unlockClientAudio(); // tikras click — antra "saugos tinklo" vieta, jei openChat() buvo praleistas
   const inp=document.getElementById('chat-input');
   const txt=inp.value.trim();
   if(!txt) return;
@@ -1409,10 +1411,21 @@ function startOrderPolling(){
 // eilėje esančias užklausas. Veikia net kai chat-panel uždarytas — pollOrderMessages()
 // tęsiasi fone kol currentOrderId egzistuoja.
 let clientAudioCtx = null;
-function playClientMsgSound(){
+// Naršyklės autoplay politika leidžia sukurti/atrakinti AudioContext TIK per tikrą
+// vartotojo paspaudimą (click) — jei jis pirmą kartą sukuriamas iš setInterval/fetch
+// grandinės (kaip būtų, jei laukdavom iki playClientMsgSound() pačiam pirmam serviso
+// atsakymui), naršyklė garsą TYLIAI (be klaidos) blokuoja. Todėl atrakinam ANKSTI —
+// paspaudus chat ikoną (openChat()) IR dar kartą paspaudus "Siųsti" (sendMsg()), abu
+// tikri click įvykiai, vykstantys GEROKAI PRIEŠ bet kokį galimą serviso atsakymą.
+function unlockClientAudio(){
   try{
     if(!clientAudioCtx) clientAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if(clientAudioCtx.state === 'suspended') clientAudioCtx.resume();
+  } catch(e){}
+}
+function playClientMsgSound(){
+  try{
+    unlockClientAudio();
     const osc = clientAudioCtx.createOscillator();
     const gain = clientAudioCtx.createGain();
     osc.type = 'sine';
@@ -1717,6 +1730,7 @@ function closeBooking(){
 }
 
 async function submitBooking(){
+  unlockClientAudio(); // tikras click — žr. komentarą prie unlockClientAudio()
   if(!bookingSelectedTime) return;
   const comment = document.getElementById('booking-comment').value.trim();
   const btn = document.getElementById('booking-submit-btn');

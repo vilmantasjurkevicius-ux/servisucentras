@@ -1434,6 +1434,34 @@ Vartotojas pastebėjo: žiūrint Kalendorių (ar bet kurį kitą ne-Užklausų p
 
 ---
 
+## Kliento garsas tylėdavo — naršyklės autoplay politika (2026-08-15)
+
+Vartotojas pranešė: klientas, kai servisas parašo chat'e, nesupypsi, net kai garsas įjungtas. Ankstesnis testas (praėjusiame žingsnyje) TIK patikrino, kad `playClientMsgSound()` iškviečiamas teisingu momentu (spy'inant funkciją) — bet NIEKADA nepatikrino, ar `AudioContext` REALIAI grojo garsą, tad ši klaida liko nepastebėta.
+
+**Šaknies priežastis**: naršyklės autoplay politika leidžia sukurti/atrakinti (`resume()`) `AudioContext` TIK per tikrą vartotojo paspaudimą (click/keydown). `playClientMsgSound()` pirmą kartą sukurdavo `clientAudioCtx` VIDUJE savęs, kviečiamas iš `pollOrderMessages()` — o tai `setInterval`/`fetch` grandinė, NE paspaudimas. Naršyklė TYLIAI (be jokios klaidos konsolėje) blokuoja tokį pirmąjį atrakinimą — funkcija veikė be klaidų, bet garso REALIAI negrodavo.
+
+**Fix**: nauja `unlockClientAudio()` (sukuria/atrakina `clientAudioCtx`, idempotentiška) kviečiama iš TRIJŲ tikrų click handler'ių — `openChat()` (💬 chat burbulo paspaudimas — pati ankstyviausia galima vieta), `sendMsg()` ("Siųsti" mygtukas), `submitBooking()` (tiesioginės rezervacijos patvirtinimas) — visi trys VISADA įvyksta GEROKAI PRIEŠ bet kokį galimą serviso atsakymą, tad iki `playClientMsgSound()` iškvietimo `AudioContext` jau būna atrakintas.
+
+**Patikrinimo apribojimas (skaidrumui)**: šios sandbox aplinkos naršyklės pavyzdys NEĮGYVENDINO griežtos autoplay politikos (net programinis, ne-click iškvietimas grąžino `state:"running"`), tad TIKSLAUS bug'o/fix'o skirtumo automatizuotai atkurti nepavyko — negalėjau realiai išgirsti garso patvirtinimui. Fix'as pagrįstas standartiniu, gerai dokumentuotu Chrome elgesiu (autoplay policy), o ne spėjimu — bet REKOMENDUOJAMA vartotojui patikrinti savo REALIOJE naršyklėje po deploy'inimo.
+
+---
+
+## Telefonas atsiskleidžia iškart, kol mokesčio surinkimas išjungtas (2026-08-15)
+
+Vartotojas paklausė, kada telefono numeris turi atsirasti chat'e. Priminiau: esama taisyklė (nekeičiama savaime) — numeris atsiskleidžia tik servisui PRIĖMUS klientą (`POST /:id/accept-client`), nes TĄ PAT AKIMIRKĄ nuskaitomas kontaktų mokestis (`calculateContactFee`) — tai pagrindinis pajamų mechanizmas, ne vien UX žingsnis. Vartotojas patikslino: kol jis NEĮJUNGĖ mokesčio surinkimo (`commission_master_enabled=0`, God Mode master jungiklis Admin panelėje), servisai turėtų gauti numerį IŠKART, vos klientui pasirinkus servisą (`POST /:id/accept`) — be papildomo, dabar nereikalingo "Priimti klientą" žingsnio.
+
+**Fix — TIK sąlyga, ne darbo eiga**: `client_accepted_at`/`accept-client` veiksmas PALIKTAS visiškai nepaliestas (servisas vis dar gali jį spausti, statusas/mokestis skaičiuojasi kaip anksčiau, kai mokestis įjungtas). Pakeista TIK matomumo sąlyga DVIEJOSE backend vietose (`orders.routes.js`):
+- `GET /orders` (struktūrinis `phone`/`email` redagavimas): `service_id===req.user.id && (client_accepted_at ARBA !commission_master_enabled)`.
+- `GET /:id/messages` (laisvo teksto kontaktų filtras `redactContacts()`): ta pati papildyta sąlyga.
+
+`automeistrai-dashboard.html` chat skydelio `cpThreadHeaderHtml()` supaprastintas — vietoj savo kopijos tos pačios sąlygos dabar tiesiog pasitiki `!!o.phone` (backend jau atlieka sprendimą), kad dvi vietos neišsiderintų ateityje.
+
+**Numatytoji reikšmė NEPAKITO** (`commission_master_enabled=1` iš `db.js` seed'o) — esamas elgesys (du žingsniai, mokestis) lieka toks pat visiems, kol administratorius sąmoningai neišjungia mokesčio surinkimo.
+
+**Patikrinta gyvai**: laikinai išjungus `commission_master_enabled` (po testo GRĄŽINTA atgal į `1`), klientas priėmė servisą (`POST /:id/accept`), servisas NIEKADA nespaudė "Priimti klientą" (`client_accepted_at` liko `null`) — `GET /orders` VIS TIEK grąžino tikrą telefoną, chat teksto kontaktai neredaguoti, o dashboard'o chat skydelis rodė "📞 +37069999901" iškart. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
