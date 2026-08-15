@@ -382,6 +382,63 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   100%{background:transparent;color:var(--yellow);}
 }
 .ptab.tab-flash{animation:tabFlash 2.6s ease-out;}
+
+/* CHAT IKONA (topbar) — nauja žymė šalia 🔔, blyksi kai ateina nauja žinutė/užklausa */
+@keyframes chatIconFlash{
+  0%,100%{color:var(--muted);}
+  15%,45%{color:var(--yellow);transform:scale(1.15);}
+  30%{color:var(--muted);transform:scale(1);}
+}
+.nav-icon-btn.chat-flash{animation:chatIconFlash 1.4s ease-in-out 2;}
+
+/* CHAT SKYDELIS — visų pokalbių sąrašas + pasirinkto pokalbio gija */
+.cp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:850;opacity:0;pointer-events:none;transition:opacity .2s;}
+.cp-overlay.show{opacity:1;pointer-events:auto;}
+.cp-modal{
+  position:fixed;top:50%;left:50%;width:min(980px,94vw);height:min(680px,88vh);
+  transform:translate(-50%,-50%) scale(0.97);background:var(--bg2);border:1px solid var(--line2);
+  border-radius:8px;z-index:860;display:flex;flex-direction:column;overflow:hidden;
+  opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;box-shadow:0 20px 60px rgba(0,0,0,0.5);
+}
+.cp-modal.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.cp-head{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.cp-head-title{font-family:'Oswald';font-size:16px;font-weight:600;}
+.cp-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;}
+.cp-close:hover{color:var(--text);}
+.cp-body{flex:1;display:flex;overflow:hidden;}
+
+.cp-list{width:300px;flex-shrink:0;border-right:1px solid var(--line);overflow-y:auto;}
+.cp-row{padding:12px 16px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;}
+.cp-row:hover{background:rgba(255,255,255,0.03);}
+.cp-row.active{background:var(--yellow-dim);border-left:2px solid var(--yellow);}
+.cp-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:3px;}
+.cp-row-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cp-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--yellow);flex-shrink:0;}
+.cp-row-meta{display:flex;align-items:center;gap:6px;margin-bottom:4px;flex-wrap:wrap;}
+.cp-guest-badge,.cp-reg-badge{font-family:'IBM Plex Mono';font-size:9px;padding:1px 6px;border-radius:8px;}
+.cp-guest-badge{background:var(--red-dim);color:#c97a72;}
+.cp-reg-badge{background:var(--green-dim);color:#6fa382;}
+.cp-row-status{font-family:'IBM Plex Mono';font-size:9px;padding:1px 6px;border-radius:8px;}
+.cp-row-desc{font-size:11.5px;color:var(--muted);line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.cp-row-time{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--dim);margin-top:3px;}
+.cp-empty{padding:32px 16px;color:var(--muted);font-size:12.5px;text-align:center;}
+
+.cp-thread{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+.cp-thread-head{padding:14px 18px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.cp-thread-name{font-size:14.5px;font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.cp-thread-sub{font-size:11.5px;color:var(--muted);margin-top:3px;}
+.cp-thread-phone{color:#6fa382;font-family:'IBM Plex Mono';}
+.cp-thread-msgs{flex:1;overflow-y:auto;padding:16px 18px;display:flex;flex-direction:column;gap:10px;}
+.cp-thread-input{padding:12px 18px;border-top:1px solid var(--line);flex-shrink:0;display:flex;flex-direction:column;gap:8px;}
+.cp-placeholder{flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:13px;}
+
+@media(max-width:700px){
+  .cp-modal{width:100vw;height:100vh;max-width:100vw;max-height:100vh;border-radius:0;top:0;left:0;transform:none;}
+  .cp-modal.show{transform:none;}
+  .cp-body{flex-direction:column;}
+  .cp-list{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:40vh;}
+  .cp-list.cp-hide-mobile,.cp-thread.cp-hide-mobile{display:none;}
+}
 </style>
 </head>
 <body>
@@ -402,6 +459,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <button class="status-pill open" id="status-toggle" onclick="toggleStatus()">● DIRBA</button>
   </div>
   <div class="nav-right">
+    <button class="nav-icon-btn" id="chat-nav-btn" title="Pokalbiai" onclick="openChatPanel()">
+      💬
+      <div class="notif-badge" id="chat-badge" style="display:none;">0</div>
+    </button>
     <button class="nav-icon-btn" title="Pranešimai" onclick="showNotifications()">
       🔔
       <div class="notif-badge">3</div>
@@ -649,6 +710,21 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   </div>
 </div>
 
+<!-- CHAT SKYDELIS — visų pokalbių sąrašas + gija (atskira nuo Užklausos kortelių) -->
+<div class="cp-overlay" id="cp-overlay" onclick="closeChatPanel()"></div>
+<div class="cp-modal" id="cp-modal">
+  <div class="cp-head">
+    <div class="cp-head-title">💬 Pokalbiai</div>
+    <button class="cp-close" onclick="closeChatPanel()">✕</button>
+  </div>
+  <div class="cp-body">
+    <div class="cp-list" id="cp-list"></div>
+    <div class="cp-thread" id="cp-thread">
+      <div class="cp-placeholder">Pasirinkite pokalbį kairėje</div>
+    </div>
+  </div>
+</div>
+
 <script>
 // Date
 const now = new Date();
@@ -667,6 +743,9 @@ let activeTab = 'new';
 let quotingOrderId = null;
 let quotingMode = null;
 let expandedOrderId = null;
+let chatUnreadOrderIds = new Set();  // užklausų id, kuriose paskutinę žinutę rašė klientas ir servisas jos dar nematė
+let cpActiveOrderId = null;          // kuris pokalbis pasirinktas chat skydelyje
+let cpOpen = false;
 
 if(!serviceToken){
   window.location.href = 'automeistrai-login.html?type=service&action=login';
@@ -904,6 +983,29 @@ function chatInputBarHtml(id){
     </div>`;
 }
 
+// Vieno pokalbio žinučių burbulų HTML — naudoja IR embed'intas pokalbis Užklausos
+// kortelėje (loadChatThread), IR naujas chat skydelis (loadConversationThread), kad
+// ta pati (netrivialaus) žinučių atvaizdavimo logika nebūtų dubliuota dviejose vietose.
+function buildBubblesHtml(messages, emptyClass){
+  if(messages.length === 0) return `<div class="${emptyClass}">Pokalbio dar nėra.</div>`;
+  return messages.map(m => {
+    const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
+    const other = m.sender_type === 'service' && !mine;
+    const who = m.sender_type === 'client' ? (m.sender_name || 'Klientas') : (mine ? 'Jūs' : (m.sender_name || 'Kitas servisas'));
+    let offerHtml = '';
+    if(mine && m.price_quote != null){
+      const timeLabel = m.available_time ? formatSchedule(m.available_time) : '';
+      offerHtml = `<span class="offer-line">💰 Jūsų pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel ? ' · Laikas: '+timeLabel : ''}</span>`;
+    }
+    const privateNote = other ? `<div class="price-hidden">🔒 Kaina/laikas privatu (matys tik klientas)</div>` : '';
+    return `
+      <div class="ochat-msg ${mine?'mine':(other?'other':'')}">
+        <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgo(m.created_at)})</div>
+        ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
+      </div>`;
+  }).join('');
+}
+
 async function loadChatThread(id, force){
   const container = document.getElementById(`ochat-${id}`);
   if(!container) return;
@@ -914,25 +1016,7 @@ async function loadChatThread(id, force){
   try{
     const messages = await apiGet(`/orders/${id}/messages`);
     if(expandedOrderId !== id) return;
-    const bubbles = messages.length === 0
-      ? `<div class="ochat-empty">Pokalbio dar nėra.</div>`
-      : messages.map(m => {
-          const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
-          const other = m.sender_type === 'service' && !mine;
-          const who = m.sender_type === 'client' ? (m.sender_name || 'Klientas') : (mine ? 'Jūs' : (m.sender_name || 'Kitas servisas'));
-          let offerHtml = '';
-          if(mine && m.price_quote != null){
-            const timeLabel = m.available_time ? formatSchedule(m.available_time) : '';
-            offerHtml = `<span class="offer-line">💰 Jūsų pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel ? ' · Laikas: '+timeLabel : ''}</span>`;
-          }
-          const privateNote = other ? `<div class="price-hidden">🔒 Kaina/laikas privatu (matys tik klientas)</div>` : '';
-          return `
-            <div class="ochat-msg ${mine?'mine':(other?'other':'')}">
-              <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgo(m.created_at)})</div>
-              ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
-            </div>`;
-        }).join('');
-    container.innerHTML = bubbles + chatInputBarHtml(id);
+    container.innerHTML = buildBubblesHtml(messages, 'ochat-empty') + chatInputBarHtml(id);
   } catch(err){
     container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>` + chatInputBarHtml(id);
   }
@@ -969,6 +1053,196 @@ async function sendChatText(id){
   } catch(err){
     alert(err.message);
   }
+}
+
+// ═══ CHAT SKYDELIS — visų pokalbių sąrašas + gija (atskira nuo Užklausos kortelių,
+// pasiekiama visada per topbar ikoną, ne tik "Užklausos" puslapyje) ═══
+
+// Neskaitytos žinutės — GRYNAI kliento pusėje (localStorage 'sc_chat_seen_<id>' =
+// paskutinės matytos žinutės serverio laiko žyma). Nėra DB stulpelio "skaityta" —
+// tai tyčia (žr. santrauka.md): keli servisai gali matyti tą pačią broadcast
+// užklausos gija PRIEŠ vienam ją priimant, tad bendras "read_at" būtų neteisingas
+// keliems servisams vienu metu. Kiekvienas serviso naršyklė seka savo skaitymą.
+function computeUnreadOrders(){
+  const unread = new Set();
+  ordersCache.forEach(o => {
+    if(o.last_message_sender !== 'client' || !o.last_message_at) return;
+    const lastSeen = localStorage.getItem('sc_chat_seen_'+o.id) || '';
+    if(o.last_message_at > lastSeen) unread.add(o.id);
+  });
+  return unread;
+}
+function updateChatBadge(){
+  const badge = document.getElementById('chat-badge');
+  const n = chatUnreadOrderIds.size;
+  badge.textContent = n > 9 ? '9+' : String(n);
+  badge.style.display = n > 0 ? 'flex' : 'none';
+}
+function flashChatIcon(){
+  const btn = document.getElementById('chat-nav-btn');
+  btn.classList.remove('chat-flash');
+  void btn.offsetWidth; // priverstinis reflow, kad animacija paleistų iš naujo, jei jau vyko
+  btn.classList.add('chat-flash');
+  setTimeout(()=>btn.classList.remove('chat-flash'), 2800);
+}
+function markConversationSeen(orderId){
+  const o = ordersCache.find(x=>x.id===orderId);
+  // Žymime paskutinės ŽINOMOS žinutės laiku (serverio, ne kliento laikrodžio) —
+  // taip išvengiama laikrodžių nesutapimo tarp naršyklės ir serverio.
+  if(o && o.last_message_at) localStorage.setItem('sc_chat_seen_'+orderId, o.last_message_at);
+  if(chatUnreadOrderIds.delete(orderId)) updateChatBadge();
+}
+
+function cpStatusInfo(o){
+  if(o.service_id === null) return {label:'Nauja', cls:'sb-new'};
+  if(o.status === 'done') return {label:'Atlikta', cls:'sb-done'};
+  if(o.status === 'declined') return {label:'Atsisakyta', cls:'sb-declined'};
+  if(o.client_accepted_at) return {label:'Priimta', cls:'sb-confirmed'};
+  return {label:'Laukia', cls:'sb-new'};
+}
+function cpSortedOrders(){
+  return [...ordersCache].sort((a,b) => (b.last_message_at||b.created_at).localeCompare(a.last_message_at||a.created_at));
+}
+function cpRowHtml(o){
+  const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
+  const guestBadge = o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
+  const status = cpStatusInfo(o);
+  const desc = [o.car_info, o.description].filter(Boolean).join(' — ');
+  return `
+    <div class="cp-row ${cpActiveOrderId===o.id?'active':''}" onclick="selectConversation(${o.id})">
+      <div class="cp-row-top">
+        <span class="cp-row-name">${escapeHtml(clientName)}</span>
+        ${chatUnreadOrderIds.has(o.id) ? '<span class="cp-unread-dot"></span>' : ''}
+      </div>
+      <div class="cp-row-meta">${guestBadge}<span class="cp-row-status ${status.cls}">${status.label}</span></div>
+      <div class="cp-row-desc">${escapeHtml(desc || 'Be aprašymo')}</div>
+      <div class="cp-row-time">${timeAgo(o.last_message_at || o.created_at)}</div>
+    </div>`;
+}
+function renderConversationList(){
+  const list = document.getElementById('cp-list');
+  const sorted = cpSortedOrders();
+  list.innerHTML = sorted.length === 0
+    ? '<div class="cp-empty">Užklausų dar nėra.</div>'
+    : sorted.map(cpRowHtml).join('');
+}
+
+function cpThreadHeaderHtml(o){
+  const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
+  const guestBadge = o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
+  // Ta pati sąlyga kaip backend GET /orders (orders.routes.js) — telefonas atsiskleidžia
+  // tik TAM servisui, kuriam priskirta, ir tik priėmus klientą (client_accepted_at).
+  const phoneRevealed = o.service_id === serviceProfile.id && !!o.client_accepted_at;
+  const desc = [o.car_info, o.description].filter(Boolean).join(' — ');
+  return `
+    <div class="cp-thread-name">${escapeHtml(clientName)} ${guestBadge}</div>
+    ${desc ? `<div class="cp-thread-sub">${escapeHtml(desc)}</div>` : ''}
+    <div class="cp-thread-sub">${phoneRevealed ? `<span class="cp-thread-phone">📞 ${escapeHtml(o.phone||'—')}</span>` : '🔒 Telefonas atsiskleis priėmus klientą (žr. Užklausos)'}</div>`;
+}
+function cpInputBarHtml(id){
+  const o = ordersCache.find(x=>x.id===id);
+  const canQuote = o && (o.status === 'new' || o.status === 'pending');
+  return `
+    ${canQuote ? `
+    <div class="ochat-price-box">
+      <label>Jūsų kaina/laikas šiai užklausai:</label>
+      <input type="number" id="cp-price-${id}" placeholder="Kaina €">
+      <input type="datetime-local" id="cp-time-${id}">
+      <button onclick="cpSubmitQuote(${id})">Atnaujinti pasiūlymą</button>
+    </div>
+    <div id="cp-price-error-${id}" class="ochat-price-error" style="display:none;"></div>` : ''}
+    <div class="ochat-text-row">
+      <input type="text" id="cp-text-${id}" placeholder="Rašykite žinutę klientui..." onkeydown="if(event.key==='Enter') cpSendMessage(${id})">
+      <button onclick="cpSendMessage(${id})">Siųsti →</button>
+    </div>`;
+}
+async function loadConversationThread(orderId, force){
+  const threadEl = document.getElementById('cp-thread');
+  const o = ordersCache.find(x=>x.id===orderId);
+  if(!o){ threadEl.innerHTML = '<div class="cp-placeholder">Pokalbis nerastas</div>'; return; }
+  if(!force){
+    const typing = document.activeElement && threadEl.contains(document.activeElement);
+    if(typing) return; // nepertraukiam, kol servisas rašo
+  }
+  threadEl.innerHTML = `
+    <div class="cp-thread-head">${cpThreadHeaderHtml(o)}</div>
+    <div class="cp-thread-msgs" id="cp-thread-msgs">Kraunama...</div>
+    <div class="cp-thread-input" id="cp-thread-input">${cpInputBarHtml(orderId)}</div>`;
+  try{
+    const messages = await apiGet(`/orders/${orderId}/messages`);
+    if(cpActiveOrderId !== orderId) return;
+    const msgsEl = document.getElementById('cp-thread-msgs');
+    if(!msgsEl) return;
+    msgsEl.innerHTML = buildBubblesHtml(messages, 'cp-empty');
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+  } catch(err){
+    const msgsEl = document.getElementById('cp-thread-msgs');
+    if(msgsEl) msgsEl.innerHTML = '<div class="cp-empty">Nepavyko įkelti pokalbio.</div>';
+  }
+}
+async function refreshAfterChatAction(id){
+  await loadOrders();
+  chatUnreadOrderIds = computeUnreadOrders();
+  updateChatBadge();
+  if(cpOpen){
+    renderConversationList();
+    if(cpActiveOrderId === id) loadConversationThread(id, true);
+  }
+}
+async function cpSendMessage(id){
+  const input = document.getElementById(`cp-text-${id}`);
+  const txt = input.value.trim();
+  if(!txt) return;
+  try{
+    await apiPost(`/orders/${id}/messages`, { message: txt });
+    await refreshAfterChatAction(id);
+  } catch(err){ alert(err.message); }
+}
+async function cpSubmitQuote(id){
+  const priceInput = document.getElementById(`cp-price-${id}`);
+  const timeInput = document.getElementById(`cp-time-${id}`);
+  const errEl = document.getElementById(`cp-price-error-${id}`);
+  const price = parseFloat(priceInput.value);
+  if(!price || price <= 0){
+    priceInput.style.borderColor = 'rgba(192,57,43,0.6)';
+    if(errEl){ errEl.textContent = 'Įveskite kainą (didesnę už 0)'; errEl.style.display = 'block'; }
+    priceInput.focus();
+    return;
+  }
+  priceInput.style.borderColor = '';
+  if(errEl) errEl.style.display = 'none';
+  try{
+    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput.value || null });
+    await refreshAfterChatAction(id);
+  } catch(err){
+    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
+  }
+}
+function selectConversation(orderId){
+  cpActiveOrderId = orderId;
+  markConversationSeen(orderId);
+  renderConversationList();
+  loadConversationThread(orderId, true);
+}
+function openChatPanel(){
+  cpOpen = true;
+  document.getElementById('cp-overlay').classList.add('show');
+  document.getElementById('cp-modal').classList.add('show');
+  document.getElementById('chat-nav-btn').classList.remove('chat-flash');
+  renderConversationList();
+  if(cpActiveOrderId === null){
+    const sorted = cpSortedOrders();
+    if(sorted.length) selectConversation(sorted[0].id);
+  } else {
+    markConversationSeen(cpActiveOrderId);
+    renderConversationList();
+    loadConversationThread(cpActiveOrderId, true);
+  }
+}
+function closeChatPanel(){
+  cpOpen = false;
+  document.getElementById('cp-overlay').classList.remove('show');
+  document.getElementById('cp-modal').classList.remove('show');
 }
 
 function startQuoting(id, mode){
@@ -1206,6 +1480,7 @@ async function pollOrders(){
     const fresh = await apiGet('/orders');
     const oldIds = new Set(ordersCache.map(o=>o.id));
     const newlyArrived = fresh.filter(o => o.status === 'new' && !oldIds.has(o.id));
+    const newlyArrivedIds = new Set(newlyArrived.map(o=>o.id));
 
     ordersCache = fresh;
     renderStats();
@@ -1221,12 +1496,34 @@ async function pollOrders(){
       renderOrders();
     }
 
-    if(newlyArrived.length){
+    // Neskaitytos žinutės — perskaičiuojam po kiekvieno poll'o (žr. computeUnreadOrders()).
+    // Naujai atsiradusias (kurių dar nebuvo prieš šį ciklą) atskiriam nuo jau buvusių, kad
+    // NAUJOS UŽKLAUSOS pirmoji žinutė nesukeltų DVIGUBO garso/blyksnio kartu su newlyArrived.
+    let freshUnread = computeUnreadOrders();
+    // Jei skydelis atidarytas IR servisas šiuo metu žiūri būtent į TĄ pokalbį — nauja jo
+    // žinutė nelaikoma "neskaityta" (servisas ją mato gyvai gijoje tą pačią sekundę), tad
+    // ženkliukas neturi mirksėti/pyptelėti dėl pokalbio, kurį jis jau ir taip stebi.
+    if(cpOpen && cpActiveOrderId !== null && freshUnread.has(cpActiveOrderId)){
+      markConversationSeen(cpActiveOrderId);
+      freshUnread = computeUnreadOrders();
+    }
+    const newlyUnread = [...freshUnread].filter(id => !chatUnreadOrderIds.has(id));
+    chatUnreadOrderIds = freshUnread;
+    updateChatBadge();
+    if(cpOpen){
+      renderConversationList();
+      const typingInPanel = document.activeElement && document.activeElement.closest('#cp-thread');
+      if(cpActiveOrderId !== null && !typingInPanel) loadConversationThread(cpActiveOrderId);
+    }
+
+    const newlyUnreadExcludingNewOrders = newlyUnread.filter(id => !newlyArrivedIds.has(id));
+    if(newlyArrived.length || newlyUnreadExcludingNewOrders.length){
       playNewOrderSound();
-      flashNewTab();
-      if(quotingOrderId === null && activeTab === 'new'){
+      if(newlyArrived.length) flashNewTab();
+      if(newlyArrived.length && quotingOrderId === null && activeTab === 'new'){
         highlightNewCards(newlyArrived.map(o=>o.id));
       }
+      if(newlyUnreadExcludingNewOrders.length) flashChatIcon();
     }
   } catch(err){
     // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
@@ -1662,6 +1959,10 @@ async function init(){
 
   categoriesCache = await apiGet('/categories');
   await loadOrders();
+  // Tyliai pažymime esamą neskaitytų pokalbių būseną (be garso/blyksnio) — kad iškart
+  // po prisijungimo jau senos neatsakytos žinutės rodytų badge, bet nesukeltų "naujos" reakcijos.
+  chatUnreadOrderIds = computeUnreadOrders();
+  updateChatBadge();
 
   if(!document.hidden) startPolling();
 }

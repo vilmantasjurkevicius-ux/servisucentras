@@ -1314,6 +1314,30 @@ Kiekvienas laukas apsuptas `.field-wrap` (position:relative), šalia pridėtas `
 
 ---
 
+## Naujas atskiras Chat skydelis serviso dashboard'e — automeistrai-dashboard.html (2026-08-15)
+
+Vartotojas paprašė (su ekrano nuotrauka) perkelti pokalbius/žinutes IŠ kiekvienos užklausos kortelės atskiro accordion'o į NAUJĄ, ATSKIRĄ vietą — WhatsApp stiliaus pokalbių sąrašas (kairėje) + gijos vaizdas (dešinėje), pasiekiamą per naują 💬 ikoną viršutinėje juostoje, visada matomą, nepriklausomai nuo to, kuriame dashboard'o puslapyje servisas yra.
+
+**Kas NEPASIKEITĖ**: senas embedded pokalbis kiekvienos užklausos kortelėje ("Užklausos" puslapyje) liko — chat skydelis yra PAPILDOMA, ne pakeičianti vieta. Abu naudoja tą pačią `buildBubblesHtml()` funkciją burbulų atvaizdavimui (žr. toliau), kad žinučių rodymo logika nebūtų dubliuota.
+
+**Backend** (`orders.routes.js`, `GET /orders`): SELECT papildytas `c.is_guest` bei dviem koreliuotais subquery'ais — `last_message_at`/`last_message_sender` (paskutinės žinutės laikas ir kas ją parašė, `client` ar `service`). Naudojama tik skaitymui, jokio naujo endpoint'o. 26/26 testų lieka galioti (patikrinta prieš ir po).
+
+**Neskaitytų žinučių sekimas — GRYNAI kliento pusėje**: DB neturi `read_at`/`is_read` stulpelio (tyčia — kelių servisų broadcast užklausos gija matoma keliems servisams vienu metu PRIEŠ vienam ją priimant, tad bendras "skaityta" stulpelis būtų neteisingas). Kiekviena naršyklė seka pati: `localStorage['sc_chat_seen_'+orderId]` = serverio (ne kliento laikrodžio) `last_message_at` reikšmė paskutinį kartą, kai servisas matė tą pokalbį. `computeUnreadOrders()` lygina šią reikšmę su dabartiniu `last_message_at` KIEKVIENAM order'iui, kur `last_message_sender==='client'`.
+
+**Pranešimas apie naują žinutę** — pakartotinai panaudotas jau esantis polling'as (`pollOrders()`, kas 12s) ir jau esantis 880Hz Web Audio garso signalas (`playNewOrderSound()`, tas pats "naujos užklausos" pyptelėjimas, valdomas to paties Nustatymai puslapio garso perjungiklio). Nauja `flashChatIcon()` prideda `.chat-flash` CSS animaciją 💬 ikonai. Kad NAUJOS UŽKLAUSOS pirmoji žinutė nesukeltų dvigubo garso/blyksnio kartu su esamu "nauja užklausa" signalu, `pollOrders()` atskiria `newlyUnreadExcludingNewOrders` (neskaitytos MINUS ką tik atėjusios naujos) — garsas paleidžiamas TIK vieną kartą, net jei abi sąlygos įvykdytos tuo pačiu metu.
+
+**Gyvai testuojant rastas ir ištaisytas UX trūkumas**: jei skydelis atidarytas IR servisas šiuo metu žiūri BŪTENT į tą pokalbį, nauja žinutė vis tiek pažymėdavo jį "neskaitytu" ir mirksėdavo ikona — nors servisas žinutę matė gyvai gijoje tą pačią sekundę. Ištaisyta: `pollOrders()` dabar iškart kviečia `markConversationSeen()` aktyviam pokalbiui prieš skaičiuojant `newlyUnread`, jei skydelis atidarytas ir rodo būtent tą pokalbį.
+
+**Svečio/registruoto kliento ženkliukas**: pokalbių sąraše ir gijos antraštėje rodoma "Svečias" arba "✓ Registruotas" pagal `order.is_guest` (naujas laukas, žr. aukščiau) — anksčiau servisams šis atributas apskritai nebuvo rodomas.
+
+**Telefono atskleidimo taisyklė NEPAKITO** (tyčia paveldėta, ne perrašyta iš naujo): `order.service_id === serviceProfile.id && !!order.client_accepted_at` — lygiai ta pati sąlyga, kaip senoje kortelėje ir backend `GET /orders`/`GET /:id/messages`. Kol klientas nepriimtas (`POST /:id/accept-client`), gijos antraštėje rodoma "🔒 Telefonas atsiskleis priėmus klientą".
+
+**Kainos/laiko pasiūlymas per skydelį**: naudoja TĄ PATĮ `POST /orders/:id/quote` endpoint'ą kaip senoji kortelė — jokios naujos backend logikos, tik atskiras `cpSubmitQuote()`/`cpInputBarHtml()` UI, veidrodinis senajam `submitChatQuote()`/`chatInputBarHtml()`.
+
+**Patikrinta gyvai** (per tiesioginius API kvietimus + JS injekciją naršyklėje, imituojant du atskirus naudotojus — testinis servisas + svečio klientas + registruotas klientas, po testo išvalyta iš DB): naujas svečio pokalbis atsiranda sąraše su "Svečias" ženkliuku ir "🔒" telefonu; kainos+laiko pasiūlymas per skydelį nusiunčiamas ir matomas gijoje; po `POST /:id/accept-client` telefono numeris atsiskleidžia GIJOS ANTRAŠTĖJE be puslapio perkrovimo; registruoto kliento pokalbis rodo "✓ Registruotas"; sąrašas rikiuojasi pagal paskutinės žinutės laiką (naujausias viršuje); ženkliukas ir 💬 blyksnis suveikia, kai skydelis uždarytas arba rodo kitą pokalbį; NESUVEIKIA (teisingai), kai servisas jau žiūri BŪTENT į tą patį pokalbį. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
