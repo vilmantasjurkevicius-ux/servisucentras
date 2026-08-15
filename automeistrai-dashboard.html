@@ -395,6 +395,16 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 /* Nebe vienkartinė — mirksi NUOLAT, kol chatUnreadOrderIds netuščias (žr. pollOrders()). */
 .nav-icon-btn.chat-flash{animation:chatIconFlash 1.4s ease-in-out infinite;}
 
+/* Pats raudonas skaičiaus ženkliukas TAIP PAT mirksi (pulsuoja) — emoji spalvotas glifas
+   nepaklūsta CSS `color`, tad vien chatIconFlash animacija ant mygtuko jam beveik nematoma;
+   ženkliuko fonas yra paprastas <div>, tad pulsavimas čia visada aiškiai matomas. Veikia
+   nepriklausomai nuo chat-flash — matomumą jau valdo #chat-badge display:none/flex. */
+@keyframes badgePulse{
+  0%,100%{transform:scale(1);opacity:1;}
+  50%{transform:scale(1.35);opacity:0.6;}
+}
+#chat-badge{animation:badgePulse 1s ease-in-out infinite;}
+
 /* CHAT SKYDELIS — visų pokalbių sąrašas + pasirinkto pokalbio gija */
 .cp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:850;opacity:0;pointer-events:none;transition:opacity .2s;}
 .cp-overlay.show{opacity:1;pointer-events:auto;}
@@ -1441,6 +1451,7 @@ async function loadOrders(){
 
 // ═══ AUTO-ATNAUJINIMAS (polling, be viso puslapio perkrovimo) ═══
 let pollTimer = null;
+let alarmTimer = null;
 let audioCtx = null;
 let soundNotifEnabled = localStorage.getItem('sc_sound_notif') !== 'off';
 
@@ -1550,31 +1561,40 @@ async function pollOrders(){
       if(cpActiveOrderId !== null && !typingInPanel) loadConversationThread(cpActiveOrderId);
     }
 
-    // Garsas KARTOJASI kas poll ciklą (~12s), kol lieka bent viena neperžiūrėta nauja
-    // užklausa ARBA neskaityta kliento žinutė — ne tik vieną kartą atėjimo akimirką.
-    // Vartotojo pageidavimas: pranešimas privalo veikti nuolat, nepriklausomai nuo to,
-    // kuriame dashboard'o puslapyje servisas šiuo metu yra, kol jis realiai peržiūri
-    // (atidaro "Naujos" skirtuką arba tą konkretų pokalbį). Garsą galima išjungti
-    // Nustatymai puslapyje (soundNotifEnabled) — playNewOrderSound() tai jau tikrina.
-    if(newOrderUnseenIds.size > 0 || chatUnreadOrderIds.size > 0){
-      playNewOrderSound();
-    }
   } catch(err){
     // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
   }
 }
 
+// Garsas KARTOJASI kas 3s, kol lieka bent viena neperžiūrėta nauja užklausa ARBA
+// neskaityta kliento žinutė — ATSKIRAS, greitesnis laikmatis nuo pollOrders() (12s),
+// kad garso kartojimosi dažnis nebūtų pririštas prie viso sąrašo perkrovimo dažnio
+// (priešingu atveju greitesnis "pastovus" pranešimas reikštų 4x dažnesnį API kvietimą
+// vien duomenims atnaujinti, kas nereikalinga vien tam, kad pypsėtų greičiau).
+// Vartotojo pageidavimas: pranešimas privalo veikti nuolat, nepriklausomai nuo to,
+// kuriame dashboard'o puslapyje servisas šiuo metu yra, kol jis realiai peržiūri
+// (atidaro "Naujos" skirtuką arba tą konkretų pokalbį). Garsą galima išjungti
+// Nustatymai puslapyje / topbar 🔊 mygtuku (soundNotifEnabled) — playNewOrderSound() tai jau tikrina.
+function checkAlarm(){
+  if(newOrderUnseenIds.size > 0 || chatUnreadOrderIds.size > 0){
+    playNewOrderSound();
+  }
+}
+
 function startPolling(){
-  if(pollTimer) return;
-  pollTimer = setInterval(pollOrders, 12000);
+  if(!pollTimer) pollTimer = setInterval(pollOrders, 12000);
+  if(!alarmTimer) alarmTimer = setInterval(checkAlarm, 3000);
 }
 function stopPolling(){
   if(pollTimer){ clearInterval(pollTimer); pollTimer = null; }
+  if(alarmTimer){ clearInterval(alarmTimer); alarmTimer = null; }
 }
-document.addEventListener('visibilitychange', () => {
-  if(document.hidden) stopPolling();
-  else startPolling();
-});
+// TYČIA NĖRA visibilitychange klausiklio, kuris stabdytų laikmačius fone — vartotojo
+// pageidavimu, garsinis pranešimas turi skambėti IR TADA, kai dashboard'o tab'as nėra
+// aktyvus (pvz. žiūrint YouTube kitame tab'e). Naršyklė (ypač Chrome po ~5 min fone)
+// gali PATI apriboti (throttle'inti) setInterval dažnį fono tab'uose taupydama CPU —
+// to iš JS pusės apeiti negalima, bet trumpesniems fono periodams (minutės, ne valandos)
+// tai neturėtų būti pastebima.
 
 // ═══ PUSLAPIŲ NAVIGACIJA (Užklausos / Profilis / Statistika / Paslaugos / Kalendorius) ═══
 const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai' };
@@ -1999,7 +2019,9 @@ async function init(){
   chatUnreadOrderIds = computeUnreadOrders();
   updateChatBadge();
 
-  if(!document.hidden) startPolling();
+  // Polling paleidžiamas VISADA (net jei tab'as iškart atidaromas fone) — žr. komentarą
+  // prie stopPolling() aukščiau, kodėl nebestabdoma pagal document.hidden.
+  startPolling();
 }
 init();
 

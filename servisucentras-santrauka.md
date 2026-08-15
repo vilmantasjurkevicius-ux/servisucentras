@@ -1364,6 +1364,40 @@ Naujas mygtukas `#sound-toggle-btn` (🔊/🔇) `automeistrai-dashboard.html` to
 
 ---
 
+## Pokalbių ženkliukas irgi mirksi (2026-08-15)
+
+Vartotojas pastebėjo, kad raudonas skaičiaus ženkliukas (`#chat-badge`) prie 💬 pats nemirksi — priežastis: `chatIconFlash` animacija keičia `color`, o spalvoti emoji glifai (kaip 💬) CSS `color` savybės nepaklūsta, tad ta animacijos dalis realiai buvo nematoma; matėsi tik silpnas `transform:scale(1.15)`.
+
+Pridėta atskira `badgePulse` animacija TIESIOGIAI ant `#chat-badge` (raudonas apskritimas su skaičiumi) — `scale(1→1.35→1)` + `opacity(1→0.6→1)`, `1s infinite`. Veikia nepriklausomai nuo `.chat-flash` (kurio nereikėjo keisti/šalinti — jis lieka mygtukui, badge'as tiesiog gavo savo, aiškiai matomą pulsavimą). Kadangi `#chat-badge` matomumą jau valdo `style.display:none/flex` (žr. [[chat_panel_topbar]]), papildomos JS logikos nereikėjo — animacija tiesiog "žaidžia" tik kai badge'as ir taip rodomas.
+
+**Patikrinta gyvai**: sukūrus svečio užklausą + žinutę, `getComputedStyle(#chat-badge)` patvirtino `animationName:"badgePulse"`, `iterationCount:"infinite"`; atidarius tą pokalbį — badge pasislepia (`display:none`), animacija nebeaktuali. `npm test` → 26/26.
+
+---
+
+## Garso intervalas 12s → 3s, ATSKIRAS nuo duomenų perkrovimo (2026-08-15)
+
+Vartotojas paklausė, kas kiek sekundžių kartojasi garsinis pranešimas (buvo 12s, nes iki šiol garsas buvo groojamas TIESIOG `pollOrders()` viduje), tada paprašė padaryti 3s.
+
+Vietoj to, kad tiesiog sutrumpintume `setInterval(pollOrders, 12000)` iki 3000 (kas priverstų VISĄ `/orders` sąrašą perkrauti 4x dažniau vien dėl garso — nereikalinga serverio apkrova), garso kartojimas IŠSKIRTAS į atskirą, greitesnį laikmatį: naujas `alarmTimer` = `setInterval(checkAlarm, 3000)`, kuris TIK tikrina `newOrderUnseenIds.size>0 || chatUnreadOrderIds.size>0` ir grojina garsą — jokio API kvietimo. `pollOrders()` (duomenų atnaujinimas, sąrašo/badge/tab-flash perpiešimas) liko kaip buvęs, kas 12s. Abu laikmačiai paleidžiami/stabdomi kartu per `startPolling()`/`stopPolling()` (taigi ir tas pats `visibilitychange` elgesys — sustoja, kai tab'as fone).
+
+**Patikrinta gyvai**: spy ant `playNewOrderSound`, imituota laukianti neperžiūrėta užklausa (`newOrderUnseenIds.add(...)`), paleista `startPolling()`, palaukta 8 realios sekundės — garsas suskambėjo 4 kartus, tarpai tarp jų ~3000ms (2987–3015ms, normali `setInterval` paklaida). `stopPolling()` išjungia abu laikmačius vienu metu. `npm test` → 26/26.
+
+---
+
+## Garsas veikia IR fono tab'e (2026-08-15)
+
+Vartotojas: nori girdėti pranešimą IR TADA, kai žiūri YouTube kitame naršyklės tab'e, o dashboard'as atidarytas fone (ne aktyvus tab'as).
+
+Rasta priežastis, kodėl taip neveikė: buvo `document.addEventListener('visibilitychange', ...)` klausiklis, kuris kviesdavo `stopPolling()` KIEKVIENĄ KARTĄ, kai `document.hidden===true` (t.y. iškart, kai tab'as tampa neaktyvus) — visiškai sustabdydavo IR `pollOrders()` (duomenų atnaujinimą), IR naująjį `alarmTimer` (garso kartojimą, žr. aukščiau). Tai reiškė: perjungus į kitą tab'ą, dashboard'as tiesiog užšaldavo — jokių naujų užklausų nebeaptikdavo, kol vartotojas negrįždavo į jį rankiniu būdu.
+
+**Fix**: `visibilitychange` klausiklis PAŠALINTAS visai — `startPolling()`/`stopPolling()` liko tik kaip funkcijos, kurias GALIMA kviesti (pvz. ateityje), bet niekas jų automatiškai nebekviečia dėl matomumo pasikeitimo. `init()` dabar visada kviečia `startPolling()` besąlygiškai (buvęs `if(!document.hidden) startPolling();` tapo tiesiog `startPolling();`).
+
+**Svarbi pastaba (užrašyta kode kaip komentaras)**: naršyklė (ypač Chrome, po ~5 min fone) GALI PATI apriboti (throttle) `setInterval` dažnį fono tab'uose CPU/baterijos taupymui — to apeiti iš JS pusės negalima. Trumpesniam fono periodui (kelios minutės, pvz. vieno vaizdo įrašo žiūrėjimas) tai neturėtų būti pastebima.
+
+**Patikrinta gyvai**: atidarytas antras tab'as (padarant dashboard'o tab'ą TIKRAI fone, `document.hidden===true` patvirtinta), sukurta nauja svečio užklausa per API, palaukta 16 realių sekundžių — dashboard'as (VEIKDAMAS FONE) pats ją aptiko (`ordersCache` atsinaujino, `newOrderUnseenIds` ją įtraukė), o garsas suskambėjo 8 kartus per tą langą (~3s intervalu), nors vartotojas "žiūrėjo" kitą tab'ą. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
