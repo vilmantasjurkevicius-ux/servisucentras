@@ -1410,6 +1410,18 @@ Vartotojas pranešė: (1) raudonas skaičiaus ženkliukas realiai nemirksi (per 
 
 ---
 
+## Kliento pusėje irgi trumpas garsinis signalas (2026-08-15)
+
+Iki šiol garso pranešimai buvo TIK serviso dashboard'e — vartotojas paprašė garso ir KLIENTUI, kai atsako servisas, bet SKIRTINGO POBŪDŽIO: trumpo, vienkartinio (užgęstančio per <1s), NE pastovaus/kartotinio kaip serviso pusėje (klientas paprastai laukia vieno konkretaus atsakymo, ne turi reaguoti į kaupiamą eilę).
+
+Pridėta `servisucentras-pagrindinis.html` (viešo puslapio chat widget'as, svečio IR registruoto kliento pokalbis su servisu — `pollOrderMessages()`, poll'inama kas 4s): nauja `playClientMsgSound()` — Web Audio sine tonas (660Hz, skirtingas nuo serviso 880Hz, kad garsai būtų atskiriami), `gain` eksponentiškai nyksta per 0.5s (užgęsta savaime, nereikia jokio `stop`/timeout valymo). Kviečiama VIENĄ KARTĄ po `pollOrderMessages()` ciklo, jei ciklo metu buvo pridėta bent viena NAUJA `sender_type==='service'` žinutė (naudojant jau esantį `renderedMessageIds` deduplikavimą, kad kiekviena žinutė "suskaičiuojama" tik kartą). Veikia net kai chat panelis uždarytas naršyklėje (`pollOrderMessages()` tęsiasi fone, kol `currentOrderId` egzistuoja).
+
+**Apimties sprendimas**: `mano-paskyra.html` (registruoto kliento sąskaitos puslapis) turi ATSKIRĄ, kitokį pokalbio mechanizmą (`pollOrderHistory()` — perkrauna VISĄ užsakymų sąrašą kas 12s, ne pavienes žinutes su deduplikavimu) — jam garsas NEPRIDĖTAS šioje užduotyje, nes reikalautų platesnio pertvarkymo (naujo unread-sekimo modelio). Jei prireiks — atskira užduotis.
+
+**Patikrinta gyvai**: injektuotas svečio kliento tokenas + `currentOrderId` tiesiai per JS (be pilno UI srauto), `pollOrderMessages()` be naujos žinutės → 0 garso kvietimų; servisas parašo atsakymą → kitas ciklas suskaičiuoja 1 garso kvietimą IR teisingai atvaizduoja žinutę gijoje; dar vienas ciklas be naujos žinutės → skaitiklis NEPAKITO (lieka 1, garsas nesikartoja). `npm test` → 26/26 (backend nepaliestas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

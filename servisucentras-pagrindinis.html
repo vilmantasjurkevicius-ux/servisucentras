@@ -1402,6 +1402,29 @@ function startOrderPolling(){
   chatPollTimer = setInterval(pollOrderMessages, 4000);
 }
 
+// Trumpas VIENKARTINIS pyptelėjimas klientui, kai atsako servisas — SKIRTINGAI nuo
+// serviso dashboard'o pastovaus/kartotinio pranešimo (žr. automeistrai-dashboard.html),
+// čia užtenka trumpo signalo (užgęsta savaime per <1s, nekartojamas), nes klientas
+// paprastai laukia VIENO konkretaus atsakymo, o ne turi reaguoti į nuolat kaupiamas
+// eilėje esančias užklausas. Veikia net kai chat-panel uždarytas — pollOrderMessages()
+// tęsiasi fone kol currentOrderId egzistuoja.
+let clientAudioCtx = null;
+function playClientMsgSound(){
+  try{
+    if(!clientAudioCtx) clientAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(clientAudioCtx.state === 'suspended') clientAudioCtx.resume();
+    const osc = clientAudioCtx.createOscillator();
+    const gain = clientAudioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 660;
+    gain.gain.setValueAtTime(0.15, clientAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, clientAudioCtx.currentTime + 0.5);
+    osc.connect(gain); gain.connect(clientAudioCtx.destination);
+    osc.start();
+    osc.stop(clientAudioCtx.currentTime + 0.5);
+  } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
+}
+
 async function pollOrderMessages(){
   if(!currentOrderId || !clientToken) return;
   try{
@@ -1411,10 +1434,12 @@ async function pollOrderMessages(){
     if(!res.ok) return;
     const messages = await res.json();
     const msgs = document.getElementById('chat-msgs');
+    let hasNewServiceMsg = false;
     messages.forEach(m => {
       if(renderedMessageIds.has(m.id)) return;
       renderedMessageIds.add(m.id);
       if(m.sender_type !== 'service') return; // savo žinutes klientas jau mato lokaliai, siunčiant
+      hasNewServiceMsg = true;
 
       const svc = cityServices.find(s=>s.id===m.sender_id);
       const svcName = svc ? svc.name : 'Servisas';
@@ -1433,6 +1458,7 @@ async function pollOrderMessages(){
       msgs.appendChild(rd);
       msgs.scrollTop = msgs.scrollHeight;
     });
+    if(hasNewServiceMsg) playClientMsgSound();
   } catch(err){ /* tylus fail — kitas ciklas po 4s pabandys vėl */ }
 }
 
