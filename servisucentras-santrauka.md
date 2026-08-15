@@ -1354,6 +1354,16 @@ Vartotojas pastebėjo: gavus naują užklausą ar kliento žinutę, garsas/mirks
 
 ---
 
+## Spartusis garso perjungimas topbar'e (2026-08-15)
+
+Vartotojas paprašė ženkliuko šalia 💬 chat ikonos, kurį paspaudus garsas išsijungtų — greitas būdas nutildyti pranešimus be ėjimo į Nustatymai puslapį.
+
+Naujas mygtukas `#sound-toggle-btn` (🔊/🔇) `automeistrai-dashboard.html` topbar'e, tarp 💬 ir 🔔 ikonų. `toggleSoundQuick()` perjungia `soundNotifEnabled`, įrašo į `localStorage['sc_sound_notif']`. Nauja `syncSoundToggleUI()` funkcija sinchronizuoja ABU valdiklius (šį mygtuką IR Nustatymai puslapio varnelę `sound-notif-toggle`) į tą pačią būseną — kad ir kuriuo keliu vartotojas išjungtų/įjungtų garsą, kitas rodo tą patį. Nutildytas mygtukas pritamsinamas (`.muted{opacity:0.45}`).
+
+**Patikrinta gyvai**: paspaudus mygtuką ikona pasikeičia 🔊→🔇, `localStorage` įrašomas `off`, Nustatymai varnelė automatiškai atsižymi; paspaudus dar kartą — abu grįžta į įjungtą būseną. `npm test` → 26/26 (grynai frontend pakeitimas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

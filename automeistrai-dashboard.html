@@ -75,6 +75,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   color:var(--muted);transition:color .15s;position:relative;
 }
 .nav-icon-btn:hover{color:var(--text);}
+.nav-icon-btn#sound-toggle-btn.muted{opacity:0.45;}
 .notif-badge{
   position:absolute;top:10px;right:10px;
   width:16px;height:16px;border-radius:50%;
@@ -466,6 +467,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
       💬
       <div class="notif-badge" id="chat-badge" style="display:none;">0</div>
     </button>
+    <button class="nav-icon-btn" id="sound-toggle-btn" title="Garso pranešimai" onclick="toggleSoundQuick()">🔊</button>
     <button class="nav-icon-btn" title="Pranešimai" onclick="showNotifications()">
       🔔
       <div class="notif-badge">3</div>
@@ -1446,9 +1448,31 @@ function loadSettingsPage(){
   document.getElementById('sound-notif-toggle').checked = soundNotifEnabled;
 }
 
+// Du valdikliai, viena būsena: Nustatymai puslapio varnelė IR sparčiojo topbar mygtuko
+// ikona visada rodo TĄ PATĮ soundNotifEnabled — abu keitimo keliai baigiasi čia.
+function syncSoundToggleUI(){
+  const btn = document.getElementById('sound-toggle-btn');
+  if(btn){
+    btn.textContent = soundNotifEnabled ? '🔊' : '🔇';
+    btn.title = soundNotifEnabled ? 'Garso pranešimai įjungti (spausti išjungti)' : 'Garso pranešimai išjungti (spausti įjungti)';
+    btn.classList.toggle('muted', !soundNotifEnabled);
+  }
+  const checkbox = document.getElementById('sound-notif-toggle');
+  if(checkbox) checkbox.checked = soundNotifEnabled;
+}
+
 function toggleSoundNotif(){
   soundNotifEnabled = document.getElementById('sound-notif-toggle').checked;
   localStorage.setItem('sc_sound_notif', soundNotifEnabled ? 'on' : 'off');
+  syncSoundToggleUI();
+}
+
+// Spartusis garso perjungimas tiesiai iš topbar (šalia 💬 ikonos) — nereikia eiti į
+// Nustatymai, kad greitai nutildytum pranešimus.
+function toggleSoundQuick(){
+  soundNotifEnabled = !soundNotifEnabled;
+  localStorage.setItem('sc_sound_notif', soundNotifEnabled ? 'on' : 'off');
+  syncSoundToggleUI();
 }
 
 function playNewOrderSound(){
@@ -1966,6 +1990,7 @@ async function init(){
   document.getElementById('nav-avatar').textContent = (serviceProfile.name || '?').charAt(0).toUpperCase();
   document.getElementById('stat-rating').textContent = serviceProfile.rating != null ? serviceProfile.rating.toFixed(1)+' ★' : '—';
   updateStatusDisplay();
+  syncSoundToggleUI();
 
   categoriesCache = await apiGet('/categories');
   await loadOrders();
