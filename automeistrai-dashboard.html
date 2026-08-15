@@ -395,15 +395,18 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 /* Nebe vienkartinė — mirksi NUOLAT, kol chatUnreadOrderIds netuščias (žr. pollOrders()). */
 .nav-icon-btn.chat-flash{animation:chatIconFlash 1.4s ease-in-out infinite;}
 
-/* Pats raudonas skaičiaus ženkliukas TAIP PAT mirksi (pulsuoja) — emoji spalvotas glifas
-   nepaklūsta CSS `color`, tad vien chatIconFlash animacija ant mygtuko jam beveik nematoma;
-   ženkliuko fonas yra paprastas <div>, tad pulsavimas čia visada aiškiai matomas. Veikia
+/* Pats raudonas skaičiaus ženkliukas TAIP PAT mirksi — emoji spalvotas glifas nepaklūsta
+   CSS `color`, tad vien chatIconFlash animacija ant mygtuko jam beveik nematoma; ženkliuko
+   fonas yra paprastas <div>, tad blyksėjimas čia visada aiškiai matomas. Tikras ON/OFF
+   mirksėjimas (ne švelnus pulsavimas) — 0%→49% pilnai matomas, staigus šuolis į beveik
+   nematomą 50%→99%, tada vėl atgal — ne plaukiojantis opacity gradientas. Veikia
    nepriklausomai nuo chat-flash — matomumą jau valdo #chat-badge display:none/flex. */
 @keyframes badgePulse{
-  0%,100%{transform:scale(1);opacity:1;}
-  50%{transform:scale(1.35);opacity:0.6;}
+  0%,49%{opacity:1;transform:scale(1);}
+  50%,99%{opacity:0.15;transform:scale(0.85);}
+  100%{opacity:1;transform:scale(1);}
 }
-#chat-badge{animation:badgePulse 1s ease-in-out infinite;}
+#chat-badge{animation:badgePulse 0.8s linear infinite;}
 
 /* CHAT SKYDELIS — visų pokalbių sąrašas + pasirinkto pokalbio gija */
 .cp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:850;opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -1114,6 +1117,14 @@ function markConversationSeen(orderId){
   if(chatUnreadOrderIds.delete(orderId)) updateChatBadge();
 }
 
+// Paspaudus 💬 ikoną — servisas TAI IR YRA peržiūrėjimo veiksmas, garsas/mirksėjimas
+// turi nutilti IŠKART, net jei servisas dar nespėjo atsidaryti KIEKVIENOS atskiros
+// pokalbio gijos. Vėliau atėjus NAUJAI kliento žinutei (bet kuriame pokalbyje), kitas
+// pollOrders() ciklas ją vėl pažymės neskaityta ir garsas/blyksėjimas atsinaujins.
+function markAllConversationsSeen(){
+  [...chatUnreadOrderIds].forEach(id => markConversationSeen(id));
+}
+
 function cpStatusInfo(o){
   if(o.service_id === null) return {label:'Nauja', cls:'sb-new'};
   if(o.status === 'done') return {label:'Atlikta', cls:'sb-done'};
@@ -1249,14 +1260,12 @@ function openChatPanel(){
   cpOpen = true;
   document.getElementById('cp-overlay').classList.add('show');
   document.getElementById('cp-modal').classList.add('show');
-  document.getElementById('chat-nav-btn').classList.remove('chat-flash');
+  markAllConversationsSeen();
   renderConversationList();
   if(cpActiveOrderId === null){
     const sorted = cpSortedOrders();
     if(sorted.length) selectConversation(sorted[0].id);
   } else {
-    markConversationSeen(cpActiveOrderId);
-    renderConversationList();
     loadConversationThread(cpActiveOrderId, true);
   }
 }

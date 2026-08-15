@@ -1398,6 +1398,18 @@ Rasta priežastis, kodėl taip neveikė: buvo `document.addEventListener('visibi
 
 ---
 
+## Ženkliuko mirksėjimo stiprinimas + paspaudimas nutildo garsą (2026-08-15)
+
+Vartotojas pranešė: (1) raudonas skaičiaus ženkliukas realiai nemirksi (per silpnas efektas), (2) paspaudus 💬 ikoną garsas turi TUOJ PAT nutilti, (3) bet vėliau klientui parašius vėl turi supypsėti.
+
+1. **Ženkliuko blyksėjimas sustiprintas**: buvęs švelnus `scale+opacity` pulsavimas pakeistas į tikrą ON/OFF mirksėjimą — `opacity 1→0.15` staigiu šuoliu (keyframe'ai 49%→50% be tarpinės animacijos), `0.8s linear infinite`.
+2. **`openChatPanel()` dabar iškart nutildo VISUS pokalbius**, ne tik pasirinktą — nauja `markAllConversationsSeen()` pažymi peržiūrėtais VISUS `chatUnreadOrderIds` narius vienu paspaudimu (anksčiau tik aktyviai pasirinktas pokalbis būdavo pažymimas, tad esant KELIOMS neskaitytoms gijoms garsas/badge likdavo aktyvūs net atidarius skydelį).
+3. **Automatiškai atsinaujina**: kadangi peržiūrėjimas žymimas per `localStorage['sc_chat_seen_'+id]` (serverio laiko žyma), bet kuri VĖLESNĖ kliento žinutė (bet kuriame pokalbyje) turi naujesnį `last_message_at` — kitas `pollOrders()` ciklas (12s) ją vėl pažymi neskaityta, o `checkAlarm()` (3s) automatiškai atnaujina garsą/mirksėjimą — jokios papildomos logikos nereikėjo.
+
+**Patikrinta gyvai**: sukurtos DVI atskiros užklausos su kliento žinutėmis (2 skirtingi svečiai) → abi pažymėtos neskaitytomis; vienas paspaudimas ant 💬 → abi iškart pažymėtos peržiūrėtomis (`chatUnreadOrderIds` tuščias, badge paslėptas, `chat-flash` pašalintas); naujos užklausos (atskira `newOrderUnseenIds` sistema) reikalauja ATSKIRO peržiūrėjimo veiksmo (`setTab('new')`) — tai TYČIA nepakito, nes tai skirtingas pranešimo tipas; po `setTab('new')` išsijungė ir tas signalas; tada NEAKTYVIAM pokalbiui (kitam nei atidarytas skydelyje) atsiuntus naują kliento žinutę, kitas `pollOrders()` ciklas iškart vėl pažymėjo jį neskaitytu ir `checkAlarm()` vėl supypsėjo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
