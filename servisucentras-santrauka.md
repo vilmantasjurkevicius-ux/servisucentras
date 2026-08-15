@@ -1304,6 +1304,16 @@ Vartotojas įmetė naują `registracija/` aplanką su `DESIGN.md` (spalvų/šrif
 
 ---
 
+## Slaptažodžio matomumo perjungimas (akutė) — automeistrai-login.html (2026-08-15)
+
+Vartotojas paprašė "akutės" prie slaptažodžio lauko, kad matytų, ką rašo. Pridėta VISIEMS 6 slaptažodžio laukams šiame faile: `client-login-pass`, `svc-login-pass`, `reg-s-pass`, `client-reg-pass`, `reset-pass1`, `reset-pass2`.
+
+Kiekvienas laukas apsuptas `.field-wrap` (position:relative), šalia pridėtas `.pw-toggle` mygtukas (👁/🙈), kviečiantis `togglePwVisibility(inputId, btn)` — perjungia `input.type` tarp `password`/`text`. `reg-s-pass` esantis `oninput="checkPw(this)"` (slaptažodžio stiprumo matuoklis) liko nepaliestas ir toliau veikia.
+
+**Patikrinta gyvai**: mygtukas perjungia matomumą (patikrinta JS paspaudimu — `type` pasikeitė `password`→`text`, ikona pasikeitė į 🙈), `reg-s-pass` stiprumo matuoklis toliau rodo "Stiprus ✓" įvedus ilgą slaptažodį. Backend nepaliestas.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
