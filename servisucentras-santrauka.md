@@ -1276,6 +1276,34 @@ Vartotojas pastebėjo: bandant pakeisti slaptažodį savo paskyroje (jau prisiju
 
 ---
 
+## automeistrai-login.html redizainas — abi prisijungimo kortelės vienu metu (2026-08-15)
+
+Vartotojas įmetė naują `registracija/` aplanką su `DESIGN.md` (spalvų/šriftų dizaino sistema, glassmorphism/high-tech automotive stilius) ir `screen.png` (Stitch tipo maketas) — norėjo, kad tikras prisijungimo puslapis atrodytų taip.
+
+**Maketas**: du kortelių stulpeliai greta ("Klientas" / "Servisas / Partneris"), kiekvienas su SAVO prisijungimo forma (el. paštas, slaptažodis, "Prisiminti mane", "Pamiršote slaptažodį?"), po kortelėmis nuoroda į registraciją, apačioje "Tęsti be registracijos". Tai PAKEIČIA anksčiau buvusį dviejų žingsnių srautą (pasirink tipą → tada matai jo formą) į vieną žingsnį (abi formos matomos iškart).
+
+**Šriftai**: Sora/Hanken Grotesk/JetBrains Mono (pakeitė Oswald/IBM Plex Sans/IBM Plex Mono) — TAI SUVIENODINA su likusiu projektu: `servisucentras-pagrindinis.html` jau naudoja šiuos šriftus nuo 2026-08-09 Stitch redizaino, o `automeistrai-login.html` buvo vienintelis pagrindinis puslapis, kuris NIEKADA negavo šio atnaujinimo.
+
+**Spalvos**: `--bg:#0F0F10`, `--bg2:#1B1B1D` (buvę atitinkamai `#191B1D`/`#23262A`), `--muted:#AB8987` (dulkėto rausvo atspalvio, buvęs pilkas `#8C9197`), `--r:10px` (buvęs `4px`). `--yellow:#E63946` (prekės ženklo raudona) NEPAKITO — jau sutapo su maketu.
+
+**Struktūrinis perdarymas** (didžiausia rizika šioje užduotyje):
+- Pašalintas senas `.left`/`.right` dviejų stulpelių išdėstymas (šoninė info juosta + forma) — pakeistas vienu centruotu stulpeliu: logotipas + antraštė (`.hero`), tada `#panel-landing` (grid, abi kortelės).
+- Prisijungimo laukai (`client-login-email/pass`, `svc-login-email/pass`) perkelti TIESIAI ant landing kortelių, IŠLAIKANT TUOS PAČIUS `id` — `clientLogin()`/`serviceLogin()` funkcijos liko VISIŠKAI nepaliestos.
+- Pašalinti `.form-tabs`/`.ftab` (Prisijungti/Registruotis/Svečias skirtukai) ir senas `panel-picker` (tipo pasirinkimo žingsnis) — dabar NEBEREIKALINGI, nes abi prisijungimo formos matomos iškart.
+- `panel-service`/`panel-client` supaprastinti — dabar kiekvienas rodo TIK registracijos turinį (atitinkamai `reg-s` 3 žingsnių vedlys / `reg-c` forma), pasiekiamą per naujas `showRegisterPanel('service'|'client')`/`backToLanding()` funkcijas.
+- Naujas atskiras top-level `panel-guest` (anksčiau `guest-c` buvo įdėtas į `panel-client` su skirtuku) — pasiekiamas per `goGuestDirect()`.
+- `openForgotPassword()`/`closeForgotPassword()`/`initFromQuery()` atnaujinti dirbti su `panel-landing` vietoj pašalinto `panel-picker`.
+- Pašalintos nebenaudojamos funkcijos: `switchType()`, `switchTab()`, `backToPicker()`, `neutralNoteHtml()`, `serviceNoteHtml()` — jų vietą užėmė paprastesnė logika.
+- God Mode "nemokama registracija" pranešimas (anksčiau buvo `.left-note` šoninėje juostoje) perkeltas į `reg-s` (serviso registracijos) antraštės paantraštę — vienintelė vieta, kur ši informacija realiai reikalinga.
+
+**Rastas ir ištaisytas CSS specifiškumo bug'as testuojant gyvai**: `#panel-landing.show{display:grid;...}` NEVEIKĖ — kortelės rikiavosi vertikaliai net plačiame ekrane. Priežastis: `.panel.show{display:block;}` (2 klasės) turi AUKŠTESNĮ specifiškumą nei `.landing-grid{display:grid;}` (1 klasė), tad visada laimėdavo nepriklausomai nuo šaltinio tvarkos CSS faile. Sprendimas: perkelta į `#panel-landing.show{display:grid;...}` (ID + klasė — aukščiausias specifiškumas), tas pats pritaikyta ir `@media(max-width:760px)` responsive taisyklei (kitaip ji irgi būtų buvusi nugalėta).
+
+**Testai**: nekeisti (grynai frontend/CSS/HTML pakeitimas, joks backend endpoint'as nepaliestas) — 26/26 lieka galioti.
+
+**Patikrinta gyvai**: desktop (1280px) — abi kortelės greta, tiksliai atitinka maketą; mobile (375px) — kortelės sukrenta vertikaliai; klaidingas prisijungimas → aiški klaida rodoma landing viršuje (senas `clientLogin()` elgesys nepakito); "Registruotis"/"Tapti partneriu"/"Tęsti be registracijos" → teisingi skydeliai; "← Atgal" → grąžina į landing; God Mode dinaminis pranešimas serviso registracijoje; `?type=&action=` deep linkai (login/register abiem tipams) veikia; `?resetToken=&role=` deep linkas veikia nepaliestas. Jokių console klaidų.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
