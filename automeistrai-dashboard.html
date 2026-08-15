@@ -839,11 +839,20 @@ function renderTabs(){
   }).join('');
 }
 
+// Atidarius "Naujos" skirtuką ARBA 💬 chat skydelį — abu yra peržiūrėjimo veiksmai,
+// sustabdantys pasikartojantį garsą/mirksėjimą dėl naujų (dar niekieno nepriimtų)
+// užklausų (žr. pollOrders() / checkAlarm()). updateChatBadge() čia BŪTINAS — kitaip
+// 💬 ikona liktų mirksėti iki kito poll ciklo, nors garsas jau būtų nutilęs.
+function acknowledgeNewOrders(){
+  if(!newOrderUnseenIds.size) return;
+  newOrderUnseenIds = new Set();
+  updateChatBadge();
+  renderTabs();
+}
+
 function setTab(status){
   activeTab = status;
-  // Atidarius "Naujos" skirtuką — tai ir yra peržiūrėjimo veiksmas, sustabdantis
-  // pasikartojantį garsą/mirksėjimą dėl naujų užklausų (žr. pollOrders()).
-  if(status === 'new') newOrderUnseenIds.clear();
+  if(status === 'new') acknowledgeNewOrders();
   renderTabs();
   renderOrders();
 }
@@ -1099,14 +1108,20 @@ function computeUnreadOrders(){
   });
   return unread;
 }
+// Skaičius/mirksėjimas ant 💬 apima IR neskaitytas žinutes, IR neperžiūrėtas naujas
+// užklausas (newOrderUnseenIds) — RASTA GYVAI: garsas (checkAlarm()) groja dėl abiejų
+// priežasčių, bet "Naujos" skirtuko mirksėjimas (tab-flash) yra Užklausos puslapio
+// VIDUJE, tad NEMATOMAS, kai servisas žiūri Kalendorių/Statistiką/kt. — servisas girdi
+// pyptelėjimą, bet niekur nemato JOKIO blyksėjimo. 💬 ikona yra vienintelis VISADA
+// matomas elementas (topbar), tad ji turi atspindėti PILNĄ "yra ką peržiūrėti" būseną.
 function updateChatBadge(){
   const badge = document.getElementById('chat-badge');
-  const n = chatUnreadOrderIds.size;
+  const n = chatUnreadOrderIds.size + newOrderUnseenIds.size;
   badge.textContent = n > 9 ? '9+' : String(n);
   badge.style.display = n > 0 ? 'flex' : 'none';
-  // 💬 ikona mirksi NUOLAT, kol yra bent viena neskaityta žinutė — ne tik akimirką po
-  // atėjimo (chat-nav-btn NĖRA perpiešiamas kito HTML, tad klasė ramiai išsilaiko tarp
-  // poll ciklų, kol markConversationSeen() ją pašalins atidarius tą pokalbį).
+  // 💬 ikona mirksi NUOLAT, kol yra bent vienas neperžiūrėtas elementas — ne tik akimirką
+  // po atėjimo (chat-nav-btn NĖRA perpiešiamas kito HTML, tad klasė ramiai išsilaiko tarp
+  // poll ciklų, kol markAllConversationsSeen()/acknowledgeNewOrders() ją pašalins).
   document.getElementById('chat-nav-btn').classList.toggle('chat-flash', n > 0);
 }
 function markConversationSeen(orderId){
@@ -1261,6 +1276,7 @@ function openChatPanel(){
   document.getElementById('cp-overlay').classList.add('show');
   document.getElementById('cp-modal').classList.add('show');
   markAllConversationsSeen();
+  acknowledgeNewOrders();
   renderConversationList();
   if(cpActiveOrderId === null){
     const sorted = cpSortedOrders();

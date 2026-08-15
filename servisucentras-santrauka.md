@@ -1422,6 +1422,18 @@ Pridėta `servisucentras-pagrindinis.html` (viešo puslapio chat widget'as, sve�
 
 ---
 
+## Rasta ir ištaisyta: garsas be jokio matomo ženklo kituose puslapiuose (2026-08-15)
+
+Vartotojas pastebėjo: žiūrint Kalendorių (ar bet kurį kitą ne-Užklausų puslapį) girdisi pyptelėjimai, bet 💬 ikona nemirksi.
+
+**Šaknies priežastis**: `checkAlarm()` groja garsą, kai `newOrderUnseenIds.size>0 ARBA chatUnreadOrderIds.size>0` — bet VIENINTELIS visada matomas (topbar) indikatorius, 💬 ikona/badge, iki šiol atspindėjo TIK `chatUnreadOrderIds` (žinutes). `newOrderUnseenIds` (naujos, dar niekieno nepriimtos užklausos) vizualiai rodomas TIK per `.tab-flash` ant "Naujos" skirtuko — kuris yra Užklausos puslapio VIDUJE (`.dash-page`, paslėptas `display:none`, kol neatidarytas). Todėl atėjus PLAIN naujai užklausai (be jokios kliento žinutės) žiūrint bet kurį KITĄ puslapį — garsas skambėdavo, bet NIEKUR nebuvo jokio blyksėjimo matyti.
+
+**Fix**: `updateChatBadge()` dabar skaičiuoja `n = chatUnreadOrderIds.size + newOrderUnseenIds.size` (buvo tik pirmasis) — 💬 badge/mirksėjimas dabar atspindi ABI kategorijas. Naujas `acknowledgeNewOrders()` (ištraukta iš `setTab('new')` logikos, papildyta trūkusiu `updateChatBadge()` kvietimu) dabar kviečiama IR `setTab('new')`, IR `openChatPanel()` — atidarius chat skydelį TAIP PAT nutildomos naujos-užklausos, ne tik žinutės (anksčiau chat skydelis nieko nežinojo apie `newOrderUnseenIds`).
+
+**Patikrinta gyvai**: perjungta į Kalendoriaus puslapį, sukurta NAUJA užklausa BE jokios žinutės → `pollOrders()` po to rodo `newOrderUnseenIds:[50]`, `chatUnreadIds:[]`, bet 💬 badge="1", matomas, mirksi — anksčiau būtų likęs paslėptas; `openChatPanel()` iškart išvalo abu (`newOrderUnseenIds:[]`, badge paslėptas, mirksėjimas sustoja); vėlesnis `checkAlarm()` nebeskamba. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
