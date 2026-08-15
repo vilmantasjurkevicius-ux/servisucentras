@@ -1462,6 +1462,16 @@ Vartotojas paklausė, kada telefono numeris turi atsirasti chat'e. Priminiau: es
 
 ---
 
+## Trumpas "pyp" ir aktyviai stebint pokalbį (2026-08-15)
+
+Vartotojas pastebėjo: kai chat skydelis atidarytas ir žiūri BŪTENT į tą pokalbį, atėjus naujai kliento žinutei tekstas atsiranda gijoje, bet visiškai TYLIAI — anksčiau (žr. "Ženkliuko mirksėjimo stiprinimas") sąmoningai nutildėme PASTOVŲ pranešimą (badge/mirksėjimas/kartojimas) tam pokalbiui, kurį servisas jau ir taip stebi, bet netyčia nutildėme IR patį VIENKARTINĮ atėjimo garsą.
+
+**Fix**: `pollOrders()` dabar paleidžia `playNewOrderSound()` VIENĄ kartą TIK tuo pačiu momentu, kai aptinkama, kad aktyviai stebimas pokalbis gavo naują žinutę (prieš pat `markConversationSeen()` iškvietimą, kuris sustabdo tolesnį kartojimą/badge). Tai atskira, papildoma logika nuo `checkAlarm()` (3s pastovaus pranešimo laikmačio) — pastarasis šiam pokalbiui NEBEĮSIJUNGIA (nes jis iškart pažymimas peržiūrėtu), bet vienas "pyp" atėjimo akimirką lieka.
+
+**Patikrinta gyvai**: atidarytas skydelis, pasirinktas pokalbis (pažymėtas peržiūrėtu), klientas parašo naują žinutę → kitas `pollOrders()` ciklas suskaičiuoja LYGIAI 1 garso kvietimą IR teisingai parodo žinutę gijoje; sekantis ciklas be pokyčių → skaitiklis NEPADIDĖJO (lieka 1); `chatUnreadOrderIds` liko tuščias, 💬 nemirksi (pastovaus pranešimo elgesys tam pokalbiui teisingai NEPRASIDĖJO). `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

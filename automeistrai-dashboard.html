@@ -1574,8 +1574,12 @@ async function pollOrders(){
     let freshUnread = computeUnreadOrders();
     // Jei skydelis atidarytas IR servisas šiuo metu žiūri būtent į TĄ pokalbį — nauja jo
     // žinutė nelaikoma "neskaityta" (servisas ją mato gyvai gijoje tą pačią sekundę), tad
-    // ženkliukas neturi mirksėti/pyptelėti dėl pokalbio, kurį jis jau ir taip stebi.
+    // ženkliukas/badge neturi PASTOVIAI mirksėti dėl pokalbio, kurį jis jau ir taip stebi.
+    // BET vieną trumpą "pyp" vis tiek verta paleisti — servisas pastebėjo, kad matydamas
+    // žinutę tiesiogiai gijoje, ji ateina VISIŠKAI tyliai; vienas garsas prie pačio atėjimo
+    // momento nekonfliktuoja su tuo, kad TOLIAU ji nekartojama/nemirksi (žr. checkAlarm()).
     if(cpOpen && cpActiveOrderId !== null && freshUnread.has(cpActiveOrderId)){
+      playNewOrderSound();
       markConversationSeen(cpActiveOrderId);
       freshUnread = computeUnreadOrders();
     }
