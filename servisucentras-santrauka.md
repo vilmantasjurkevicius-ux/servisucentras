@@ -1338,6 +1338,22 @@ Vartotojas paprašė (su ekrano nuotrauka) perkelti pokalbius/žinutes IŠ kiekv
 
 ---
 
+## Garsinis + vizualinis pranešimas — dabar PASTOVUS, ne vienkartinis (2026-08-15)
+
+Vartotojas pastebėjo: gavus naują užklausą ar kliento žinutę, garsas/mirksėjimas suveikdavo TIK VIENĄ KARTĄ (kai pasirodė) — jei servisas tą akimirką žiūrėjo į kitą dashboard'o puslapį (pvz. Statistika, Profilis), pranešimą buvo lengva praleisti visam laikui. Reikalavimas: pranešimas turi kartotis, kol servisas REALIAI peržiūri, nepriklausomai nuo to, ką tuo metu veikia.
+
+**Kas pakeista** (`automeistrai-dashboard.html`, tik `pollOrders()` ir aplinkinės funkcijos, jokio naujo endpoint'o):
+- Naujas state kintamasis `newOrderUnseenIds` (Set) — veidrodinis jau buvusiam `chatUnreadOrderIds` iš [[chat_panel_topbar]]. Kiekvieną poll ciklą (~12s) į jį pridedamos naujai atėjusios `status==='new'` užklausos, o pašalinamos tos, kurios nebe `'new'` (kitas servisas priėmė / servisas pats atsisakė).
+- `pollOrders()` dabar groja garsą (`playNewOrderSound()`) KAS CIKLĄ, kol `newOrderUnseenIds.size>0 || chatUnreadOrderIds.size>0` — anksčiau grodavo tik tą vieną ciklą, kai kažkas NAUJO atsirado (diff'as prieš/po), dabar kartojasi tol, kol neperžiūrėta.
+- CSS `.ptab.tab-flash`/`.nav-icon-btn.chat-flash` animacijos pakeistos iš vienkartinių (`2.6s`/`1.4s × 2`, pašalinamos per `setTimeout`) į `infinite` — mirksi NUOLAT, kol atitinkamas Set netuščias.
+- `renderTabs()` dabar pati įrašo `tab-flash` klasę į šabloną (`s==='new' && newOrderUnseenIds.size>0`), nes ji perpiešia visus `.ptab` mygtukus kiekvieną poll'ą — atskira `flashNewTab()` funkcija su `classList.add`+`setTimeout` TAPO NEBEREIKALINGA IR PAŠALINTA (bet klasę pridėjus per JS ją būtų ištrynęs kitas `renderTabs()` iškvietimas, tad šablono metodas — vienintelis teisingas). `chat-nav-btn` mygtukas NĖRA perpiešiamas jokios kitos funkcijos, tad jo `chat-flash` klasę tiesiog perjungia `updateChatBadge()` (`classList.toggle('chat-flash', n>0)`) — atskira `flashChatIcon()` funkcija irgi pašalinta kaip nebereikalinga.
+- **Peržiūrėjimo (acknowledgment) taškai**: naujoms užklausoms — `setTab('new')` (servisas paspaudžia "Naujos" skirtuką) išvalo `newOrderUnseenIds`; pokalbiams — jau esantis `markConversationSeen()`/`selectConversation()` iš [[chat_panel_topbar]] (nekeista).
+- Garsą išjungti Nustatymai puslapyje (`soundNotifEnabled`) — nekeista, `playNewOrderSound()` jį jau tikrina.
+
+**Patikrinta gyvai** (spy ant `playNewOrderSound`, rankinis `pollOrders()` kvietimas kelis kartus iš eilės imituojant kelis poll ciklus be naujo atėjimo tarp jų): naujai atėjus užklausai — garsas suskamba PIRMĄ kartą IR PAKARTOTINAI kituose 3 cikluose (skaitiklis augo 0→1→4) su mirksinčiu "Naujos" skirtuku; `setTab('new')` iš karto sustabdo — sekantis ciklas garso nebegroja; ta pati kartotinė logika patikrinta ir kliento žinutei (skaitiklis augo toliau, 💬 ikona mirksėjo, badge rodė "1"), o `selectConversation()` iš karto sustabdė. `npm test` → 26/26 prieš ir po.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

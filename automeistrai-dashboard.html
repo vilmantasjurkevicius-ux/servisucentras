@@ -378,18 +378,21 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 }
 .ocard.new-highlight{animation:newOrderPulse 2.6s ease-out;}
 @keyframes tabFlash{
-  0%{background:rgba(230,57,70,0.55);color:var(--bg);}
-  100%{background:transparent;color:var(--yellow);}
+  0%,100%{background:transparent;color:var(--yellow);}
+  50%{background:rgba(230,57,70,0.55);color:var(--bg);}
 }
-.ptab.tab-flash{animation:tabFlash 2.6s ease-out;}
+/* Nebe vienkartinė animacija — mirksi NUOLAT, kol servisas neatidaro "Naujos" skirtuko
+   (žr. setTab()), kad pranešimas nebūtų praleistas, jei servisas žiūri kitą puslapį. */
+.ptab.tab-flash{animation:tabFlash 1.4s ease-in-out infinite;}
 
-/* CHAT IKONA (topbar) — nauja žymė šalia 🔔, blyksi kai ateina nauja žinutė/užklausa */
+/* CHAT IKONA (topbar) — nauja žymė šalia 🔔, blyksi kai yra neskaitytų žinučių */
 @keyframes chatIconFlash{
   0%,100%{color:var(--muted);}
   15%,45%{color:var(--yellow);transform:scale(1.15);}
   30%{color:var(--muted);transform:scale(1);}
 }
-.nav-icon-btn.chat-flash{animation:chatIconFlash 1.4s ease-in-out 2;}
+/* Nebe vienkartinė — mirksi NUOLAT, kol chatUnreadOrderIds netuščias (žr. pollOrders()). */
+.nav-icon-btn.chat-flash{animation:chatIconFlash 1.4s ease-in-out infinite;}
 
 /* CHAT SKYDELIS — visų pokalbių sąrašas + pasirinkto pokalbio gija */
 .cp-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:850;opacity:0;pointer-events:none;transition:opacity .2s;}
@@ -746,6 +749,7 @@ let expandedOrderId = null;
 let chatUnreadOrderIds = new Set();  // užklausų id, kuriose paskutinę žinutę rašė klientas ir servisas jos dar nematė
 let cpActiveOrderId = null;          // kuris pokalbis pasirinktas chat skydelyje
 let cpOpen = false;
+let newOrderUnseenIds = new Set();   // naujos užklausos, kurių servisas dar NEPERŽIŪRĖJO (atidarius "Naujos" skirtuką)
 
 if(!serviceToken){
   window.location.href = 'automeistrai-login.html?type=service&action=login';
@@ -811,12 +815,20 @@ function tabFilter(o, tab){
 function renderTabs(){
   document.getElementById('panel-tabs').innerHTML = TAB_STATUS.map(s => {
     const count = ordersCache.filter(o => tabFilter(o, s)).length;
-    return `<button class="ptab ${s===activeTab?'active':''}" data-tab="${s}" onclick="setTab('${s}')">${TAB_LABELS[s]} <span class="n">${count}</span></button>`;
+    // "new" skirtukas mirksi NUOLAT (žr. .ptab.tab-flash CSS), kol newOrderUnseenIds
+    // netuščias — perpiešiama kiekvieną renderTabs() kvietimą, tad klasė čia įrašoma
+    // tiesiai į šabloną, o ne pridedama atskirai per classList (kitaip ją ištrintų
+    // kitas renderTabs() perpiešimas per kitą poll ciklą).
+    const flash = (s === 'new' && newOrderUnseenIds.size > 0) ? ' tab-flash' : '';
+    return `<button class="ptab ${s===activeTab?'active':''}${flash}" data-tab="${s}" onclick="setTab('${s}')">${TAB_LABELS[s]} <span class="n">${count}</span></button>`;
   }).join('');
 }
 
 function setTab(status){
   activeTab = status;
+  // Atidarius "Naujos" skirtuką — tai ir yra peržiūrėjimo veiksmas, sustabdantis
+  // pasikartojantį garsą/mirksėjimą dėl naujų užklausų (žr. pollOrders()).
+  if(status === 'new') newOrderUnseenIds.clear();
   renderTabs();
   renderOrders();
 }
@@ -1077,13 +1089,10 @@ function updateChatBadge(){
   const n = chatUnreadOrderIds.size;
   badge.textContent = n > 9 ? '9+' : String(n);
   badge.style.display = n > 0 ? 'flex' : 'none';
-}
-function flashChatIcon(){
-  const btn = document.getElementById('chat-nav-btn');
-  btn.classList.remove('chat-flash');
-  void btn.offsetWidth; // priverstinis reflow, kad animacija paleistų iš naujo, jei jau vyko
-  btn.classList.add('chat-flash');
-  setTimeout(()=>btn.classList.remove('chat-flash'), 2800);
+  // 💬 ikona mirksi NUOLAT, kol yra bent viena neskaityta žinutė — ne tik akimirką po
+  // atėjimo (chat-nav-btn NĖRA perpiešiamas kito HTML, tad klasė ramiai išsilaiko tarp
+  // poll ciklų, kol markConversationSeen() ją pašalins atidarius tą pokalbį).
+  document.getElementById('chat-nav-btn').classList.toggle('chat-flash', n > 0);
 }
 function markConversationSeen(orderId){
   const o = ordersCache.find(x=>x.id===orderId);
@@ -1459,13 +1468,6 @@ function playNewOrderSound(){
   } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
 }
 
-function flashNewTab(){
-  const tab = document.querySelector('#panel-tabs .ptab[data-tab="new"]');
-  if(!tab) return;
-  tab.classList.add('tab-flash');
-  setTimeout(()=>tab.classList.remove('tab-flash'), 2600);
-}
-
 function highlightNewCards(ids){
   ids.forEach(id=>{
     const el = document.querySelector(`.ocard[data-order-id="${id}"]`);
@@ -1480,9 +1482,17 @@ async function pollOrders(){
     const fresh = await apiGet('/orders');
     const oldIds = new Set(ordersCache.map(o=>o.id));
     const newlyArrived = fresh.filter(o => o.status === 'new' && !oldIds.has(o.id));
-    const newlyArrivedIds = new Set(newlyArrived.map(o=>o.id));
 
     ordersCache = fresh;
+
+    // Naujos, dar NEPERŽIŪRĖTOS užklausos — laikomos "neatidarytomis", kol servisas
+    // paspaudžia "Naujos" skirtuką (žr. setTab()), NEPRIKLAUSOMAI nuo to, kiek poll ciklų
+    // praeis ar kokiame puslapyje servisas šiuo metu yra. Pašalinam id, kurie nebe 'new'
+    // (kitas servisas spėjo priimti/servisas pats atmetė), pridedam ką tik atėjusius.
+    const freshNewIds = new Set(fresh.filter(o => o.status === 'new').map(o => o.id));
+    newOrderUnseenIds = new Set([...newOrderUnseenIds].filter(id => freshNewIds.has(id)));
+    newlyArrived.forEach(o => newOrderUnseenIds.add(o.id));
+
     renderStats();
     renderTabs();
     renderWeekBars();
@@ -1495,10 +1505,11 @@ async function pollOrders(){
     if(quotingOrderId === null && !typingInChat){
       renderOrders();
     }
+    if(newlyArrived.length && quotingOrderId === null && activeTab === 'new'){
+      highlightNewCards(newlyArrived.map(o=>o.id));
+    }
 
     // Neskaitytos žinutės — perskaičiuojam po kiekvieno poll'o (žr. computeUnreadOrders()).
-    // Naujai atsiradusias (kurių dar nebuvo prieš šį ciklą) atskiriam nuo jau buvusių, kad
-    // NAUJOS UŽKLAUSOS pirmoji žinutė nesukeltų DVIGUBO garso/blyksnio kartu su newlyArrived.
     let freshUnread = computeUnreadOrders();
     // Jei skydelis atidarytas IR servisas šiuo metu žiūri būtent į TĄ pokalbį — nauja jo
     // žinutė nelaikoma "neskaityta" (servisas ją mato gyvai gijoje tą pačią sekundę), tad
@@ -1507,7 +1518,6 @@ async function pollOrders(){
       markConversationSeen(cpActiveOrderId);
       freshUnread = computeUnreadOrders();
     }
-    const newlyUnread = [...freshUnread].filter(id => !chatUnreadOrderIds.has(id));
     chatUnreadOrderIds = freshUnread;
     updateChatBadge();
     if(cpOpen){
@@ -1516,14 +1526,14 @@ async function pollOrders(){
       if(cpActiveOrderId !== null && !typingInPanel) loadConversationThread(cpActiveOrderId);
     }
 
-    const newlyUnreadExcludingNewOrders = newlyUnread.filter(id => !newlyArrivedIds.has(id));
-    if(newlyArrived.length || newlyUnreadExcludingNewOrders.length){
+    // Garsas KARTOJASI kas poll ciklą (~12s), kol lieka bent viena neperžiūrėta nauja
+    // užklausa ARBA neskaityta kliento žinutė — ne tik vieną kartą atėjimo akimirką.
+    // Vartotojo pageidavimas: pranešimas privalo veikti nuolat, nepriklausomai nuo to,
+    // kuriame dashboard'o puslapyje servisas šiuo metu yra, kol jis realiai peržiūri
+    // (atidaro "Naujos" skirtuką arba tą konkretų pokalbį). Garsą galima išjungti
+    // Nustatymai puslapyje (soundNotifEnabled) — playNewOrderSound() tai jau tikrina.
+    if(newOrderUnseenIds.size > 0 || chatUnreadOrderIds.size > 0){
       playNewOrderSound();
-      if(newlyArrived.length) flashNewTab();
-      if(newlyArrived.length && quotingOrderId === null && activeTab === 'new'){
-        highlightNewCards(newlyArrived.map(o=>o.id));
-      }
-      if(newlyUnreadExcludingNewOrders.length) flashChatIcon();
     }
   } catch(err){
     // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
