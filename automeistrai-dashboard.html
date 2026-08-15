@@ -866,13 +866,31 @@ function formatSchedule(v){
   return `${d} ${MONTHS_SHORT[parseInt(m,10)-1]} ${timePart||''}`;
 }
 
+// Vienas <input type="datetime-local"> reikalauja UŽPILDYTI IR datą, IR laiką iš karto —
+// jei naudotojas pasirenka tik datą (nebūtinai akivaizdu, kad reikia atskirai spustelėti
+// laiko dalį), VISAS laukas lieka tuščias ("" .value), o pasirinkta data TYLIAI DINGSTA
+// (rasta gyvai testuojant — vartotojas pastebėjo, kad "laikas dingsta"). Sprendimas — du
+// atskiri laukai: data + laikas su numatytąja 09:00 reikšme, tad dalinis įvedimas (vien
+// data) vis tiek sudaro pilną, galiojantį rezultatą, o ne prarandamas.
+function dateTimePairHtml(idPrefix, title){
+  const t = title ? ` title="${title}"` : '';
+  return `<input type="date" id="${idPrefix}-date"${t} style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+    <input type="time" id="${idPrefix}-time" value="09:00" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:76px;">`;
+}
+function combineDateTime(idPrefix){
+  const dateEl = document.getElementById(`${idPrefix}-date`);
+  const timeEl = document.getElementById(`${idPrefix}-time`);
+  if(!dateEl || !dateEl.value) return null;
+  return `${dateEl.value}T${(timeEl && timeEl.value) ? timeEl.value : '09:00'}`;
+}
+
 function actionsForOrder(o){
   const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
   if(quotingOrderId === o.id){
     if(quotingMode === 'schedule'){
       return `
         <div style="display:flex;gap:6px;align-items:center;">
-          <input type="datetime-local" id="price-input-${o.id}" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+          ${dateTimePairHtml(`schedule-input-${o.id}`)}
           <button class="action-btn accept" onclick="submitSchedule(${o.id})">✓ Nustatyti</button>
           <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
         </div>`;
@@ -917,7 +935,7 @@ function actionsForOrder(o){
       <div style="display:flex;flex-direction:column;gap:4px;">
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input type="number" id="price-input-${o.id}" placeholder="Kaina €" style="width:70px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;" onkeydown="if(event.key==='Enter') submitPrice(${o.id})">
-          ${showTimeField ? `<input type="datetime-local" id="time-input-${o.id}" title="Kada galite priimti automobilį (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;" onkeydown="if(event.key==='Enter') submitPrice(${o.id})">` : ''}
+          ${showTimeField ? dateTimePairHtml(`time-input-${o.id}`, 'Kada galite priimti automobilį (nebūtina)') : ''}
           <button class="action-btn accept" onclick="submitPrice(${o.id})">✓ Siųsti</button>
           <button class="action-btn decline" onclick="cancelQuoting()">✕</button>
         </div>
@@ -1009,7 +1027,7 @@ function chatInputBarHtml(id){
     <div class="ochat-price-box">
       <label>Jūsų kaina/laikas šiai užklausai:</label>
       <input type="number" id="ochat-price-${id}" placeholder="Kaina €">
-      <input type="datetime-local" id="ochat-time-${id}">
+      ${dateTimePairHtml(`ochat-time-${id}`)}
       <button onclick="submitChatQuote(${id})">Atnaujinti pasiūlymą</button>
     </div>
     <div id="ochat-price-error-${id}" class="ochat-price-error" style="display:none;"></div>` : ''}
@@ -1060,7 +1078,6 @@ async function loadChatThread(id, force){
 
 async function submitChatQuote(id){
   const priceInput = document.getElementById(`ochat-price-${id}`);
-  const timeInput = document.getElementById(`ochat-time-${id}`);
   const errEl = document.getElementById(`ochat-price-error-${id}`);
   const price = parseFloat(priceInput.value);
   if(!price || price <= 0){
@@ -1072,7 +1089,8 @@ async function submitChatQuote(id){
   priceInput.style.borderColor = '';
   if(errEl) errEl.style.display = 'none';
   try{
-    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput.value || null });
+    const availableTime = combineDateTime(`ochat-time-${id}`);
+    await apiPost(`/orders/${id}/quote`, { price, availableTime });
     await loadOrders();
   } catch(err){
     if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
@@ -1195,7 +1213,7 @@ function cpInputBarHtml(id){
     <div class="ochat-price-box">
       <label>Jūsų kaina/laikas šiai užklausai:</label>
       <input type="number" id="cp-price-${id}" placeholder="Kaina €">
-      <input type="datetime-local" id="cp-time-${id}">
+      ${dateTimePairHtml(`cp-time-${id}`)}
       <button onclick="cpSubmitQuote(${id})">Atnaujinti pasiūlymą</button>
     </div>
     <div id="cp-price-error-${id}" class="ochat-price-error" style="display:none;"></div>` : ''}
@@ -1248,7 +1266,6 @@ async function cpSendMessage(id){
 }
 async function cpSubmitQuote(id){
   const priceInput = document.getElementById(`cp-price-${id}`);
-  const timeInput = document.getElementById(`cp-time-${id}`);
   const errEl = document.getElementById(`cp-price-error-${id}`);
   const price = parseFloat(priceInput.value);
   if(!price || price <= 0){
@@ -1260,7 +1277,8 @@ async function cpSubmitQuote(id){
   priceInput.style.borderColor = '';
   if(errEl) errEl.style.display = 'none';
   try{
-    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput.value || null });
+    const availableTime = combineDateTime(`cp-time-${id}`);
+    await apiPost(`/orders/${id}/quote`, { price, availableTime });
     await refreshAfterChatAction(id);
   } catch(err){
     if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
@@ -1312,8 +1330,8 @@ async function submitPrice(id){
   input.style.borderColor = '';
   if(errEl) errEl.style.display = 'none';
   try{
-    const timeInput = document.getElementById(`time-input-${id}`);
-    await apiPost(`/orders/${id}/quote`, { price, availableTime: timeInput && timeInput.value ? timeInput.value : null });
+    const availableTime = combineDateTime(`time-input-${id}`);
+    await apiPost(`/orders/${id}/quote`, { price, availableTime });
     quotingOrderId = null; quotingMode = null;
     await loadOrders();
   } catch(err){
@@ -1397,10 +1415,14 @@ function startScheduling(id){
 }
 
 async function submitSchedule(id){
-  const input = document.getElementById(`price-input-${id}`);
-  if(!input.value){ input.style.borderColor = 'rgba(192,57,43,0.6)'; return; }
+  const scheduledTime = combineDateTime(`schedule-input-${id}`);
+  if(!scheduledTime){
+    const dateEl = document.getElementById(`schedule-input-${id}-date`);
+    if(dateEl) dateEl.style.borderColor = 'rgba(192,57,43,0.6)';
+    return;
+  }
   try{
-    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime: input.value });
+    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime });
     quotingOrderId = null; quotingMode = null;
     await loadOrders();
   } catch(err){
@@ -1942,7 +1964,7 @@ function renderCalendarPage(){
           ${unscheduled.map(o=>`
             <div class="svc-row">
               <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}</div>
-              <input type="datetime-local" id="cal-time-${o.id}" style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+              ${dateTimePairHtml(`cal-time-${o.id}`)}
               <button class="action-btn accept" onclick="assignCalendarTime(${o.id})">✓ Priskirti</button>
             </div>`).join('')}
         </div>
@@ -1966,10 +1988,10 @@ function shiftCalendarWeek(delta){
 }
 
 async function assignCalendarTime(id){
-  const input = document.getElementById(`cal-time-${id}`);
-  if(!input.value) return;
+  const scheduledTime = combineDateTime(`cal-time-${id}`);
+  if(!scheduledTime) return;
   try{
-    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime: input.value });
+    await apiRequest('PATCH', `/orders/${id}/schedule`, { scheduledTime });
     await loadOrders();
     renderCalendarPage();
   } catch(err){

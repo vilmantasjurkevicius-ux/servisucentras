@@ -1472,6 +1472,20 @@ Vartotojas pastebėjo: kai chat skydelis atidarytas ir žiūri BŪTENT į tą po
 
 ---
 
+## "Laikas dingsta" — datetime-local sudalinta į dvi dalis (2026-08-15)
+
+Vartotojas pastebėjo: "Jūsų kaina/laikas šiai užklausai" laukelyje pasirinkus laiką kalendoriuje, laikas kartais dingsta.
+
+**Šaknies priežastis**: vienas `<input type="datetime-local">` reikalauja UŽPILDYTI IR datą, IR laiką IŠ KARTO, kad `.value` grąžintų bet ką — jei naudotojas naršyklės kalendoriuje pasirenka TIK datą (nėra akivaizdu, kad reikia atskirai spustelėti/įvesti IR laiko dalį), visas laukas tyliai lieka `""`, o pasirinkta data DINGSTA visa, be jokios klaidos ekrane.
+
+**Fix**: visos 5 `datetime-local` vietos faile (`automeistrai-dashboard.html`) pakeistos į DU atskirus laukus — `<input type="date">` + `<input type="time" value="09:00">` (numatytoji reikšmė) — per naujus bendrus pagalbininkus `dateTimePairHtml(idPrefix, title)` (HTML) ir `combineDateTime(idPrefix)` (sujungia į `YYYY-MM-DDTHH:mm`, grąžina `null` tik jei DATA taip pat tuščia). Paveiktos vietos: kainos+laiko pasiūlymas kortelėje (`time-input`), sename įterptame chat'e (`ochat-time`), naujame chat skydelyje (`cp-time`), atvykimo laiko priskyrimas priėmus klientą (`schedule-input`), Kalendoriaus "Priskirti" (`cal-time`). Atitinkami `submitPrice()`/`submitChatQuote()`/`cpSubmitQuote()`/`submitSchedule()`/`assignCalendarTime()` atnaujinti naudoti `combineDateTime()` vietoj tiesioginio `.value` skaitymo.
+
+**Nepasirinktas variantas** (naudotojui paklausus): visiškai naujo, savarankiškai sukurto lietuviškai lokalizuoto kalendoriaus komponento kūrimas VISUR — pernelyg didelis darbas šiam bug'ui ištaisyti; native naršyklės pikeriai (dabar du atskiri, paprastesni) lieka.
+
+**Patikrinta gyvai**: chat skydelyje pasirinkta TIK data (laiko laukas paliktas su numatytąja 09:00 reikšme) → `combineDateTime()` grąžino galiojantį `"2026-08-22T09:00"`, pasiūlymas sėkmingai išsiuntė ir teisingai parodė gijoje ("Laikas: 22 rugp 09:00"); tas pats patikrinta ir kortelės "Pasiūlyti kainą" sraute (`GET /:id/messages` grąžino `available_time:"2026-08-25T09:00"`). `npm test` → 26/26 (grynai frontend pakeitimas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
