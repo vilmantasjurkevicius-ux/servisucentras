@@ -1551,6 +1551,20 @@ Vartotojas pastebėjo (realioje užklausoje nuo registruoto kliento Giedriaus, e
 
 ---
 
+## mano-paskyra.html: rasta ir ištaisyta šoninio meniu persidengimo klaida + logo fonas (2026-08-16)
+
+Vartotojas atsiuntė ekrano nuotrauką: "Mano automobiliai" puslapyje šoninio meniu mygtukai ("Naujas pokalbis", "Užsakymų istorija", "Profilis") persidengia su puslapio antrašte.
+
+**Šaknies priežastis** (patikrinta gyvai, `getBoundingClientRect()`): šoninis meniu yra `<nav class="acc-sidebar">` elementas. Faile jau buvo BENDRA, NEAPRĖŽTA `nav{display:flex;height:56px;align-items:center;...}` taisyklė, skirta TIK viršutinei navigacijai — bet kadangi ji taikoma pagal ŽYMĖS pavadinimą (ne klasę), ji AUTOMATIŠKAI atsiliepė ir šoniniam meniu (jis irgi `<nav>`). Kadangi `.acc-sidebar{}` savo taisyklėje NEAPIBRĖŽĖ `display`/`height`/`position`, šios savybės "prasiskverbdavo" iš bendro `nav{}` — šoninis meniu tapdavo 56px aukščio HORIZONTALIU flex'u (mygtukai eidavo vienas šalia kito, tekstas laužydavosi į kelias eilutes), o po juo prasidėdavo pagrindinio turinio antraštė, susidurdama su juo.
+
+**Fix**: `.acc-sidebar{}` papildyta eksplicitiniais `display:block;height:auto;position:static;background:none;backdrop-filter:none;border-bottom:none;` — perrašo VISKĄ, kas "prasiskverbdavo" iš bendro `nav{}`, negriaunant PAČIOS `nav{}` taisyklės (kuri tebeveikia teisingai viršutinei navigacijai). Mobili versija (`@media(max-width:800px)`) atskirai perrašo `position:fixed` savo bloke — tai liko VEIKTI teisingai (source order/specifiškumas nepasikeitė).
+
+**Antra dalis — logo fonas**: pridėtas tas pats vandenženklio metodas, jau naudotas `automeistrai-login.html`/`servisucentras-diagnostika.html` — `body::before{position:fixed;inset:0;background:url('logo-watermark.png') repeat;background-size:70px 70px;opacity:0.045;pointer-events:none;}`, `.shell{position:relative;z-index:1;}`, kad turinys liktų virš fiksuoto vandenženklio sluoksnio.
+
+**Patikrinta gyvai**: desktop (1280px) — šoninis meniu dabar vertikalus, be persidengimo; mobilus (375px) — hamburger meniu ir toliau teisingai išsiskleidžia vertikaliu sąrašu su backdrop'u (jokios regresijos); logo raštas matomas fone abiejuose dydžiuose. `npm test` → 26/26 (grynai frontend/CSS pakeitimas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

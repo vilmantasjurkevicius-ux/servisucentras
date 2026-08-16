@@ -17,7 +17,12 @@
   --radius:4px;
 }
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;position:relative;}
+body::before{
+  content:"";position:fixed;inset:0;z-index:0;
+  background:url('logo-watermark.png') repeat;background-size:70px 70px;
+  opacity:0.045;pointer-events:none;
+}
 
 /* ══ TOP NAV ══ */
 nav{
@@ -38,8 +43,15 @@ nav{
 .nav-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
 
 /* ══ SHELL: SIDEBAR + CONTENT ══ */
-.shell{display:flex;min-height:calc(100vh - 56px);}
-.acc-sidebar{width:220px;flex-shrink:0;border-right:1px solid var(--line);padding:20px 0;}
+.shell{display:flex;min-height:calc(100vh - 56px);position:relative;z-index:1;}
+/* display/height/position/background/border-bottom eksplicitiškai perrašyti — be jų
+   šis <nav> elementas paveldėtų juos iš bendro nav{} taisyklės aukščiau (skirtos TIK
+   viršutinei navigacijai, ne šiam šoniniam meniu), kuri jį paversdavo 56px aukščio
+   horizontaliu flex'u (mygtukai eidavo iš eilės vietoj krūvos vienas po kito). */
+.acc-sidebar{
+  width:220px;flex-shrink:0;border-right:1px solid var(--line);padding:20px 0;
+  display:block;height:auto;position:static;background:none;backdrop-filter:none;border-bottom:none;
+}
 .acc-sb-title{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;padding:0 20px 10px;}
 .acc-item{
   width:100%;display:flex;align-items:center;gap:10px;
