@@ -1589,6 +1589,26 @@ Vartotojas paprašė dviejų dalykų kliento paskyros "Naujas pokalbis" puslapyj
 
 ---
 
+## Kliento paskyroje — pranešimų ženkliukas + garsas (2026-08-16)
+
+Vartotojas paprašė: klientas turi matyti IR girdėti pranešimą, kai servisas parašo pokalbyje ARBA patvirtina (priima) jo užklausą/rezervaciją — analogiška funkcija tai, kuri jau veikia serviso dashboard'e ("Chat skydelis"), bet iki šiol `mano-paskyra.html` (kliento paskyra) neturėjo JOKIOS pranešimų/garso infrastruktūros — tik 12s polling'ą, kuris tyliai perpiešdavo sąrašą.
+
+**Vieta**: du nauji topbar mygtukai šalia "🚪 Atsijungti" — 💬 (su raudonu skaičiaus ženkliuku) ir 🔊/🔇 (garso jungiklis, `localStorage.sc_pa_sound`).
+
+**Du "priežasčių" setai** (`paChatUnreadIds`, `paAcceptUnreadIds`), sekami GRYNAI naršyklės pusėje (`localStorage sc_pa_msg_seen_<id>` / `sc_pa_accept_seen_<id>`) — ta pati technika kaip serviso dashboard'o chat skydelyje (žr. aukščiau):
+1. **Nauja žinutė nuo serviso** — `GET /clients/me/orders` (clients.routes.js) papildytas `last_message_at`/`last_message_sender` subquery'iais (ta pati struktūra kaip serviso pusės `GET /orders`).
+2. **Servisas patvirtino/priėmė klientą** — `order.client_accepted_at` (nustatomas per `POST /orders/:id/accept-client`, kai servisas paspaudžia "Priimti klientą") — šis laukas jau buvo grąžinamas (`SELECT o.*`), tik reikėjo pradėti jį STEBĖTI kliento pusėje.
+
+Ženkliukas išnyksta, kai klientas IŠSKLEIDŽIA to konkretaus užsakymo pokalbį (`toggleOrderChat()`) — pažymi ABI priežastis skaitytomis vienu metu (žiūri į užsakymą = pripažįsta abu). Jei pokalbis JAU išskleistas, kai poll'as pagauna naują žinutę/patvirtinimą — viena trumpa pyptelėjimas vis tiek paleidžiama (bet NEPATENKA į nuolatinį ženkliuką), lygiai ta pati logika kaip anksčiau įgyvendinta serviso dashboard'e.
+
+**Garsas** — VIENKARTINIS pyptelėjimas (ne pastovi kartojama sirena, kokia yra dashboard'e — čia to neprašyta, tad nedaryta) kiekvieną kartą, kai poll'as (kas 12s) aptinka NAUJĄ neskaitytą priežastį. `AudioContext` atrakinamas per tikrus click handlerius (`toggleOrderChat`, `togglePaSound`, `openHistoryFromBell`) — naršyklės autoplay politika neleidžia jo sukurti iš `setInterval`.
+
+**Rasta ir ištaisyta vystymo metu**: `init()` iškart kviesdavo `syncPaSoundUI()` SINCHRONIŠKAI (dar prieš pirmą `await`), o `let paSoundEnabled`/`paAudioCtx` buvo deklaruoti TIK failo apačioje — tai sukeldavo `ReferenceError: Cannot access 'paSoundEnabled' before initialization` (temporal dead zone), nes tos `let` eilutės script'e dar nebūdavo pasiektos, kai `init()` pradėdavo vykdytis. Fix: abi deklaracijos perkeltos aukštyn, šalia `clientToken`.
+
+**Patikrinta gyvai**: sukurtas testinis servisas+klientas+užsakymas; servisas parašė žinutę → kito poll'o metu ženkliukas parodė "1", mirksėjimo klasė pridėta; išskleidus pokalbį — ženkliukas išnyko, žinutė matoma. Servisas priėmė KITĄ (naują) užsakymą (`accept-client`, `client_accepted_at` nustatytas) kol klientas NIEKUR jo neišskleidęs — poll'as parodė ženkliuką "1", statusas "Vykdomas"; išskleidus — ženkliukas išnyko. Garso jungiklis perjungtas į 🔇, `localStorage` patvirtino `"off"`. Mobilus vaizdas (375px) — jokio persidengimo su hamburger meniu ar "Atsijungti". `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

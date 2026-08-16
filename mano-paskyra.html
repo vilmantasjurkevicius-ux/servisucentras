@@ -41,6 +41,14 @@ nav{
 .nav-greeting b{color:var(--text);}
 .nav-btn{font-family:'IBM Plex Sans';font-weight:600;font-size:12.5px;padding:7px 14px;border-radius:var(--radius);cursor:pointer;transition:all .15s;background:transparent;border:1px solid var(--line2);color:var(--text);}
 .nav-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+/* ══ Pranešimų ženkliukas + garso jungiklis (šalia Atsijungti) ══ */
+.nav-icon-btn{position:relative;width:34px;height:34px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius);cursor:pointer;font-size:15px;background:transparent;border:1px solid var(--line2);color:var(--text);transition:all .15s;}
+.nav-icon-btn:hover{border-color:rgba(245,196,0,0.3);color:var(--y);}
+.nav-icon-btn.muted{opacity:0.45;}
+.nav-icon-btn.pa-chat-flash{animation:paChatFlash 1.4s ease-in-out infinite;}
+@keyframes paChatFlash{0%,100%{border-color:var(--line2);}50%{border-color:var(--r);color:#e07070;}}
+.pa-notif-badge{position:absolute;top:-6px;right:-6px;min-width:16px;height:16px;padding:0 3px;border-radius:9px;background:var(--r);color:#fff;font-size:9.5px;font-family:'IBM Plex Mono';font-weight:600;display:none;align-items:center;justify-content:center;animation:paBadgePulse 0.8s linear infinite;}
+@keyframes paBadgePulse{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
 
 /* ══ SHELL: SIDEBAR + CONTENT ══ */
 .shell{display:flex;min-height:calc(100vh - 56px);position:relative;z-index:1;}
@@ -190,6 +198,11 @@ nav{
   </a>
   <div class="nav-right">
     <span class="nav-greeting" id="nav-greeting">Sveiki!</span>
+    <button class="nav-icon-btn" id="pa-chat-btn" title="Pokalbiai" onclick="openHistoryFromBell()">
+      💬
+      <span class="pa-notif-badge" id="pa-notif-badge">0</span>
+    </button>
+    <button class="nav-icon-btn" id="pa-sound-btn" title="Garso pranešimai" onclick="togglePaSound()">🔊</button>
     <button class="nav-btn" onclick="logout()">🚪 Atsijungti</button>
   </div>
   <button class="acc-hamburger" id="acc-hamburger-btn" onclick="toggleAccSidebar()" aria-label="Meniu">☰</button>
@@ -311,6 +324,8 @@ nav{
 <script>
 const API_BASE = '/api';
 let clientToken = localStorage.getItem('sc_client_token');
+let paSoundEnabled = localStorage.getItem('sc_pa_sound') !== 'off';
+let paAudioCtx = null;
 
 // Apsauga: neprisijungęs arba svečio tokenas — iškart nukreipiama į prisijungimą,
 // dar prieš bandant kviesti API (žr. "Serviso knyga — Žingsnis 1/7" santrauka.md).
@@ -324,6 +339,7 @@ function redirectToLogin(){
 }
 
 async function init(){
+  syncPaSoundUI();
   try{
     const res = await fetch(`${API_BASE}/clients/me`, { headers: { 'Authorization': 'Bearer '+clientToken } });
     if(!res.ok){ redirectToLogin(); return; }
@@ -832,6 +848,8 @@ async function submitNewChat(){
 let categoriesCache = [];
 let orderHistoryCache = [];
 let expandedOrderId = null; // kurio užsakymo pokalbis šiuo metu išskleistas (Žingsnis 4/7)
+let paChatUnreadIds = new Set();
+let paAcceptUnreadIds = new Set();
 
 function fmtEUR(n){ return (Number(n)||0).toFixed(2)+'€'; }
 function escapeHtml(s){
@@ -875,6 +893,8 @@ async function loadOrderHistory(){
     categoriesCache = catsRes.ok ? await catsRes.json() : [];
   } catch(e){ categoriesCache = []; }
   orderHistoryCache = await apiGet('/clients/me/orders');
+  ({ chatUnread: paChatUnreadIds, acceptUnread: paAcceptUnreadIds } = computePaUnread());
+  updatePaBadge();
   renderOrderHistory();
 }
 
@@ -940,12 +960,14 @@ function renderOrderHistory(){
    veikia pagrindinio puslapio aktyviame pokalbyje (POST /:id/accept), čia tik
    istorijos peržiūra + tolesnis susirašinėjimas tekstu. ══ */
 function toggleOrderChat(id){
+  unlockPaAudio();
   if(expandedOrderId === id){
     expandedOrderId = null;
     renderOrderHistory();
     return;
   }
   expandedOrderId = id;
+  markPaOrderSeen(id);
   renderOrderHistory();
   loadOrderChat(id, true);
 }
@@ -1004,6 +1026,91 @@ async function sendOrderChatText(id){
   }
 }
 
+// ═══ PRANEŠIMŲ ŽENKLIUKAS + GARSAS (topbar, šalia Atsijungti) — informuoja klientą,
+// kai servisas parašo naują žinutę ARBA priima jo užklausą/rezervaciją
+// (client_accepted_at, žr. POST /orders/:id/accept-client). Neskaitytumas sekamas
+// GRYNAI naršyklės pusėje (localStorage) — ta pati technika kaip serviso dashboard'o
+// chat skydelyje (žr. santrauka.md "Chat skydelis"), tik čia du atskiri "priežasties"
+// setai (žinutė / priėmimas), nes juos reikia žymėti skaitytais nepriklausomai.
+// (paSoundEnabled/paAudioCtx deklaruoti aukščiau, šalia clientToken — init() juos
+// naudoja SINCHRONIŠKAI dar prieš pirmą await, tad turi būti jau inicializuoti.) ═══
+
+// Kviečiama iš TIKRŲ click handlerių (ne setInterval) — naršyklė leidžia sukurti/atgaivinti
+// AudioContext tik tikro gesto metu, žr. santrauka.md "unlockClientAudio()".
+function unlockPaAudio(){
+  try{
+    if(!paAudioCtx) paAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(paAudioCtx.state === 'suspended') paAudioCtx.resume();
+  } catch(e){}
+}
+function playPaSound(){
+  if(!paSoundEnabled) return;
+  try{
+    if(!paAudioCtx) paAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(paAudioCtx.state === 'suspended') paAudioCtx.resume();
+    const osc = paAudioCtx.createOscillator();
+    const gain = paAudioCtx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 880;
+    gain.gain.setValueAtTime(0.15, paAudioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, paAudioCtx.currentTime + 0.35);
+    osc.connect(gain); gain.connect(paAudioCtx.destination);
+    osc.start();
+    osc.stop(paAudioCtx.currentTime + 0.35);
+  } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
+}
+function syncPaSoundUI(){
+  const btn = document.getElementById('pa-sound-btn');
+  if(!btn) return;
+  btn.textContent = paSoundEnabled ? '🔊' : '🔇';
+  btn.title = paSoundEnabled ? 'Garso pranešimai įjungti (spausti išjungti)' : 'Garso pranešimai išjungti (spausti įjungti)';
+  btn.classList.toggle('muted', !paSoundEnabled);
+}
+function togglePaSound(){
+  unlockPaAudio();
+  paSoundEnabled = !paSoundEnabled;
+  localStorage.setItem('sc_pa_sound', paSoundEnabled ? 'on' : 'off');
+  syncPaSoundUI();
+}
+
+function computePaUnread(){
+  const chatUnread = new Set();
+  const acceptUnread = new Set();
+  orderHistoryCache.forEach(o=>{
+    if(o.last_message_sender === 'service' && o.last_message_at){
+      const seen = localStorage.getItem('sc_pa_msg_seen_'+o.id) || '';
+      if(o.last_message_at > seen) chatUnread.add(o.id);
+    }
+    if(o.client_accepted_at){
+      const seen = localStorage.getItem('sc_pa_accept_seen_'+o.id) || '';
+      if(o.client_accepted_at > seen) acceptUnread.add(o.id);
+    }
+  });
+  return { chatUnread, acceptUnread };
+}
+function updatePaBadge(){
+  const ids = new Set([...paChatUnreadIds, ...paAcceptUnreadIds]);
+  const n = ids.size;
+  const badge = document.getElementById('pa-notif-badge');
+  badge.textContent = n > 9 ? '9+' : String(n);
+  badge.style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('pa-chat-btn').classList.toggle('pa-chat-flash', n > 0);
+}
+function markPaOrderSeen(orderId){
+  const o = orderHistoryCache.find(x=>x.id===orderId);
+  if(o){
+    if(o.last_message_at) localStorage.setItem('sc_pa_msg_seen_'+orderId, o.last_message_at);
+    if(o.client_accepted_at) localStorage.setItem('sc_pa_accept_seen_'+orderId, o.client_accepted_at);
+  }
+  paChatUnreadIds.delete(orderId);
+  paAcceptUnreadIds.delete(orderId);
+  updatePaBadge();
+}
+function openHistoryFromBell(){
+  unlockPaAudio();
+  showAccPage('history', document.querySelector('[data-page="history"]'));
+}
+
 // AUTO-ATNAUJINIMAS — anksčiau šis puslapis niekada neperkraudavo pokalbio, kol
 // vartotojas patys neperkraudavo viso puslapio, tad serviso atsakymai NEATSIRASDAVO
 // atidarytoje gijoje (tas pats mechanizmas, kuris jau veikia serviso dashboard'e —
@@ -1014,6 +1121,28 @@ let paPollTimer = null;
 async function pollOrderHistory(){
   try{
     orderHistoryCache = await apiGet('/clients/me/orders');
+    let { chatUnread, acceptUnread } = computePaUnread();
+
+    // Jei būtent šio užsakymo pokalbis šiuo metu išskleistas — vartotojas jį TIESIOGIAI
+    // mato, tad į NUOLATINĮ ženkliuką/mirksėjimą tai neturi patekti, BET viena trumpa
+    // pyptelėjimas vis tiek paleidžiama (ta pati logika kaip serviso dashboard'o chat
+    // skydelyje — žr. santrauka.md "Chat skydelis: trumpas garso signalas...").
+    let pinged = false;
+    if(expandedOrderId !== null && (chatUnread.has(expandedOrderId) || acceptUnread.has(expandedOrderId))){
+      playPaSound();
+      pinged = true;
+      markPaOrderSeen(expandedOrderId);
+      ({ chatUnread, acceptUnread } = computePaUnread());
+    }
+
+    const isFreshlyUnread = id => !paChatUnreadIds.has(id) && !paAcceptUnreadIds.has(id);
+    const hasFresh = !pinged && ([...chatUnread].some(isFreshlyUnread) || [...acceptUnread].some(isFreshlyUnread));
+
+    paChatUnreadIds = chatUnread;
+    paAcceptUnreadIds = acceptUnread;
+    updatePaBadge();
+    if(hasFresh) playPaSound();
+
     const typingInChat = document.activeElement && document.activeElement.closest('.order-chat');
     if(!typingInChat) renderOrderHistory();
   } catch(err){
