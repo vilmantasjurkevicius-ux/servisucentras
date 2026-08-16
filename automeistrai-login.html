@@ -486,6 +486,7 @@ select.field{cursor:pointer;}
   </div>
 </div>
 
+<script src="lt-cities.js"></script>
 <script>
 const API_BASE = '/api';
 
@@ -565,18 +566,8 @@ function populateWorkHourSelects(){
   document.getElementById('reg-s-work-end').value = '18:00';
 }
 
-// MIESTAS — visų Lietuvos savivaldybių centrų sąrašas. Kaimams ir kitoms
-// vietovėms, kurių sąraše nėra, "Kita vietovė..." atveria laisvo teksto lauką.
-const LT_CITIES = [
-  'Akmenė','Alytus','Anykščiai','Birštonas','Biržai','Druskininkai','Elektrėnai',
-  'Ignalina','Jonava','Joniškis','Jurbarkas','Kaišiadorys','Kalvarija','Kaunas',
-  'Kazlų Rūda','Kėdainiai','Kelmė','Klaipėda','Kretinga','Kupiškis','Lazdijai',
-  'Marijampolė','Mažeikiai','Molėtai','Neringa','Pagėgiai','Pakruojis','Palanga',
-  'Panevėžys','Pasvalys','Plungė','Prienai','Radviliškis','Raseiniai','Rietavas',
-  'Rokiškis','Skuodas','Šakiai','Šalčininkai','Šiauliai','Šilalė','Šilutė',
-  'Širvintos','Švenčionys','Tauragė','Telšiai','Trakai','Ukmergė','Utena',
-  'Varėna','Vilkaviškis','Vilnius','Visaginas','Zarasai',
-];
+// MIESTAS — visų Lietuvos savivaldybių centrų sąrašas (LT_CITIES, žr. lt-cities.js).
+// Kaimams ir kitoms vietovėms, kurių sąraše nėra, "Kita vietovė..." atveria laisvo teksto lauką.
 function populateCitySelect(){
   const sel = document.getElementById('reg-s-city');
   sel.innerHTML = '<option value="">Pasirinkite miestą</option>'

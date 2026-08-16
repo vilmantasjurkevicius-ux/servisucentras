@@ -95,6 +95,17 @@ nav{
 .car-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:9px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13.5px;outline:none;}
 .car-input:focus{border-color:rgba(245,196,0,0.4);}
 .car-form-actions{display:flex;gap:8px;}
+/* ══ NAUJAS POKALBIS — serviso kalendorius (laisvi/užimti laikai) ══ */
+.nc-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
+.nc-day-chip{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 12px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);transition:border-color .15s;}
+.nc-day-chip:hover{border-color:rgba(245,196,0,0.4);}
+.nc-day-chip.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
+.nc-day-chip .nd-num{font-size:15px;font-weight:700;display:block;color:inherit;margin-top:2px;}
+.nc-slots{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px;max-height:180px;overflow-y:auto;}
+.nc-slot{background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 4px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:12px;color:var(--text);transition:border-color .15s;}
+.nc-slot:hover{border-color:rgba(245,196,0,0.4);}
+.nc-slot.busy{opacity:0.35;cursor:not-allowed;color:var(--muted);text-decoration:line-through;}
+.nc-slot.on{background:var(--y);color:var(--bg);border-color:var(--y);font-weight:700;}
 /* ══ SERVISO KNYGA prie automobilio (Žingsnis 5/7) ══ */
 .car-book-toggle{background:transparent;border:none;color:var(--muted);font-family:'IBM Plex Sans';font-size:12px;font-weight:600;cursor:pointer;padding:0;margin-top:10px;}
 .car-book-toggle:hover{color:var(--y);}
@@ -205,7 +216,7 @@ nav{
 
     <div class="acc-page" id="acc-page-newchat">
       <div class="acc-page-title">💬 Naujas pokalbis</div>
-      <div class="acc-page-sub">Pasirinkite miestą ir servisą, su kuriuo norite susisiekti tiesiogiai — be konkretaus laiko rezervavimo.</div>
+      <div class="acc-page-sub">Pasirinkite miestą ir servisą — matysite jo laisvus/užimtus laikus ir galėsite iškart rezervuoti konkretų laiką arba tiesiog parašyti.</div>
       <div class="car-form" style="max-width:460px;">
         <div class="car-form-grid" style="grid-template-columns:1fr;">
           <div>
@@ -219,6 +230,15 @@ nav{
             <select class="car-input" id="nc-service" onchange="onNewChatServiceChange()" disabled>
               <option value="">— pirma pasirinkite miestą —</option>
             </select>
+          </div>
+          <div id="nc-time-wrap" style="display:none;">
+            <label class="car-label">Laikas (nebūtina) — matote, kada servisas laisvas/užimtas</label>
+            <div class="nc-days" id="nc-days"></div>
+            <div class="nc-slots" id="nc-slots"></div>
+            <div id="nc-time-chosen" style="display:none;font-size:12px;color:var(--muted);margin:-4px 0 12px;">
+              Pasirinktas laikas: <b id="nc-time-chosen-txt" style="color:var(--text);"></b>
+              — <a href="#" onclick="clearNcTime();return false;" style="color:var(--y);">✕ išvalyti</a>
+            </div>
           </div>
           <div>
             <label class="car-label">Automobilis (nebūtina)</label>
@@ -287,6 +307,7 @@ nav{
 </div>
 
 <script src="car-data.js"></script>
+<script src="lt-cities.js"></script>
 <script>
 const API_BASE = '/api';
 let clientToken = localStorage.getItem('sc_client_token');
@@ -339,7 +360,11 @@ async function apiRequest(method, path, body){
   });
   if(res.status === 401){ redirectToLogin(); throw new Error('Sesija baigėsi'); }
   const data = await res.json().catch(()=>({}));
-  if(!res.ok) throw new Error(data.error || 'Klaida');
+  if(!res.ok){
+    const err = new Error(data.error || 'Klaida');
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 const apiGet = (path) => apiRequest('GET', path);
@@ -660,13 +685,17 @@ function renderCarBookHtml(carId){
    tai NE rezervacija, tik susisiekimas). Po sukūrimo persijungiama į "Užsakymų
    istoriją" ir iškart išskleidžiamas naujas pokalbis. ══ */
 let ncAllServices = [];
+let ncAvailability = null;
+let ncSelectedDay = null;
+let ncSelectedTime = null;
 async function loadNewChatCities(){
   try{
     ncAllServices = await apiGet('/services');
   } catch(e){ ncAllServices = []; }
-  const cities = [...new Set(ncAllServices.filter(s=>!s.is_bot).map(s=>s.city))].sort((a,b)=>a.localeCompare(b,'lt'));
+  // Rodomi VISI Lietuvos miestai (LT_CITIES, žr. lt-cities.js), ne tik tie, kuriuose jau yra
+  // servisų — jei pasirinktame mieste servisų nėra, tai aiškiai parodoma serviso lauke žemiau.
   document.getElementById('nc-city').innerHTML = '<option value="">— pasirinkite miestą —</option>'
-    + cities.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    + LT_CITIES.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   renderNewChatCarOptions();
 }
 function renderNewChatCarOptions(){
@@ -678,6 +707,7 @@ function renderNewChatCarOptions(){
 function onNewChatCityChange(){
   const city = document.getElementById('nc-city').value;
   const serviceSel = document.getElementById('nc-service');
+  loadNcAvailability(null);
   if(!city){
     serviceSel.innerHTML = '<option value="">— pirma pasirinkite miestą —</option>';
     serviceSel.disabled = true;
@@ -690,10 +720,79 @@ function onNewChatCityChange(){
   serviceSel.disabled = services.length === 0;
   updateNewChatSubmitState();
 }
-function onNewChatServiceChange(){ updateNewChatSubmitState(); }
+function onNewChatServiceChange(){
+  const serviceId = document.getElementById('nc-service').value;
+  loadNcAvailability(serviceId ? parseInt(serviceId, 10) : null);
+  updateNewChatSubmitState();
+}
 function updateNewChatSubmitState(){
   const ok = document.getElementById('nc-service').value && document.getElementById('nc-message').value.trim();
   document.getElementById('nc-submit-btn').disabled = !ok;
+}
+
+// ── Serviso kalendorius (laisvi/užimti laikai) — ta pati logika kaip
+// servisucentras-pagrindinis.html openBooking/renderBookingDays/selectBookingDay/
+// pickBookingSlot, tik čia laikas visada NEPRIVALOMAS (klientas gali tiesiog parašyti). ──
+async function loadNcAvailability(serviceId){
+  ncSelectedDay = null; ncSelectedTime = null;
+  document.getElementById('nc-time-chosen').style.display = 'none';
+  const wrap = document.getElementById('nc-time-wrap');
+  if(!serviceId){ ncAvailability = null; wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  document.getElementById('nc-days').innerHTML = '';
+  document.getElementById('nc-slots').innerHTML = '<div style="color:var(--muted);font-size:12px;">Kraunama...</div>';
+  try{
+    const res = await fetch(`${API_BASE}/services/${serviceId}/availability`);
+    ncAvailability = res.ok ? await res.json() : null;
+  } catch(e){ ncAvailability = null; }
+  if(!ncAvailability){
+    document.getElementById('nc-slots').innerHTML = '<div style="color:var(--muted);font-size:12px;">Nepavyko įkelti kalendoriaus.</div>';
+    return;
+  }
+  renderNcDays();
+  const firstFreeDay = ncAvailability.days.find(d=>d.slots.some(s=>!s.busy)) || ncAvailability.days[0];
+  selectNcDay(firstFreeDay ? firstFreeDay.date : null);
+}
+function renderNcDays(){
+  const DAY_ABBR = ['Pir','Ant','Tre','Ket','Pen','Šeš','Sek'];
+  document.getElementById('nc-days').innerHTML = ncAvailability.days.map(d=>{
+    const dt = new Date(d.date+'T00:00:00');
+    const dow = (dt.getDay()+6)%7;
+    const hasFree = d.slots.some(s=>!s.busy);
+    return `<div class="nc-day-chip ${d.date===ncSelectedDay?'on':''}" style="${hasFree?'':'opacity:0.4;'}" onclick="selectNcDay('${d.date}')">${DAY_ABBR[dow]}<span class="nd-num">${dt.getDate()}</span></div>`;
+  }).join('');
+}
+function selectNcDay(dateStr){
+  ncSelectedDay = dateStr;
+  ncSelectedTime = null;
+  document.getElementById('nc-time-chosen').style.display = 'none';
+  renderNcDays();
+  const slotsEl = document.getElementById('nc-slots');
+  if(!dateStr){ slotsEl.innerHTML = ''; return; }
+  const day = ncAvailability.days.find(d=>d.date===dateStr);
+  if(!day || day.slots.length === 0){
+    slotsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;">Šią dieną servisas nedirba.</div>';
+    return;
+  }
+  slotsEl.innerHTML = day.slots.map(s=>{
+    const hh = s.time.split('T')[1];
+    return `<div class="nc-slot ${s.busy?'busy':''}" onclick="${s.busy?'':`pickNcSlot('${s.time}')`}">${hh}</div>`;
+  }).join('');
+}
+function pickNcSlot(timeStr){
+  ncSelectedTime = timeStr;
+  const slotsEl = document.getElementById('nc-slots');
+  slotsEl.querySelectorAll('.nc-slot').forEach(el=>el.classList.remove('on'));
+  const day = ncAvailability.days.find(d=>d.date===ncSelectedDay);
+  const idx = day ? day.slots.findIndex(s=>s.time===timeStr) : -1;
+  if(idx>=0) slotsEl.children[idx].classList.add('on');
+  document.getElementById('nc-time-chosen-txt').textContent = formatOrderTime(timeStr);
+  document.getElementById('nc-time-chosen').style.display = 'block';
+}
+function clearNcTime(){
+  ncSelectedTime = null;
+  document.getElementById('nc-time-chosen').style.display = 'none';
+  document.getElementById('nc-slots').querySelectorAll('.nc-slot').forEach(el=>el.classList.remove('on'));
 }
 async function submitNewChat(){
   const serviceId = parseInt(document.getElementById('nc-service').value, 10);
@@ -706,16 +805,23 @@ async function submitNewChat(){
   const btn = document.getElementById('nc-submit-btn');
   btn.disabled = true; btn.textContent = 'Siunčiama...';
   try{
-    const order = await apiPost('/orders/direct', { serviceId, comment: message, carId });
+    const order = await apiPost('/orders/direct', { serviceId, comment: message, carId, scheduledTime: ncSelectedTime || null });
     document.getElementById('nc-city').value = '';
     document.getElementById('nc-service').innerHTML = '<option value="">— pirma pasirinkite miestą —</option>';
     document.getElementById('nc-service').disabled = true;
     document.getElementById('nc-message').value = '';
+    loadNcAvailability(null);
     showAccPage('history', document.querySelector('[data-page="history"]'));
     await loadOrderHistory();
     toggleOrderChat(order.id);
   } catch(err){
-    errEl.textContent = err.message; errEl.style.display = 'block';
+    if(err.status === 409){
+      errEl.textContent = err.message || 'Šis laikas jau užimtas — pasirinkite kitą.';
+      errEl.style.display = 'block';
+      await loadNcAvailability(serviceId);
+    } else {
+      errEl.textContent = err.message; errEl.style.display = 'block';
+    }
   } finally {
     btn.textContent = '💬 Pradėti pokalbį';
     updateNewChatSubmitState();

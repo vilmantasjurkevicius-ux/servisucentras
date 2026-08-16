@@ -1577,6 +1577,18 @@ Vartotojas paprašė į kliento "Profilis" puslapį (mano-paskyra.html) įdėti 
 
 ---
 
+## "Naujas pokalbis": visi Lietuvos miestai + serviso kalendorius (2026-08-16)
+
+Vartotojas paprašė dviejų dalykų kliento paskyros "Naujas pokalbis" puslapyje: (A) miestų sąraše rodyti VISUS Lietuvos miestus, ne tik tuos, kuriuose jau yra užsiregistravusių servisų, ir (B) pridėti serviso kalendorių, kad klientas matytų, kada servisas laisvas/užimtas, ir galėtų iškart užsiregistruoti konkrečiam laikui.
+
+**(A) Miestų sąrašas**: anksčiau `loadNewChatCities()` mieste sąrašą sudarydavo TIK iš esamų (ne-bot) servisų miestų (`ncAllServices.map(s=>s.city)`) — jei mieste dar nebuvo nė vieno serviso, jo apskritai nebūdavo sąraše. Kadangi identiškas VISŲ Lietuvos savivaldybių sąrašas (`LT_CITIES`, 54 įrašai) jau egzistavo `automeistrai-login.html` (serviso registracijos miesto pasirinkimui), jis ištrauktas į naują bendrą failą **`lt-cities.js`** (ta pati dubliavimo vengimo logika kaip `car-data.js` automobilių duomenims) — dabar abu failai (`automeistrai-login.html`, `mano-paskyra.html`) įkelia jį per `<script src="lt-cities.js">`. Pasirinkus miestą be jokio serviso, serviso laukas parodo "— šiame mieste servisų nėra —" (tas pats elgesys, koks jau buvo — tiesiog dabar pasiekiamas visiems miestams, ne tik iš anksto "populiariems").
+
+**(B) Serviso kalendorius**: naudojant TĄ PATĮ viešą `GET /api/services/:id/availability` endpoint'ą, kuris jau naudojamas `servisucentras-pagrindinis.html` tiesioginės rezervacijos modale (`openBooking`/`renderBookingDays`/`selectBookingDay`/`pickBookingSlot`), pridėta identiška logika (naujos `.nc-*` CSS klasės ir `nc*` JS funkcijos, kad nesikirstų su esamu `booking*` kodu kitame faile) tiesiai "Naujas pokalbis" formoje — pasirinkus servisą, po juo atsiranda dienų juosta + valandų tinklelis, užimtos valandos pilkos/perbrauktos ir neklikabilios. Laikas NEPRIVALOMAS (skirtingai nuo `servisucentras-pagrindinis.html` modalo, kuris reikalauja laiko) — jei klientas nieko nepasirenka, `submitNewChat()` siunčia `scheduledTime:null`, lygiai kaip anksčiau (grynas pokalbis be rezervacijos). Pasirinkus laiką, siunčiamas per esamą (jau anksčiau paruoštą, bet nenaudotą iš šio puslapio) `POST /orders/direct` `scheduledTime` lauką — jokio naujo backend endpoint'o nereikėjo. 409 (laikas užimtas per lenktynių sąlygą) sugaunamas ir kalendorius automatiškai perkraunamas su nauju stovekliu — tam `apiRequest()` papildytas: klaidos objektas dabar neša `err.status` (anksčiau turėjo tik `.message`).
+
+**Patikrinta gyvai**: sukurtas testinis servisas (Vilnius) + klientas, DB rankiniu būdu sukurtas `in_progress` užsakymas rytojaus 10:00 (užimtas laikas); miesto sąraše patvirtinti visi 54 miestai; pasirinkus servisą kalendorius teisingai parodė 10:00 kaip užimtą (perbrauktą, neklikabilų), likusias valandas — laisvas; pasirinkus laisvą 14:00 ir pateikus žinutę, sukurtas užsakymas su `scheduled_time:"2026-08-17T14:00"`; pateikus BE pasirinkto laiko — `scheduled_time:null` (senas elgesys nepakito); tiesioginis API bandymas rezervuoti jau užimtą 10:00 grąžino `409` su tikslia klaidos žinute. `automeistrai-login.html` patikrinta — `LT_CITIES` (54 įrašai) sėkmingai įsikelia iš bendro `lt-cities.js`. `npm test` → 26/26 (backend nekeistas — tik frontend + viena bendra JS byla).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
