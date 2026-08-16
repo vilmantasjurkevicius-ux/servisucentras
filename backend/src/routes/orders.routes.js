@@ -26,12 +26,18 @@ function findMatchingServices(city, categoryId) {
   `).all(city);
 }
 
+// Kuro tipas saugomas kaip trumpas enum (žr. mano-paskyra.html FUEL_LABELS) — čia ta pati
+// žymė, kad car_info snapshot'e rodytųsi žmogui skaitomas žodis, ne raidinis kodas.
+const FUEL_LABELS = { benzinas: 'Benzinas', dyzelinas: 'Dyzelinas', elektra: 'Elektra', hibridas: 'Hibridas', dujos: 'Dujos (SUP)' };
+
 // Automobilio pasirinkimas kuriant užklausą (Serviso knyga, Žingsnis 3/7) — registruotas
 // klientas gali PASIRINKTI konkretų automobilį (carId) iš savo "Mano automobiliai" sąrašo,
-// vietoj laisvo teksto. car_info išsaugomas kaip UŽRAŠYTA nuotrauka ("Markė Modelis (Metai)")
-// pasirinkimo METU — nepriklauso nuo vėlesnio automobilio redagavimo/ištrynimo, tad senos
-// užklausos visada rodo tai, kas buvo pasirinkta tada. Svečiai carId neturi (jų automobilių
-// knygos nėra), tad jiems visada naudojamas laisvas tekstas (carInfo) — nepakitęs elgesys.
+// vietoj laisvo teksto. car_info išsaugomas kaip UŽRAŠYTA nuotrauka ("Markė Modelis (Metai),
+// variklis, kuras") pasirinkimo METU — nepriklauso nuo vėlesnio automobilio redagavimo/
+// ištrynimo, tad senos užklausos visada rodo tai, kas buvo pasirinkta tada. Servisui šie
+// duomenys (metai/variklis/kuras) naudingi iš karto vertinant darbą, ne tik markė/modelis.
+// Svečiai carId neturi (jų automobilių knygos nėra), tad jiems visada naudojamas laisvas
+// tekstas (carInfo) — nepakitęs elgesys.
 function resolveCarSelection(clientId, carId, carInfoText) {
   if (carId) {
     const car = db.prepare('SELECT * FROM cars WHERE id = ?').get(carId);
@@ -40,7 +46,11 @@ function resolveCarSelection(clientId, carId, carInfoText) {
       err.status = 400;
       throw err;
     }
-    const label = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`;
+    const details = [];
+    if (car.engine) details.push(car.engine);
+    if (car.fuel_type) details.push(FUEL_LABELS[car.fuel_type] || car.fuel_type);
+    const label = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`
+      + (details.length ? ', ' + details.join(', ') : '');
     return { carId: car.id, carInfo: label };
   }
   return { carId: null, carInfo: carInfoText || null };

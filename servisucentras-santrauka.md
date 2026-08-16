@@ -1539,6 +1539,18 @@ Vartotojas paprašė, kad "Registruokitės" raginimas (žr. aukščiau) mirksėt
 
 ---
 
+## Servisui rodomas pilnas automobilio aprašymas, ne tik markė/modelis (2026-08-16)
+
+Vartotojas pastebėjo (realioje užklausoje nuo registruoto kliento Giedriaus, ekrano nuotrauka): serviso dashboard'e prie "Ford Kuga" nerodomi metai/variklis/kuras, nors klientas registruotas ir turi šiuos duomenis "Mano automobiliai" paskyroje.
+
+**Fix**: `resolveCarSelection()` (orders.routes.js, naudojama IR `POST /orders`, IR `POST /orders/direct`) — car_info snapshot'as, kuris anksčiau buvo TIK `"Markė Modelis (Metai)"`, dabar prideda variklio ir kuro informaciją, jei jie užpildyti kliento automobilio įraše: `"Ford Kuga (2014), 2.0 TDI, Dyzelinas"`. Naudojama TIK kai užklausa kuriama pasirenkant konkretų automobilį (`carId`) iš "Mano automobiliai" — svečio laisvo teksto srautas nepakito.
+
+**Svarbu**: tai NEATGALINIS pakeitimas — `car_info` išsaugomas kaip UŽRAŠYTA nuotrauka pasirinkimo METU (tyčinis, jau anksčiau nustatytas elgesys — žr. kodo komentarą), tad Giedriaus JAU ESAMA užklausa ekrano nuotraukoje NEPASIKEIS (ji buvo sukurta prieš šį pataisymą). Nauja formatė pasirodys TIK naujoms užklausoms, kai registruotas klientas pasirenka automobilį su užpildytu varikliu/kuru.
+
+**Patikrinta gyvai**: sukurtas testinis registruotas klientas su automobiliu (Ford Kuga, 2014, "2.0 TDI", dyzelinas), sukurta tiesioginė rezervacija pasirenkant šį automobilį → `car_info` grąžino tiksliai `"Ford Kuga (2014), 2.0 TDI, Dyzelinas"`, serviso dashboard'e (`ordersCache`) matomas identiškas tekstas. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
