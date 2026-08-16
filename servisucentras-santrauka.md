@@ -1509,6 +1509,18 @@ Vartotojas paprašė (formalia užduotimi, panašiai kaip ecumap.com) pakeisti a
 
 ---
 
+## Kaskadiniai sąrašai IR svečiams, ne tik registruotiems (2026-08-16)
+
+Vartotojas patikrino gyvai (realiame servisucentras.lt, ekrano nuotrauka) ir vis tiek matė senąjį laisvo teksto lauką su naršyklės autofill pasiūlymais ("valius", "golf5" ir pan.) vietoje naujų sąrašų.
+
+**Diagnozė**: production deploy JAU BUVO atsinaujinęs (patikrinta — `car-data.js` grąžina naują turinį iš `www.servisucentras.lt`), tad tai NEBUVO deploy vėlavimo klaida. Tikroji priežastis: ankstesnis įgyvendinimas (žr. aukščiau, 2026-08-16 ankstesnis įrašas) kaskadinius sąrašus rodė TIK registruotiems, prisijungusiems klientams (`isRegisteredClient===true`) — SVEČIAI (nepasijungę, tik vardu/telefonu "žinomi" tarp apsilankymų, kaip ekrano nuotraukoje: "Sveiki, ...! Ne jūs? Pakeisti duomenis") IR TOLIAU matydavo seną laisvo teksto `#gm-car` lauką — tai buvo TYČIA, iš anksčiau paveldėta taisyklė ("Svečias — nepakitęs laisvo teksto laukas"), bet prieštarauja vartotojo užduoties tikslui (VISOS automobilio pasirinkimo vietos → kaskada).
+
+**Fix**: `servisucentras-pagrindinis.html` `showGuestOverlay()` — TIEK 'car' (žinomas svečias, kitas pokalbis), TIEK 'new' (pirmas apsilankymas) režimai dabar TIESIOGIAI rodo kaskadinį markė/modelis/metai pasirinkimą (naudojant TĄ PATĮ `#gm-car-quickadd` bloką, kuris anksčiau buvo skirtas tik registruoto kliento "+ Naujas automobilis" pošakiui) — praleidžiant tarpinį "pasirinkite iš išsaugotų" žingsnį, nes svečiai neturi "Mano automobiliai" knygos (backend `requireRegisteredClient` tebeblokuoja `POST /api/cars` svečiams — tai NEPAKITO). Nauja `readGuestCarInfo()` surenka pasirinktas reikšmes į TĄ PATĮ `"Markė Modelis (Metai)"` laisvo teksto `car_info`, kokį anksčiau reikėdavo įrašyti ranka — joks naujas API kvietimas svečiams nereikalingas, `order.car_id` lieka `null` (tik registruotiems — nepakitęs elgesys).
+
+**Patikrinta gyvai**: naujas (pirmą kartą) svečias — atidarius chat'ą iš karto matomi markė/modelis/metai sąrašai (be laisvo teksto lauko); pasirinkus Toyota→RAV4→2018 ir užregistravus, tikra užklausa DB gavo `car_info:"Toyota RAV4 (2018)"`, `car_id:null`; PAKARTOTINAI atidarius chat'ą (guestName jau žinomas — TIKSLIAI ta pati situacija kaip vartotojo ekrano nuotraukoje: "Sveiki, ...! Ne jūs?") — kaskada rodoma vėl, ne senas laisvo teksto laukas. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

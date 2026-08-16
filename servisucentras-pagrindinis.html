@@ -1142,6 +1142,22 @@ function showChat(){
   setTimeout(()=>document.getElementById('chat-input').focus(),300);
 }
 
+// Svečias NETURI "Mano automobiliai" knygos (žr. backend cars.routes.js
+// requireRegisteredClient) — jam kaskadinis markės/modelio/metų pasirinkimas rodomas
+// TIESIOGIAI (be tarpinio "pasirinkite iš išsaugotų" žingsnio, nes išsaugotų nėra), o
+// pasirinktos reikšmės guestOk() surenkamos į tą pačią laisvo teksto car_info eilutę,
+// kurią anksčiau reikėdavo įrašyti ranka — joks POST /api/cars čia nekviečiamas.
+function initGuestCarCascade(){
+  document.getElementById('gm-car-select').style.display = 'none';
+  const quickadd = document.getElementById('gm-car-quickadd');
+  quickadd.style.display = 'block';
+  document.getElementById('gm-car-new-make').innerHTML = carMakeOptionsHtml('');
+  document.getElementById('gm-car-new-model').innerHTML = carModelOptionsHtml('', '');
+  document.getElementById('gm-car-new-year').innerHTML = carYearOptionsHtml('', '', '');
+  document.getElementById('gm-car-new-make-other').style.display = 'none';
+  document.getElementById('gm-car-new-model-other').style.display = 'none';
+}
+
 function showGuestOverlay(mode){
   guestOverlayMode = mode;
   const nameField = document.getElementById('gm-name');
@@ -1154,6 +1170,7 @@ function showGuestOverlay(mode){
   const sub = document.getElementById('gm-sub');
   const note = document.getElementById('gm-note');
   const btn = document.getElementById('gm-submit-btn');
+  let focusTarget = nameField;
 
   if(mode === 'car'){
     document.getElementById('chat-panel').classList.remove('show');
@@ -1165,19 +1182,18 @@ function showGuestOverlay(mode){
     title.textContent = 'Apie kurį automobilį klausiate šįkart?';
     sub.textContent = 'Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart.';
     note.style.display = 'none';
-    // Registruotas klientas — RENKASI iš "Mano automobiliai" (Serviso knyga, Žingsnis 3/7),
-    // ne laisvas tekstas. Svečias — nepakitęs laisvo teksto laukas.
+    // Registruotas klientas — RENKASI iš "Mano automobiliai" (Serviso knyga, Žingsnis 3/7).
+    // Svečias — kaskadinis pasirinkimas be knygos (žr. initGuestCarCascade() aukščiau).
+    carField.style.display = 'none';
+    document.getElementById('gm-car-label').style.display = 'none';
     const carPickerWrap = document.getElementById('gm-car-picker-wrap');
+    carPickerWrap.style.display = 'block';
     if(isRegisteredClient){
-      carField.style.display = 'none';
-      document.getElementById('gm-car-label').style.display = 'none';
-      carPickerWrap.style.display = 'block';
       renderCarPickerOptions('gm');
+      focusTarget = document.getElementById('gm-car-select');
     } else {
-      carField.style.display = '';
-      document.getElementById('gm-car-label').style.display = '';
-      carPickerWrap.style.display = 'none';
-      carField.value = '';
+      initGuestCarCascade();
+      focusTarget = document.getElementById('gm-car-new-make');
     }
     btn.textContent = '💬 Tęsti →';
   } else if(mode === 'edit'){
@@ -1200,18 +1216,19 @@ function showGuestOverlay(mode){
     title.textContent = 'Prieš rašant servisams';
     sub.innerHTML = 'Įveskite vardą ir telefoną — servisai žinos su kuo kalba. <b>Užtrunka 10 sekundžių.</b>';
     note.style.display = 'block';
-    // 'new' režimas — visada dar neidentifikuotas lankytojas (nei registruotas, nei žinomas
-    // svečias), tad visada laisvas tekstas, ne car-picker.
-    carField.style.display = '';
-    document.getElementById('gm-car-label').style.display = '';
-    document.getElementById('gm-car-picker-wrap').style.display = 'none';
+    // 'new' režimas — dar neidentifikuotas lankytojas (nei registruotas, nei žinomas
+    // svečias), bet automobilio pasirinkimas TAS PATS kaskadinis, kaip 'car' režime.
+    carField.style.display = 'none';
+    document.getElementById('gm-car-label').style.display = 'none';
+    document.getElementById('gm-car-picker-wrap').style.display = 'block';
+    initGuestCarCascade();
     nameField.value = ''; phoneField.value = '+370 '; carField.value = '';
     nameField.style.borderColor = ''; phoneField.style.borderColor = '';
     btn.textContent = '💬 Rašyti servisams →';
   }
 
   document.getElementById('guest-overlay').classList.add('show');
-  setTimeout(()=>{ (mode==='car' ? carField : nameField).focus(); }, 200);
+  setTimeout(()=>{ focusTarget.focus(); }, 200);
 }
 
 function closeGuest(){
@@ -1222,12 +1239,19 @@ function closeGuest(){
 
 function editGuestInfo(){ showGuestOverlay('edit'); }
 
-async function guestOk(){
-  const carInfo = document.getElementById('gm-car').value.trim();
+// Svečio kaskadinio pasirinkimo (markė/modelis/metai) reikšmės, sudėtos į tą pačią
+// "Markė Modelis (Metai)" laisvo teksto eilutę, kokią anksčiau reikėdavo įrašyti ranka —
+// tuščia, jei svečias nieko nepasirinko (automobilis lieka nebūtinas laukas, kaip ir anksčiau).
+function readGuestCarInfo(){
+  const { make, model, year } = readCarSelection('gm-car-new');
+  if(!make && !model) return '';
+  return `${make} ${model}`.trim() + (year ? ` (${year})` : '');
+}
 
+async function guestOk(){
   // 'car' režimas — vardas/telefonas jau žinomi, token galiojantis. Registruotam klientui —
   // reikia išspręsti car-picker'io pasirinkimą (gali sukurti naują automobilį per API);
-  // svečiui — nepakitęs laisvas tekstas, jokio API kvietimo nereikia.
+  // svečiui — kaskadinis pasirinkimas surenkamas į laisvo teksto eilutę, jokio API kvietimo.
   if(guestOverlayMode === 'car'){
     if(isRegisteredClient){
       try{
@@ -1235,7 +1259,7 @@ async function guestOk(){
       } catch(err){ alert(err.message); return; }
       guestCarInfo = '';
     } else {
-      guestCarInfo = carInfo;
+      guestCarInfo = readGuestCarInfo();
       guestCarId = null;
     }
     document.getElementById('guest-overlay').classList.remove('show');
@@ -1277,7 +1301,7 @@ async function guestOk(){
       if(!res.ok) throw new Error(data.error || 'Nepavyko užsiregistruoti');
 
       clientToken = data.token;
-      guestName = name; guestPhone = phone; guestCarInfo = carInfo;
+      guestName = name; guestPhone = phone; guestCarInfo = readGuestCarInfo();
       localStorage.setItem('sc_client_token', clientToken);
       localStorage.setItem('sc_client_name', guestName);
       localStorage.setItem('sc_client_phone', guestPhone);
