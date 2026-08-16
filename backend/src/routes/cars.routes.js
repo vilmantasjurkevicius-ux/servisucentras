@@ -18,13 +18,13 @@ router.get('/me', authRequired, requireRole('client'), requireRegisteredClient, 
 });
 
 router.post('/', authRequired, requireRole('client'), requireRegisteredClient, (req, res) => {
-  const { make, model, year, engine, fuelType, plateNumber, vin } = req.body;
+  const { make, model, year, engine, fuelType, bodyType, plateNumber, vin } = req.body;
   if (!make || !model) return res.status(400).json({ error: 'Trūksta markės arba modelio' });
 
   const info = db.prepare(`
-    INSERT INTO cars (client_id, make, model, year, engine, fuel_type, plate_number, vin)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(req.user.id, make, model, year || null, engine || null, fuelType || null, plateNumber || null, vin || null);
+    INSERT INTO cars (client_id, make, model, year, engine, fuel_type, body_type, plate_number, vin)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(req.user.id, make, model, year || null, engine || null, fuelType || null, bodyType || null, plateNumber || null, vin || null);
 
   res.status(201).json(db.prepare('SELECT * FROM cars WHERE id = ?').get(info.lastInsertRowid));
 });
@@ -36,7 +36,7 @@ router.patch('/:id', authRequired, requireRole('client'), requireRegisteredClien
 
   const allowed = {
     make: 'make', model: 'model', year: 'year', engine: 'engine',
-    fuelType: 'fuel_type', plateNumber: 'plate_number', vin: 'vin',
+    fuelType: 'fuel_type', bodyType: 'body_type', plateNumber: 'plate_number', vin: 'vin',
   };
   const fields = [];
   const params = [];

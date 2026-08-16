@@ -1486,6 +1486,29 @@ Vartotojas pastebėjo: "Jūsų kaina/laikas šiai užklausai" laukelyje pasirink
 
 ---
 
+## Automobilio pasirinkimas: kaskadiniai Markė→Modelis→Metai(→Kėbulo tipas) sąrašai (2026-08-16)
+
+Vartotojas paprašė (formalia užduotimi, panašiai kaip ecumap.com) pakeisti automobilio įvedimą iš laisvo teksto/paprasto sąrašo į kaskadinius išskleidžiamus sąrašus: Markė → Modelis → Karta/Metai → nebūtinas Variklis/kėbulo tipas, su "+ Naujas automobilis"/"Kitas modelis" laisvo teksto fallback'u, neprarandant jau įrašytų automobilių.
+
+**Atradimas prieš pradedant**: dalis šito jau egzistavo — `mano-paskyra.html` ir `servisucentras-pagrindinis.html` jau turėjo BAIT PO BAITO DUBLIUOTĄ 2-lygių (Markė→Modelis) kaskadą (`CAR_MAKES_MODELS`, ~30 markių) automobilio pridėjimo formose. Trūko TIK 3-io lygio (Metai — buvo paprastas skaičiaus laukas, nesusietas su modeliu) ir 4-o (Kėbulo tipo — visai nebuvo).
+
+**Sprendimas — bendras `car-data.js` failas** (naujas, `<script src="car-data.js">` abiejuose failuose), pašalinantis senąją dubliaciją IR pridedantis naujus lygius:
+- `CAR_MAKES_MODELS` — tas pats ~30 markių rinkinys (Lietuvos rinkoje dažniausios), perkeltas iš abiejų failų į vieną vietą.
+- `CAR_MODEL_MIN_YEAR` — override'ai modeliams, kurie realiai neegzistavo nuo numatytos 1997 m. ribos (pvz. Škoda Kodiaq nuo 2016, Volvo XC90 nuo 2002, Audi Q3 nuo 2011) — apytiksliai, pagal Europos rinkai pristatymo metus, NE tiksli generacijų/facelift'ų data (tai būtų reikėję tyrinėti šimtus modelių tiksliai — sąmoningas supaprastinimas, kaip prašyta užduotyje).
+- `carYearOptionsHtml(make, model, selected)` — NAUJAS, generuoja metų sąrašą nuo modelio-specifinės ribos iki dabartinių metų; jei redaguojamo automobilio metai už standartinio diapazono (senas įrašas) — vis tiek įtraukiami, kad nedingtų.
+- `carBodyTypeOptionsHtml(selected)` — NAUJAS, statinis 9 kėbulo tipų sąrašas (Sedanas, Universalas, Hečbekas, Visureigis/SUV ir t.t.) — nepriklausomas nuo markės/modelio (bendra klasifikacija, ne generacijai priklausantys duomenys, kad nereikėtų fabrikuoti tikslių variklio/kėbulo derinių kiekvienai generacijai).
+- `onCarModelSelectChange()` dabar TAIP PAT atnaujina metų sąrašą (ne tik modelio-kitas-lauko rodymą), o `readCarSelection(prefix)` grąžina `{make, model, year, bodyType}` (buvęs `readCarMakeModel` grąžindavo tik `{make, model}`).
+
+**Backend**: `cars` lentelei pridėtas `body_type TEXT` stulpelis (migracija `db.js`, `PRAGMA table_info` patikra kaip visur kitur šiame projekte), `cars.routes.js` POST/PATCH `allowed` map papildytas `bodyType→body_type`. `resolveCarSelection()` (orders.routes.js) NEKEISTA — `car_info` etiketė lieka `"Markė Modelis (Metai)"`, kėbulo tipas į ją neįtraukiamas (nuoseklu su esamu elgesiu — variklis/kuras/numeris/VIN irgi niekada nebuvo įtraukti į šią santrauką).
+
+**`mano-paskyra.html`** ("Mano automobiliai" — pilna forma): `carFormHtml()` — buvęs laisvo skaičiaus metų laukas pakeistas kaskadiniu select'u, pridėtas nebūtinas "Kėbulo tipas" select'as; `renderCars()` rodo naują "Kėbulas:" meta žymą, jei nustatyta.
+
+**`servisucentras-pagrindinis.html`** (svečio/kliento chat car-picker, greitas pridėjimas): abi vietos (chat "car" žingsnis + tiesioginės rezervacijos modalas) — buvęs skaičiaus laukas pakeistas kaskadiniu metų select'u; kėbulo tipo NEPRIDĖTA čia sąmoningai — šis greito pridėjimo mini-formatas lieka minimalus (anksčiau neturėjo nei variklio, nei kuro laukų), pilnas profilis su visais laukais lieka `mano-paskyra.html`.
+
+**Patikrinta gyvai**: iš anksto per API sukurtas senas įrašas "Volvo S80 (2000)" — po pakeitimo IR TOLIAU rodomas teisingai, niekur nedingo; pasirinkus Volvo→XC90 metų sąrašas teisingai prasidėjo nuo 2002 (override); naujas automobilis su metais+kėbulo tipu išsaugotas ir teisingai atvaizduotas; redagavimas teisingai iš anksto pažymi visus 4 laukus; "Kita markė..."/"Kitas modelis..." laisvo teksto fallback'as veikia ir išsaugomas; svečio/kliento chat'o "+ Naujas automobilis" greitas pridėjimas (BMW→X5, metai 1997–2026 diapazonas be override'o) sukūrė automobilį per tą patį `POST /api/cars` ir grąžino teisingą `car_id`. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

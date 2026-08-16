@@ -77,6 +77,7 @@ CREATE TABLE IF NOT EXISTS cars (
   year INTEGER,
   engine TEXT,
   fuel_type TEXT,
+  body_type TEXT,
   plate_number TEXT,
   vin TEXT,
   created_at TEXT NOT NULL DEFAULT (datetime('now'))

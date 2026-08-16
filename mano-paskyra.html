@@ -257,6 +257,7 @@ nav{
   </div>
 </div>
 
+<script src="car-data.js"></script>
 <script>
 const API_BASE = '/api';
 let clientToken = localStorage.getItem('sc_client_token');
@@ -358,82 +359,13 @@ function fuelSelectHtml(id, selected){
   </select>`;
 }
 
-/* ══ MARKĖ/MODELIS — kaskadinis pasirinkimas (kaip autoplius.lt), vietoj laisvo
-   teksto. "Kita..." variantas abiejuose sąrašuose leidžia įrašyti ranka retesnį
-   atvejį. Ta pati duomenų aibė ir funkcijos naudojamos IR servisucentras-
-   pagrindinis.html greito automobilio pridėjimo formose (car-picker'iuose). ══ */
-const CAR_MAKES_MODELS = {
-  'Audi': ['A1','A3','A4','A5','A6','A7','A8','Q2','Q3','Q5','Q7','Q8','TT'],
-  'BMW': ['1 serija','2 serija','3 serija','4 serija','5 serija','6 serija','7 serija','X1','X3','X5','X6','Z4'],
-  'Chevrolet': ['Aveo','Captiva','Cruze','Lacetti','Malibu','Spark'],
-  'Citroën': ['Berlingo','C1','C2','C3','C4','C5','Jumpy','Xsara'],
-  'Dacia': ['Dokker','Duster','Logan','Sandero'],
-  'Fiat': ['500','Doblo','Ducato','Panda','Punto','Tipo'],
-  'Ford': ['C-Max','EcoSport','Fiesta','Focus','Galaxy','Kuga','Mondeo','Puma','S-Max','Transit'],
-  'Honda': ['Accord','Civic','CR-V','HR-V','Jazz'],
-  'Hyundai': ['i10','i20','i30','i40','ix35','Kona','Santa Fe','Tucson'],
-  'Jeep': ['Cherokee','Compass','Grand Cherokee','Renegade'],
-  'Kia': ['Ceed','Optima','Picanto','Rio','Sorento','Sportage'],
-  'Lada': ['Granta','Niva','Vesta'],
-  'Land Rover': ['Defender','Discovery','Freelander','Range Rover'],
-  'Lexus': ['CT','ES','IS','NX','RX'],
-  'Mazda': ['2','3','5','6','CX-3','CX-5','CX-7'],
-  'Mercedes-Benz': ['A klasė','B klasė','C klasė','E klasė','S klasė','CLA','GLA','GLC','GLE','ML','Sprinter','Viano','Vito'],
-  'Mini': ['Clubman','Cooper','Countryman'],
-  'Mitsubishi': ['ASX','Colt','Lancer','Outlander','Pajero'],
-  'Nissan': ['Almera','Juke','Micra','Note','Primera','Qashqai','X-Trail'],
-  'Opel': ['Antara','Astra','Corsa','Insignia','Meriva','Mokka','Vectra','Zafira'],
-  'Peugeot': ['107','206','207','208','2008','3008','307','308','407','508','Partner'],
-  'Porsche': ['911','Cayenne','Macan','Panamera'],
-  'Renault': ['Captur','Clio','Kadjar','Laguna','Megane','Scenic','Trafic','Twingo'],
-  'Seat': ['Altea','Ateca','Ibiza','Leon','Toledo'],
-  'Škoda': ['Fabia','Karoq','Kodiaq','Octavia','Rapid','Roomster','Superb','Yeti'],
-  'Subaru': ['Forester','Impreza','Legacy','Outback','XV'],
-  'Suzuki': ['Grand Vitara','Jimny','SX4','Swift','Vitara'],
-  'Toyota': ['Auris','Avensis','Camry','Corolla','Hilux','Land Cruiser','Prius','RAV4','Yaris'],
-  'Volkswagen': ['Caddy','Golf','Jetta','Passat','Polo','Sharan','Tiguan','Touareg','Touran','Transporter','Up!'],
-  'Volvo': ['S40','S60','S80','V40','V50','V60','V70','XC60','XC90'],
-};
-
-function carMakeOptionsHtml(selected){
-  const makes = Object.keys(CAR_MAKES_MODELS).sort((a,b)=>a.localeCompare(b,'lt'));
-  const known = selected && CAR_MAKES_MODELS[selected];
-  return '<option value="">— pasirinkite markę —</option>'
-    + makes.map(m=>`<option value="${m}"${selected===m?' selected':''}>${m}</option>`).join('')
-    + `<option value="__other__"${selected && !known ? ' selected':''}>Kita markė...</option>`;
-}
-function carModelOptionsHtml(make, selected){
-  const models = CAR_MAKES_MODELS[make] || [];
-  const known = selected && models.includes(selected);
-  return '<option value="">— pasirinkite modelį —</option>'
-    + models.map(m=>`<option value="${m}"${selected===m?' selected':''}>${m}</option>`).join('')
-    + `<option value="__other__"${selected && !known ? ' selected':''}>Kitas modelis...</option>`;
-}
-function onCarMakeSelectChange(prefix){
-  const makeSel = document.getElementById(`${prefix}-make`);
-  const makeOther = document.getElementById(`${prefix}-make-other`);
-  const isOther = makeSel.value === '__other__';
-  if(makeOther) makeOther.style.display = isOther ? 'block' : 'none';
-  const modelSel = document.getElementById(`${prefix}-model`);
-  if(modelSel) modelSel.innerHTML = carModelOptionsHtml(isOther ? '' : makeSel.value, '');
-  onCarModelSelectChange(prefix);
-}
-function onCarModelSelectChange(prefix){
-  const modelSel = document.getElementById(`${prefix}-model`);
-  const modelOther = document.getElementById(`${prefix}-model-other`);
-  if(modelSel && modelOther) modelOther.style.display = modelSel.value === '__other__' ? 'block' : 'none';
-}
-function readCarMakeModel(prefix){
-  const makeSel = document.getElementById(`${prefix}-make`);
-  const modelSel = document.getElementById(`${prefix}-model`);
-  const make = makeSel.value === '__other__'
-    ? (document.getElementById(`${prefix}-make-other`).value || '').trim()
-    : makeSel.value;
-  const model = modelSel.value === '__other__'
-    ? (document.getElementById(`${prefix}-model-other`).value || '').trim()
-    : modelSel.value;
-  return { make, model };
-}
+/* ══ MARKĖ/MODELIS/METAI — kaskadinis pasirinkimas (kaip ecumap.com), vietoj laisvo
+   teksto. Duomenų aibė ir kaskados funkcijos (CAR_MAKES_MODELS, carMakeOptionsHtml,
+   carModelOptionsHtml, carYearOptionsHtml, carBodyTypeOptionsHtml, onCarMakeSelectChange,
+   onCarModelSelectChange, readCarSelection) yra bendros su servisucentras-pagrindinis.html
+   greito automobilio pridėjimo formomis — žr. car-data.js (bendras <script> failas abiem,
+   kad duomenys ir logika nebūtų dubliuojami dviejose vietose kaip buvo anksčiau). "Kita..."
+   variantas markės/modelio sąrašuose leidžia įrašyti ranka retesnį atvejį. ══ */
 
 function carFormHtml(prefix, car){
   const c = car || {};
@@ -451,7 +383,8 @@ function carFormHtml(prefix, car){
         <select class="car-input" id="${prefix}-model" onchange="onCarModelSelectChange('${prefix}')">${carModelOptionsHtml(c.make, c.model)}</select>
         <input class="car-input" id="${prefix}-model-other" style="display:${c.model && !modelKnown ? 'block':'none'};margin-top:6px;" placeholder="Įrašykite modelį" value="${c.model && !modelKnown ? c.model : ''}">
       </div>
-      <div><label class="car-label">Pagaminimo metai</label><input class="car-input" id="${prefix}-year" type="number" value="${c.year||''}" placeholder="pvz. 2018"></div>
+      <div><label class="car-label">Pagaminimo metai</label><select class="car-input" id="${prefix}-year">${carYearOptionsHtml(c.make||'', c.model||'', c.year||'')}</select></div>
+      <div><label class="car-label">Kėbulo tipas</label><select class="car-input" id="${prefix}-bodytype">${carBodyTypeOptionsHtml(c.body_type||'')}</select></div>
       <div><label class="car-label">Variklis</label><input class="car-input" id="${prefix}-engine" value="${c.engine||''}" placeholder="pvz. 2.0 TDI, 110kW"></div>
       <div><label class="car-label">Kuras</label>${fuelSelectHtml(prefix+'-fuel', c.fuel_type||'')}</div>
       <div><label class="car-label">Valstybinis numeris</label><input class="car-input" id="${prefix}-plate" value="${c.plate_number||''}" placeholder="neprivaloma"></div>
@@ -488,10 +421,9 @@ function renderAddForm(){
 
 function readCarForm(prefix){
   const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
-  const { make, model } = readCarMakeModel(prefix);
+  const { make, model, year, bodyType } = readCarSelection(prefix);
   return {
-    make, model,
-    year: val(`${prefix}-year`) ? parseInt(val(`${prefix}-year`), 10) : null,
+    make, model, year, bodyType,
     engine: val(`${prefix}-engine`) || null,
     fuelType: val(`${prefix}-fuel`) || null,
     plateNumber: val(`${prefix}-plate`) || null,
@@ -597,6 +529,7 @@ function renderCars(){
     }
     const metaParts = [];
     if(c.year) metaParts.push(`<span>Metai: <b>${c.year}</b></span>`);
+    if(c.body_type) metaParts.push(`<span>Kėbulas: <b>${c.body_type}</b></span>`);
     if(c.engine) metaParts.push(`<span>Variklis: <b>${c.engine}</b></span>`);
     if(c.fuel_type) metaParts.push(`<span>Kuras: <b>${FUEL_LABELS[c.fuel_type]||c.fuel_type}</b></span>`);
     if(c.plate_number) metaParts.push(`<span>Numeris: <b>${c.plate_number}</b></span>`);
