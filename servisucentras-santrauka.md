@@ -1565,6 +1565,18 @@ Vartotojas atsiuntė ekrano nuotrauką: "Mano automobiliai" puslapyje šoninio m
 
 ---
 
+## Kliento profilis: vardas/pavardė/paštas/telefonas/adresas (2026-08-16)
+
+Vartotojas paprašė į kliento "Profilis" puslapį (mano-paskyra.html) įdėti vardą, pavardę, el. paštą, telefoną, adresą — su pastaba prie telefono, kad klientas galėtų pats pataisyti, jei registruojantis kažką blogai įrašė. Iki šiol šis puslapis turėjo TIK slaptažodžio keitimo formą — jokių paskyros duomenų apskritai nebuvo rodoma.
+
+**Backend**: `clients` lentelei pridėtas naujas `address TEXT` stulpelis (migracija `db.js`). `PATCH /clients/me` išplėstas — anksčiau leido keisti tik `first_name`/`last_name`/`phone`, dabar TAIP PAT `address` ir `email`. El. paštas tvarkomas ATSKIRAI nuo kitų laukų, nes jis UNIQUE IR prisijungimo kredencialas: tikrinamas laisvumas (neskaitant paties savęs, 409 jei užimtas) ir atmetama tuščia reikšmė (400) — registruotas klientas negali likti be el. pašto.
+
+**Frontend**: nauja "Mano duomenys" forma "Profilis" puslapio viršuje (virš esamo slaptažodžio keitimo), su visais 5 laukais + pastaba: "Suklydote registruojantis įvedami telefono numerį ar kitus duomenis? Čia galite juos bet kada pataisyti." Forma užpildoma iš `GET /clients/me` atsakymo, kurį `init()` jau ir taip kviesdavo (jokio papildomo API kvietimo).
+
+**Patikrinta gyvai**: sukurtas testinis klientas, "Profilis" puslapyje forma teisingai užsipildė esamais duomenimis; pakeistas telefonas ir įrašytas adresas → `PATCH` sėkmingas, DB įraše matomi teisingi nauji duomenys; bandymas nustatyti KITO kliento jau naudojamą el. paštą → teisingai grąžino "Šis el. paštas jau naudojamas kito kliento" klaidą, DB įrašas nepasikeitė. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

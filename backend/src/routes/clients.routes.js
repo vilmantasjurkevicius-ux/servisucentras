@@ -18,7 +18,18 @@ router.get('/me', authRequired, requireRole('client'), (req, res) => {
 });
 
 router.patch('/me', authRequired, requireRole('client'), (req, res) => {
-  const allowed = ['first_name', 'last_name', 'phone'];
+  // El. paštas — UNIQUE stulpelis IR prisijungimo kredencialas, tad tvarkomas atskirai nuo
+  // likusių laukų: tikrinamas laisvumas (neskaitant paties savęs) prieš keičiant, o tuščia
+  // reikšmė atmetama (registruotas klientas negali likti be el. pašto — juo prisijungiama).
+  if (req.body.email !== undefined) {
+    const email = (req.body.email || '').trim();
+    if (!email) return res.status(400).json({ error: 'El. paštas privalomas' });
+    const existing = db.prepare('SELECT id FROM clients WHERE email = ? AND id != ?').get(email, req.user.id);
+    if (existing) return res.status(409).json({ error: 'Šis el. paštas jau naudojamas kito kliento' });
+    db.prepare('UPDATE clients SET email = ? WHERE id = ?').run(email, req.user.id);
+  }
+
+  const allowed = ['first_name', 'last_name', 'phone', 'address'];
   const fields = [];
   const params = [];
   for (const key of allowed) {

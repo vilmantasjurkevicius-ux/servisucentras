@@ -42,6 +42,9 @@ function migrate() {
   const carCols = db.prepare("PRAGMA table_info(cars)").all().map((c) => c.name);
   if (!carCols.includes('body_type')) db.exec('ALTER TABLE cars ADD COLUMN body_type TEXT');
 
+  const clientCols = db.prepare("PRAGMA table_info(clients)").all().map((c) => c.name);
+  if (!clientCols.includes('address')) db.exec('ALTER TABLE clients ADD COLUMN address TEXT');
+
   const serviceCols = db.prepare("PRAGMA table_info(services)").all().map((c) => c.name);
   if (!serviceCols.includes('work_hours')) db.exec('ALTER TABLE services ADD COLUMN work_hours TEXT');
   if (!serviceCols.includes('temp_closed')) db.exec('ALTER TABLE services ADD COLUMN temp_closed INTEGER NOT NULL DEFAULT 0');

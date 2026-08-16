@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS clients (
   email TEXT UNIQUE,
   password_hash TEXT,
   phone TEXT,
+  address TEXT,
   is_guest INTEGER NOT NULL DEFAULT 0,
   status TEXT NOT NULL DEFAULT 'active', -- active | banned
   created_at TEXT NOT NULL DEFAULT (datetime('now'))

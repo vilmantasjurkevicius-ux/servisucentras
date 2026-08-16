@@ -245,6 +245,23 @@ nav{
     <div class="acc-page" id="acc-page-profile">
       <div class="acc-page-title">👤 Profilis</div>
       <div class="acc-page-sub">Jūsų paskyros duomenys.</div>
+      <div class="car-form" style="max-width:420px;margin-bottom:20px;">
+        <div class="car-card-title" style="margin-bottom:16px;">Mano duomenys</div>
+        <div class="car-form-grid">
+          <div><label class="car-label">Vardas</label><input class="car-input" id="prof-first-name" placeholder="Vardas"></div>
+          <div><label class="car-label">Pavardė</label><input class="car-input" id="prof-last-name" placeholder="Pavardė"></div>
+          <div style="grid-column:1/-1;"><label class="car-label">El. paštas</label><input class="car-input" type="email" id="prof-email" placeholder="jusu@pastas.lt"></div>
+          <div>
+            <label class="car-label">Telefonas</label>
+            <input class="car-input" type="tel" id="prof-phone" placeholder="+370 6xx xxxxx">
+          </div>
+          <div style="grid-column:1/-1;"><label class="car-label">Adresas</label><input class="car-input" id="prof-address" placeholder="neprivaloma"></div>
+        </div>
+        <div class="car-vin-note" style="margin-bottom:12px;">Suklydote registruojantis įvesdami telefono numerį ar kitus duomenis? Čia galite juos bet kada pataisyti.</div>
+        <div id="prof-err" style="display:none;color:#e07070;font-size:12.5px;margin-bottom:12px;"></div>
+        <div id="prof-ok" style="display:none;color:#6fbf8a;font-size:12.5px;margin-bottom:12px;">✓ Duomenys atnaujinti</div>
+        <button class="car-btn car-btn-pri" id="prof-submit-btn" onclick="saveClientProfile()">💾 Išsaugoti</button>
+      </div>
       <div class="car-form" style="max-width:420px;">
         <div class="car-card-title" style="margin-bottom:16px;">Keisti slaptažodį</div>
         <div class="car-form-grid" style="grid-template-columns:1fr;">
@@ -294,6 +311,11 @@ async function init(){
     // buvimo nepakanka — ši paskyra TIK registruotiems klientams.
     if(client.is_guest){ redirectToLogin(); return; }
     document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(client.first_name||'')+'</b>!';
+    document.getElementById('prof-first-name').value = client.first_name || '';
+    document.getElementById('prof-last-name').value = client.last_name || '';
+    document.getElementById('prof-email').value = client.email || '';
+    document.getElementById('prof-phone').value = client.phone || '';
+    document.getElementById('prof-address').value = client.address || '';
     loadCars();
     loadOrderHistory();
     loadNewChatCities();
@@ -324,6 +346,35 @@ const apiGet = (path) => apiRequest('GET', path);
 const apiPost = (path, body) => apiRequest('POST', path, body || {});
 const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
 const apiDelete = (path) => apiRequest('DELETE', path);
+
+async function saveClientProfile(){
+  const errEl = document.getElementById('prof-err');
+  const okEl = document.getElementById('prof-ok');
+  errEl.style.display = 'none'; okEl.style.display = 'none';
+  const payload = {
+    firstName: document.getElementById('prof-first-name').value.trim(),
+    lastName: document.getElementById('prof-last-name').value.trim(),
+    email: document.getElementById('prof-email').value.trim(),
+    phone: document.getElementById('prof-phone').value.trim(),
+    address: document.getElementById('prof-address').value.trim(),
+  };
+  const btn = document.getElementById('prof-submit-btn');
+  btn.disabled = true;
+  try{
+    const res = await fetch(`${API_BASE}/clients/me`, {
+      method:'PATCH', headers:{'Content-Type':'application/json','Authorization':'Bearer '+clientToken},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Nepavyko išsaugoti');
+    document.getElementById('nav-greeting').innerHTML = 'Sveiki, <b>'+(data.first_name||'')+'</b>!';
+    okEl.style.display = 'block';
+  } catch(err){
+    errEl.textContent = err.message; errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+  }
+}
 
 async function changeClientPassword(){
   const currentPassword = document.getElementById('pw-current').value;
