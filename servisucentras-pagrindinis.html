@@ -522,6 +522,15 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
 .gm-btn:hover{background:#FF525F;}
 .gm-note{font-size:11.5px;color:#555;text-align:center;margin-top:12px;}
 .gm-note a{color:var(--y);cursor:pointer;}
+/* Svečio "Registruokitės" raginimas prie automobilio pasirinkimo — tikras ON/OFF
+   mirksėjimas (ne švelnus pulsavimas), kaip ir kitur šiame projekte naudojami dėmesio
+   atkreipimo blyksniai: 0%→49% pilnai matoma raudona, staigus šuolis į beveik nematomą. */
+@keyframes gmRegisterBlink{
+  0%,49%{opacity:1;}
+  50%,99%{opacity:0.25;}
+  100%{opacity:1;}
+}
+.gm-register-link{animation:gmRegisterBlink 1s linear infinite;font-weight:700;}
 .gm-known-row{font-size:13px;color:var(--text);background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:10px 13px;margin-bottom:16px;}
 .gm-known-row b{color:var(--y);}
 .gm-known-row a{color:var(--y);cursor:pointer;text-decoration:underline;margin-left:6px;}
@@ -1180,18 +1189,21 @@ function showGuestOverlay(mode){
     knownRow.style.display = 'block';
     knownRow.innerHTML = 'Sveiki, <b>'+guestName+'</b>! <a onclick="showGuestOverlay(\'edit\')">Ne jūs? Pakeisti duomenis</a>';
     title.textContent = 'Apie kurį automobilį klausiate šįkart?';
-    sub.textContent = 'Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart.';
     note.style.display = 'none';
     // Registruotas klientas — RENKASI iš "Mano automobiliai" (Serviso knyga, Žingsnis 3/7).
-    // Svečias — kaskadinis pasirinkimas be knygos (žr. initGuestCarCascade() aukščiau).
+    // Svečias — kaskadinis pasirinkimas be knygos (žr. initGuestCarCascade() aukščiau), o
+    // paantraštė čia paragina registruotis — tada automobilio nebereikėtų vedinėti iš naujo
+    // kiekvieną kartą, jis liktų išsaugotas ir pasirenkamas iš sąrašo.
     carField.style.display = 'none';
     document.getElementById('gm-car-label').style.display = 'none';
     const carPickerWrap = document.getElementById('gm-car-picker-wrap');
     carPickerWrap.style.display = 'block';
     if(isRegisteredClient){
+      sub.textContent = 'Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart.';
       renderCarPickerOptions('gm');
       focusTarget = document.getElementById('gm-car-select');
     } else {
+      sub.innerHTML = '<a class="gm-register-link" style="color:var(--y);cursor:pointer;" onclick="location.href=\'automeistrai-login.html?type=client&action=register\'">Registruokitės</a> — nereikės kaskart įvedinėti automobilio.';
       initGuestCarCascade();
       focusTarget = document.getElementById('gm-car-new-make');
     }

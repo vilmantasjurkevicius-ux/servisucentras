@@ -1521,6 +1521,24 @@ Vartotojas patikrino gyvai (realiame servisucentras.lt, ekrano nuotrauka) ir vis
 
 ---
 
+## Svečiui — raginimas registruotis vietoj bendro teksto (2026-08-16)
+
+Vartotojas paprašė pakeisti paantraštę virš automobilio pasirinkimo (rodoma kiekvieną kartą svečiui pradedant naują pokalbį): buvusi "Kiekvieną kartą paklausime iš naujo — gal tai kitas automobilis nei praeitąkart." pakeista į raginimą registruotis — "Registruokitės — nereikės kaskart įvedinėti automobilio." su nuoroda į registraciją (`automeistrai-login.html?type=client&action=register`).
+
+**Tik svečiams** — registruoti klientai (kurie jau turi "Mano automobiliai" sąrašą) toliau mato SENĄ, jiems tinkamą tekstą (nes JIEMS tikrai reikia pasirinkti KIEKVIENĄ kartą iš naujo, koks automobilis šįkart — jie jau registruoti, raginimas neaktualus). `.gm-sub` elementas neturėjo savo nuorodos stiliaus (skirtingai nuo `.gm-note a`, kuris jau naudojamas kitur šiame faile) — pridėtas inline stilius (`var(--y)`), kad nuoroda vizualiai išsiskirtų.
+
+**Patikrinta gyvai**: svečio atveju (`isRegisteredClient=false`) paantraštė rodo naują raginimą su paspaudžiama "Registruokitės" nuoroda; registruoto kliento atveju (`isRegisteredClient=true`) paantraštė lieka nepakitusi. `npm test` → 26/26 (grynai frontend pakeitimas).
+
+---
+
+## "Registruokitės" nuoroda dabar mirksi raudonai (2026-08-16)
+
+Vartotojas paprašė, kad "Registruokitės" raginimas (žr. aukščiau) mirksėtų raudonai, kad atkreiptų dėmesį. Nuoroda jau buvo raudona (`var(--y)`=`#E63946` — šio failo prekės ženklo raudona, nepaisant kintamojo pavadinimo "y"), tad pridėtas TIK mirksėjimas: nauja `.gm-register-link` klasė su `gmRegisterBlink` animacija — tikras ON/OFF šuolis (opacity 1→0.25, `linear`, be tarpinio pereinamumo), ta pati technika, kokia jau naudota chat ženkliuko mirksėjimui serviso dashboard'e.
+
+**Patikrinta gyvai**: `getComputedStyle` patvirtino `animationName:"gmRegisterBlink"`, `1s`, `linear`, `infinite`, spalva `rgb(230, 57, 70)`. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
