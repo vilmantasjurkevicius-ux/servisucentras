@@ -1675,6 +1675,16 @@ Vartotojas atsiuntė ekrano nuotrauką (rodyklė žymėjo): "Chat skydelio" poka
 
 ---
 
+## Užklausos kortelėje aprašymo tekstas — taip pat geltonas (2026-08-17)
+
+Vartotojas atsiuntė ekrano nuotrauką su anotacija, rodančia į užklausos kortelės aprašymo eilutę (virš "📞 telefonas · #id · 💬 Pokalbis") — norėjo, kad IR ŠIS tekstas (kliento parašytas užklausos aprašymas, matomas SUSKLEISTOJE kortelėje, dar neatidarius pokalbio) būtų geltonas, taip pat kaip jau geltona pačiame pokalbyje.
+
+**Fix**: `.ocard-desc` (automeistrai-dashboard.html) spalva pakeista iš `var(--muted)` (pilka) į `#F5C400` — tas pats tiesioginis hex kaip ir kitur šiame faile (NE `var(--yellow)`, nes ji čia iš tikrųjų raudona). `mano-paskyra.html`'o atitikmuo (`.order-card-desc`) NEKEISTAS — jis jau buvo `var(--text)` (įprasta, ne pilka), o tai KLIENTO PAČIO paskyra, kur "pažymėti, kad tai nuo kliento" mažiau aktualu nei serviso dashboard'e, kur maišosi kelių šalių tekstas.
+
+**Patikrinta gyvai**: sukurtas testinis užsakymas su aprašymu "Sugedo ABS, prašau padėti" — `getComputedStyle(.ocard-desc).color` grąžino `"rgb(245, 196, 0)"`; ekrano nuotrauka patvirtino tekstą auksine spalva tiksliai virš "Pokalbis" nuorodos, atitinkant vartotojo anotaciją. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
