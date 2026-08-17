@@ -104,6 +104,12 @@ nav{
 .car-input:focus{border-color:rgba(245,196,0,0.4);}
 .car-form-actions{display:flex;gap:8px;}
 /* ══ NAUJAS POKALBIS — serviso kalendorius (laisvi/užimti laikai) ══ */
+/* min-width:0 būtinas — be jo CSS Grid elementas (#nc-time-wrap) natūraliai plėsdavosi
+   iki savo TURINIO min-content pločio (visi 14 dienų mygtukų vienoje eilutėje, jie
+   flex:0 0 auto — nesusitraukia), ištempdamas visą .car-form-grid stulpelį PLATESNĮ nei
+   .car-form fono dėžė (matėsi kaip lentelė "neatsitelpianti" į foną) — overflow-x:auto
+   savaime NEUŽTENKA, nes automatinis min-width TIK grid elementui (ne jo vaikams) taikomas. */
+#nc-time-wrap{min-width:0;}
 .nc-days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:10px;}
 .nc-day-chip{flex:0 0 auto;background:var(--bg3);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 12px;text-align:center;cursor:pointer;font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);transition:border-color .15s;}
 .nc-day-chip:hover{border-color:rgba(245,196,0,0.4);}

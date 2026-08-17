@@ -1615,6 +1615,16 @@ Vartotojas: aukščiau aprašyto topbar ženkliuko neužtenka — pati užsakymo
 
 **Patikrinta gyvai**: naujas testinis užsakymas + serviso žinutė → kortelė rodė pulsuojantį raudoną kraštą (`getComputedStyle` patvirtino `animationName:"paOrderBlink"`, `infinite`) ir "🆕 Naujas atsakymas" ženkliuką; atidarius pokalbį — abu iškart išnyko, topbar ženkliukas taip pat išsivalė. `npm test` → 26/26.
 
+## CSS Grid "blowout": kalendoriaus lentelė netilpo į kortelės foną (2026-08-17)
+
+Vartotojas atsiuntė realios (production) svetainės ekrano nuotrauką: "Naujas pokalbis" kalendoriaus dienų eilutė vizualiai išsiplėtusi PLATESNĖ nei pati kortelės fono dėžė ("lentelė fone netelpa").
+
+**Šaknies priežastis** (patvirtinta `offsetWidth`/`scrollWidth` matavimais): `#nc-time-wrap` yra CSS Grid elementas (`.car-form-grid{display:grid;grid-template-columns:1fr;}`). Grid elementams pagal nutylėjimą taikomas `min-width:auto`, kuris priverčia elementą NEBŪTI siauresnis už savo TURINIO min-content plotį — o `.nc-days` viduje yra 14 `flex:0 0 auto` (nesusitraukiančių) dienų mygtukų vienoje eilutėje, tad jų bendras min-content plotis (~707px) ištempė VISĄ grid stulpelį iki 707px, nors `.car-form` fono dėžė liko fiksuota 460px. `overflow-x:auto` ant `.nc-days` savaime NEPADĖJO, nes automatinio min-pločio nulinimas taikomas TIK pačiam grid elementui su `overflow≠visible`, o ne jo TĖVUI (`#nc-time-wrap`), kuris liko `overflow:visible`.
+
+**Fix**: pridėta `#nc-time-wrap{min-width:0;}` — vienas CSS deklaravimas, leidžiantis grid stulpeliui grįžti į numatytą 1fr plotį, po ko `.nc-days`'o `overflow-x:auto` jau veikia kaip numatyta (dienos slenka horizontaliai KORTELĖS viduje, ne ištempia ją).
+
+**Patikrinta gyvai**: prieš taisymą `#nc-time-wrap.offsetWidth` buvo 707px (grid stulpelis 418px) — akivaizdus persidengimas; po taisymo abu — 418px, `daysScrollWidth` (707px) > `daysClientWidth` (418px) patvirtina, kad turinys dabar teisingai SLENKA, ne IŠTEMPIA. Rankinis `scrollLeft` patvirtino slinkimą veikiant vizualiai (dienos 23-30 pasiekiamos). `npm test` → 26/26.
+
 ---
 
 ## Kaip tęsti naujame pokalbyje
