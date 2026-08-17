@@ -1685,6 +1685,18 @@ Vartotojas atsiuntė ekrano nuotrauką su anotacija, rodančia į užklausos kor
 
 ---
 
+## "Naujas pokalbis": kategorijos pasirinkimas (2026-08-17)
+
+Vartotojas paprašė: prie žinutės "Naujas pokalbis" formoje pridėti kategoriją (kas sugedo — stabdžiai, variklis, važiuoklė, diagnostika ir t.t.), kad servisas iškart matytų ir galėtų skirstyti darbus pagal kategorijas.
+
+**Atrasta**: backend'as (`POST /orders/direct`) JAU seniai priima ir išsaugo `categoryId` — jis tiesiog niekada nebuvo siunčiamas iš šios konkrečios formos. Dashboard'o užklausos kortelė (`categoryInfo(o.category_id).label`), Statistikos puslapis (kategorijų skaičiavimas) ir Kalendoriaus/timeline vaizdas JAU rodo/naudoja `category_id` — tad pridėjus jį čia, VISOS šios esamos vietos iškart pradeda veikti prasmingai šiam užklausų tipui, jokių backend pakeitimų nereikėjo.
+
+**Fix**: `mano-paskyra.html` — nauja "Kategorija (nebūtina) — kas sugedo" `<select>` prieš "Žinutė" lauką, užpildoma iš `GET /categories` (visos 12 kategorijų su emoji: 🔍 Diagnostika, 🔩 Variklis, ⚙️ Važiuoklė, 🔴 Stabdžiai ir kt.). Nebūtinas laukas (numatyta "— nenurodyta —"), ta pati logika kaip jau esantis "Automobilis (nebūtina)" laukas. `submitNewChat()` siunčia `categoryId` kartu su kitais laukais, išvaloma po sėkmingo pateikimo.
+
+**Patikrinta gyvai**: pasirinkus "🔴 Stabdžiai" ir pateikus — DB `category_id` gavo tiksliai `"stabdziai"`; serviso dashboard'e užklausos kortelė iškart parodė raudoną "Stabdžiai" ženkliuką šalia "Tiesioginė rezervacija" (jokio papildomo veiksmo servisui nereikėjo — esama `categoryInfo()` logika automatiškai tai atvaizdavo). `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

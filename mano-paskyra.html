@@ -273,6 +273,12 @@ nav{
             </select>
           </div>
           <div>
+            <label class="car-label">Kategorija (nebūtina) — kas sugedo</label>
+            <select class="car-input" id="nc-category">
+              <option value="">— nenurodyta —</option>
+            </select>
+          </div>
+          <div>
             <label class="car-label">Žinutė *</label>
             <textarea class="car-input" id="nc-message" rows="3" placeholder="Aprašykite, kuo galėtų padėti šis servisas..." oninput="updateNewChatSubmitState()"></textarea>
           </div>
@@ -726,6 +732,15 @@ async function loadNewChatCities(){
   document.getElementById('nc-city').innerHTML = '<option value="">— pasirinkite miestą —</option>'
     + LT_CITIES.map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
   renderNewChatCarOptions();
+  // Kategorija — kas sugedo (stabdžiai/variklis/važiuoklė/diagnostika ir t.t.), kad servisas
+  // iškart matytų, prie kokio darbo priskirti gautą žinutę (žr. GET /orders kategorijų filtrą
+  // ir Statistikos puslapį dashboard'e — abu jau naudoja category_id, tik iki šiol "Naujas
+  // pokalbis" jo niekada neatsiųsdavo).
+  try{
+    const cats = await apiGet('/categories');
+    document.getElementById('nc-category').innerHTML = '<option value="">— nenurodyta —</option>'
+      + cats.map(c=>`<option value="${c.id}">${escapeHtml(c.label)}</option>`).join('');
+  } catch(e){}
 }
 function renderNewChatCarOptions(){
   const sel = document.getElementById('nc-car');
@@ -828,16 +843,19 @@ async function submitNewChat(){
   const message = document.getElementById('nc-message').value.trim();
   const carSel = document.getElementById('nc-car').value;
   const carId = carSel ? parseInt(carSel, 10) : null;
+  const categorySel = document.getElementById('nc-category').value;
+  const categoryId = categorySel || null;
   const errEl = document.getElementById('nc-error');
   if(!serviceId || !message){ errEl.textContent = 'Pasirinkite servisą ir įrašykite žinutę'; errEl.style.display = 'block'; return; }
   errEl.style.display = 'none';
   const btn = document.getElementById('nc-submit-btn');
   btn.disabled = true; btn.textContent = 'Siunčiama...';
   try{
-    const order = await apiPost('/orders/direct', { serviceId, comment: message, carId, scheduledTime: ncSelectedTime || null });
+    const order = await apiPost('/orders/direct', { serviceId, comment: message, carId, categoryId, scheduledTime: ncSelectedTime || null });
     document.getElementById('nc-city').value = '';
     document.getElementById('nc-service').innerHTML = '<option value="">— pirma pasirinkite miestą —</option>';
     document.getElementById('nc-service').disabled = true;
+    document.getElementById('nc-category').value = '';
     document.getElementById('nc-message').value = '';
     loadNcAvailability(null);
     showAccPage('history', document.querySelector('[data-page="history"]'));
