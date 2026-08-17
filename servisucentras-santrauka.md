@@ -1607,6 +1607,14 @@ Vartotojas paprašė: klientas turi matyti IR girdėti pranešimą, kai servisas
 
 **Patikrinta gyvai**: sukurtas testinis servisas+klientas+užsakymas; servisas parašė žinutę → kito poll'o metu ženkliukas parodė "1", mirksėjimo klasė pridėta; išskleidus pokalbį — ženkliukas išnyko, žinutė matoma. Servisas priėmė KITĄ (naują) užsakymą (`accept-client`, `client_accepted_at` nustatytas) kol klientas NIEKUR jo neišskleidęs — poll'as parodė ženkliuką "1", statusas "Vykdomas"; išskleidus — ženkliukas išnyko. Garso jungiklis perjungtas į 🔇, `localStorage` patvirtino `"off"`. Mobilus vaizdas (375px) — jokio persidengimo su hamburger meniu ar "Atsijungti". `npm test` → 26/26.
 
+## Papildoma: pati užsakymo kortelė mirksi, kai servisas parašo (2026-08-17)
+
+Vartotojas: aukščiau aprašyto topbar ženkliuko neužtenka — pati užsakymo KORTELĖ "Užsakymų istorijoje", į kurią servisas parašė, taip pat turi mirksėti, kad būtų iš karto pastebima sąraše.
+
+**Fix**: `renderOrderHistory()` (mano-paskyra.html) dabar tikrina `paChatUnreadIds.has(o.id)` (tas pats setas, jau naudojamas topbar ženkliukui) — jei `true`, prie `.order-card` pridedama `.pa-new-msg` klasė (nuolatinė raudono krašto+švytėjimo animacija `paOrderBlink`, kol neatidarytas pokalbis) ir prie statuso pridedamas mirksintis ženkliukas "🆕 Naujas atsakymas" (`.pa-new-msg-tag`). Mirksėjimas dingsta TUO PAČIU momentu, kai klientas paspaudžia "💬 Pokalbis" (jau esamas `toggleOrderChat()` → `markPaOrderSeen()` mechanizmas, jokių naujų trigerių nereikėjo). Tyčia apribota TIK žinutėms (ne serviso priėmimo patvirtinimui) — vartotojas paprašė būtent apie žinutę.
+
+**Patikrinta gyvai**: naujas testinis užsakymas + serviso žinutė → kortelė rodė pulsuojantį raudoną kraštą (`getComputedStyle` patvirtino `animationName:"paOrderBlink"`, `infinite`) ir "🆕 Naujas atsakymas" ženkliuką; atidarius pokalbį — abu iškart išnyko, topbar ženkliukas taip pat išsivalė. `npm test` → 26/26.
+
 ---
 
 ## Kaip tęsti naujame pokalbyje

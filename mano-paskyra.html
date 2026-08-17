@@ -148,6 +148,11 @@ nav{
 .os-accepted{background:var(--ydim);color:var(--y);}
 .os-progress{background:var(--gdim);color:#6fbf8a;}
 .os-done{background:rgba(122,176,240,0.1);color:#7ab0f0;}
+/* Užsakymas, į kurį servisas KĄ TIK parašė žinutę — mirksi, kol klientas jį atsidaro */
+.order-card.pa-new-msg{animation:paOrderBlink 1.1s ease-in-out infinite;}
+@keyframes paOrderBlink{0%,100%{border-color:var(--line2);box-shadow:none;}50%{border-color:var(--r);box-shadow:0 0 0 3px rgba(139,26,26,0.22);}}
+.pa-new-msg-tag{font-family:'IBM Plex Mono';font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:var(--r);color:#fff;margin-left:8px;animation:paTagBlink 1.1s ease-in-out infinite;}
+@keyframes paTagBlink{0%,100%{opacity:1;}50%{opacity:0.35;}}
 .os-cancelled{background:rgba(139,26,26,0.15);color:#e07070;}
 .order-decline-note{margin-top:10px;background:rgba(139,26,26,0.1);border:1px solid rgba(139,26,26,0.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#e0a0a0;line-height:1.5;}
 
@@ -929,14 +934,16 @@ function renderOrderHistory(){
     const declineHtml = o.last_decline_reason
       ? `<div class="order-decline-note">⚠ <b>${o.last_decline_service_name||'Servisas'}</b> atsisakė šios užklausos (${(o.last_decline_at||'').slice(0,10)}). Priežastis: ${o.last_decline_reason}</div>`
       : '';
+    // Mirksi, kol klientas neatsidaro pokalbio — žr. paChatUnreadIds (PRANEŠIMŲ ŽENKLIUKAS + GARSAS).
+    const hasNewMsg = paChatUnreadIds.has(o.id);
     return `
-      <div class="order-card">
+      <div class="order-card${hasNewMsg ? ' pa-new-msg' : ''}">
         <div class="order-card-head">
           <div>
             <div class="order-card-title">#${String(o.id).padStart(4,'0')} · ${categoryLabel(o.category_id)}</div>
             <div class="order-card-date">${dateStr}</div>
           </div>
-          <span class="order-status ${status.cls}">${status.label}</span>
+          <span class="order-status ${status.cls}">${status.label}</span>${hasNewMsg ? '<span class="pa-new-msg-tag">🆕 Naujas atsakymas</span>' : ''}
         </div>
         <div class="order-card-meta">
           <span>Servisas: <b>${o.service_name || '— dar nepriskirta —'}</b></span>
