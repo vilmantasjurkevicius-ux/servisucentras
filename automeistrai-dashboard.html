@@ -915,8 +915,13 @@ function formatSchedule(v){
 // data) vis tiek sudaro pilną, galiojantį rezultatą, o ne prarandamas.
 function dateTimePairHtml(idPrefix, title){
   const t = title ? ` title="${title}"` : '';
+  // <input type="time"> rodo AM/PM priklausomai nuo naršyklės/OS lokalės (ta pati
+  // problema kaip su type="date" — žr. TIME_OPTIONS/timeSelectHtml žemiau, jau
+  // naudojama Darbo laikas puslapyje) — čia naudojame TĄ PATĮ TIME_OPTIONS sąrašą
+  // per <select>, kad visada rodytų fiksuotą 24 val. formatą, pvz. "17:00".
+  const timeOpts = TIME_OPTIONS.map(time => `<option value="${time}" ${time==='09:00'?'selected':''}>${time}</option>`).join('');
   return `<input type="text" id="${idPrefix}-date" class="lt-date-trigger" readonly placeholder="data"${t} onclick="openLtDatePicker(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLtDatePicker(this);}" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:88px;">
-    <input type="time" id="${idPrefix}-time" value="09:00" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:76px;">`;
+    <select id="${idPrefix}-time" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:76px;">${timeOpts}</select>`;
 }
 function combineDateTime(idPrefix){
   const dateEl = document.getElementById(`${idPrefix}-date`);
