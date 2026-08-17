@@ -273,7 +273,9 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
 .ochat-msg{max-width:88%;}
 .ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:3px;}
-.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line2);border-radius:3px 10px 10px 10px;padding:8px 12px;font-size:12.5px;line-height:1.45;}
+/* #F5C400 tiesiogiai, ne var(--yellow) — šiame faile --yellow iš tikrųjų yra raudona
+   (#E63946, žr. :root), tad naudojant ją čia tekstas būtų raudonas, ne geltonas. */
+.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line2);border-radius:3px 10px 10px 10px;padding:8px 12px;font-size:12.5px;line-height:1.45;color:#F5C400;}
 
 .ochat-msg.mine{align-self:flex-end;}
 .ochat-msg.mine .who{text-align:right;}

@@ -1641,6 +1641,18 @@ Vartotojas atsiuntė ekrano nuotrauką iš production svetainės: serviso dashbo
 
 ---
 
+## Pokalbio žinučių tekstas — geltonas (2026-08-17)
+
+Vartotojas paprašė, kad pokalbio žinutės tekstas serviso dashboard'e IR kliento paskyroje būtų geltonas.
+
+**Apimtis**: abi vietos, kur klientas ir servisas susirašinėja — `automeistrai-dashboard.html` (naudoja BENDRĄ `buildBubblesHtml()` funkciją tiek įterptam pokalbiui užklausos kortelėje, tiek "Chat skydelio" modalo pokalbiui — vienas CSS pakeitimas apima abi vietas) ir `mano-paskyra.html` (kliento "Užsakymų istorijos" pokalbis). Keičiamas TIK pačios žinutės teksto burbulas (`.bubble`), ne siuntėjo vardas/laikas (`.who`) virš jo — tai atrodė kaip tinkamiausia pusiausvyra tarp vartotojo prašymo ir įskaitomos vizualinės hierarchijos.
+
+**Spalva**: `mano-paskyra.html` jau turėjo tinkamą kintamąjį `var(--y)` (`#F5C400`, tikras auksinis/geltonas). `automeistrai-dashboard.html` — TYČIA NE `var(--yellow)`, nes šiame faile tas kintamasis iš tikrųjų yra RAUDONAS (`#E63946`, žr. `:root`) — pavadinimas klaidina. Naudota tiesiogiai `#F5C400` (ta pati auksinė, kokia realiai naudojama likusioje projekto dalyje kaip "geltona/auksinė" spalva), su komentaru kodėl NE `var(--yellow)`.
+
+**Patikrinta gyvai**: sukurtas testinis servisas+klientas+užsakymas+žinutė; abiejose vietose (dashboard'o įterptas pokalbis IR mano-paskyra.html) `getComputedStyle(bubble).color` grąžino `"rgb(245, 196, 0)"` — tiksliai `#F5C400`. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
