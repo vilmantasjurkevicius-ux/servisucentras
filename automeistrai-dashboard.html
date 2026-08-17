@@ -1169,9 +1169,23 @@ function chatInputBarHtml(id){
 // Vieno pokalbio žinučių burbulų HTML — naudoja IR embed'intas pokalbis Užklausos
 // kortelėje (loadChatThread), IR naujas chat skydelis (loadConversationThread), kad
 // ta pati (netrivialaus) žinučių atvaizdavimo logika nebūtų dubliuota dviejose vietose.
-function buildBubblesHtml(messages, emptyClass){
-  if(messages.length === 0) return `<div class="${emptyClass}">Pokalbio dar nėra.</div>`;
-  return messages.map(m => {
+function buildBubblesHtml(messages, emptyClass, order){
+  // Užklausos aprašymas (order.description) — tai PIRMOJI kliento žinutė (parašyta
+  // KURIANT užklausą, dar prieš pirmą order_messages įrašą), bet saugoma atskirame
+  // orders.description stulpelyje, ne order_messages lentelėje. Be šio pridėjimo
+  // pokalbis atrodydavo prasidedantis "iš niekur" arba net rodydavo "Pokalbio dar
+  // nėra", nors klientas jau buvo kažką parašęs — žr. santrauka.md.
+  const descText = order ? [order.car_info, order.description].filter(Boolean).join(' — ') : '';
+  if(messages.length === 0 && !descText) return `<div class="${emptyClass}">Pokalbio dar nėra.</div>`;
+  const descBubble = descText ? (() => {
+    const clientName = `${order.first_name||''} ${order.last_name||''}`.trim() || 'Klientas';
+    return `
+      <div class="ochat-msg other">
+        <div class="who"><span class="msg-avatar">👤</span>${escapeHtml(clientName)} · ${formatMsgTime(order.created_at)} (${timeAgo(order.created_at)})</div>
+        <div class="bubble">${escapeHtml(descText)}</div>
+      </div>`;
+  })() : '';
+  return descBubble + messages.map(m => {
     const mine = m.sender_type === 'service' && m.sender_id === serviceProfile.id;
     const other = m.sender_type === 'service' && !mine;
     const who = m.sender_type === 'client' ? (m.sender_name || 'Klientas') : (mine ? 'Jūs' : (m.sender_name || 'Kitas servisas'));
@@ -1200,7 +1214,8 @@ async function loadChatThread(id, force){
   try{
     const messages = await apiGet(`/orders/${id}/messages`);
     if(expandedOrderId !== id) return;
-    container.innerHTML = buildBubblesHtml(messages, 'ochat-empty') + chatInputBarHtml(id);
+    const o = ordersCache.find(x=>x.id===id);
+    container.innerHTML = buildBubblesHtml(messages, 'ochat-empty', o) + chatInputBarHtml(id);
   } catch(err){
     container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>` + chatInputBarHtml(id);
   }
@@ -1329,10 +1344,10 @@ function cpThreadHeaderHtml(o){
   // žr. orders.routes.js: priėmus klientą ARBA kai mokesčio surinkimas globaliai išjungtas),
   // ne perkuriame tą pačią sąlygą čia iš naujo — taip išvengiama dviejų vietų išsiderinimo.
   const phoneRevealed = !!o.phone;
-  const desc = [o.car_info, o.description].filter(Boolean).join(' — ');
+  // o.description/car_info NEBERODOMI čia atskirai — dabar rodomi kaip PIRMA
+  // pokalbio žinutė (žr. buildBubblesHtml()), kad neatsikartotų dukart.
   return `
     <div class="cp-thread-name">${escapeHtml(clientName)} ${guestBadge}</div>
-    ${desc ? `<div class="cp-thread-sub">${escapeHtml(desc)}</div>` : ''}
     <div class="cp-thread-sub">${phoneRevealed ? `<span class="cp-thread-phone">📞 ${escapeHtml(o.phone||'—')}</span>` : '🔒 Telefonas atsiskleis priėmus klientą (žr. Užklausos)'}</div>`;
 }
 function cpInputBarHtml(id){
@@ -1369,7 +1384,7 @@ async function loadConversationThread(orderId, force){
     if(cpActiveOrderId !== orderId) return;
     const msgsEl = document.getElementById('cp-thread-msgs');
     if(!msgsEl) return;
-    msgsEl.innerHTML = buildBubblesHtml(messages, 'cp-empty');
+    msgsEl.innerHTML = buildBubblesHtml(messages, 'cp-empty', o);
     msgsEl.scrollTop = msgsEl.scrollHeight;
   } catch(err){
     const msgsEl = document.getElementById('cp-thread-msgs');

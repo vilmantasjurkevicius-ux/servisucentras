@@ -1005,9 +1005,20 @@ async function loadOrderChat(id, force){
   try{
     const messages = await apiGet(`/orders/${id}/messages`);
     if(expandedOrderId !== id) return;
-    const bubbles = messages.length === 0
+    const order = orderHistoryCache.find(x=>x.id===id);
+    // Užklausos aprašymas — tai PIRMA kliento žinutė (parašyta kuriant užklausą, dar
+    // prieš pirmą order_messages įrašą), bet saugoma atskirame orders.description
+    // stulpelyje. Be šio pridėjimo pokalbis atrodydavo prasidedantis "iš niekur"
+    // arba net rodydavo "Pokalbio dar nėra", nors klientas jau buvo parašęs.
+    const descText = order ? [order.car_info, order.description].filter(Boolean).join(' — ') : '';
+    const descBubble = descText ? `
+            <div class="order-chat-msg mine">
+              <div class="who"><span class="msg-avatar">👤</span>Jūs · ${formatMsgTime(order.created_at)} (${timeAgoShort(order.created_at)})</div>
+              <div class="bubble">${escapeHtml(descText)}</div>
+            </div>` : '';
+    const bubbles = (messages.length === 0 && !descText)
       ? `<div class="order-chat-empty">Pokalbio dar nėra.</div>`
-      : messages.map(m => {
+      : descBubble + messages.map(m => {
           const mine = m.sender_type === 'client';
           const who = mine ? 'Jūs' : (m.sender_name || 'Servisas');
           let offerHtml = '';

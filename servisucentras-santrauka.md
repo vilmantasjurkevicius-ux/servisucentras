@@ -1663,6 +1663,18 @@ Vartotojas atsiuntė ekrano nuotrauką: pokalbis atrodė sunkiai atskiriamas (ka
 
 ---
 
+## "Pirma žinutė" (užklausos aprašymas) trūko pokalbio gijoje (2026-08-17)
+
+Vartotojas atsiuntė ekrano nuotrauką (rodyklė žymėjo): "Chat skydelio" pokalbio gijoje virš "Pokalbio dar nėra." matėsi laisvai kabantis tekstas ("vel as") — ne burbule, prieštaraujantis pačiam "nėra pokalbio" teiginiui.
+
+**Šaknies priežastis**: kai klientas sukuria užklausą, jo pirmas tekstas (`orders.description`, + `car_info`) saugomas ATSKIRAME `orders` lentelės stulpelyje, NE `order_messages` lentelėje. Pokalbio gijos (`buildBubblesHtml()` dashboard'e, `loadOrderChat()` mano-paskyra.html) rodė TIK `order_messages` įrašus — jei servisas dar nebuvo atsakęs (0 `order_messages`), gija rodydavo "Pokalbio dar nėra.", NORS klientas jau buvo kažką parašęs. Chat skydelio galvutėje (`cpThreadHeaderHtml()`) ši pati `description` buvo rodoma ATSKIRAI, virš pačios gijos, kaip paprastas tekstas — būtent tai matėsi ekrano nuotraukoje.
+
+**Fix**: `orders.description` (+ `car_info`) dabar rodomas kaip PIRMA gijos žinutė (tinkamai burbule, su avataru ir laiku iš `order.created_at`) VISOSE trijose pokalbio vietose — `buildBubblesHtml()` (automeistrai-dashboard.html, apima ir įterptą pokalbį, ir Chat skydelį) ir `loadOrderChat()` (mano-paskyra.html). Iš `cpThreadHeaderHtml()` pašalinta dubliuojanti eilutė, kad tekstas nebūtų rodomas du kartus. "Pokalbio dar nėra." dabar rodoma TIK jei NĖRA nei `description`, nei jokių `order_messages`.
+
+**Patikrinta gyvai**: sukurtas testinis užsakymas su aprašymu "vėl aš, sugedo ABS", be jokio atsakymo — visos trys vietos (Chat skydelis, įterptas dashboard'o pokalbis, mano-paskyra.html) teisingai parodė šį tekstą kaip pirmą, tinkamai suformatuotą burbulą su 👤 avataru, be jokio "Pokalbio dar nėra." prieštaravimo. Pridėjus tikrą serviso atsakymą — abu (aprašymas + atsakymas) rodomi teisinga chronologine tvarka, be dubliavimosi. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
