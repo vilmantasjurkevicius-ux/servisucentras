@@ -30,6 +30,31 @@
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-serif;display:flex;flex-direction:column;min-height:100vh;}
 
+/* ══ LIETUVIŠKAS KALENDORIUS — pakeičia naršyklės natūralų <input type="date">, kuris
+   rodo anglišką mm/dd/yyyy formatą ir mėnesių/dienų pavadinimus pagal naršyklės kalbą,
+   ne puslapio. Vienas bendras iškylantis kalendorius (ne po vieną kiekvienam laukui),
+   žr. openLtDatePicker()/pickLtDate() — atitinkami <input type="text" readonly> laukai
+   toliau saugo ISO YYYY-MM-DD .value, tad visas esamas kodas (combineDateTime() ir kt.)
+   veikia nepakitęs. ══ */
+.lt-date-trigger{cursor:pointer;}
+.lt-date-trigger:hover{border-color:var(--yellow) !important;}
+.lt-date-popup{display:none;position:fixed;z-index:2000;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:10px;width:228px;box-shadow:0 8px 24px rgba(0,0,0,0.5);}
+.lt-date-popup.show{display:block;}
+.lt-date-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;}
+.lt-date-head button{background:none;border:1px solid var(--line2);color:var(--text);width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:13px;line-height:1;}
+.lt-date-head button:hover{border-color:var(--yellow);color:var(--yellow);}
+#lt-date-month-label{font-family:'IBM Plex Mono';font-size:11.5px;font-weight:600;color:var(--text);text-transform:capitalize;}
+.lt-date-dow{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-family:'IBM Plex Mono';font-size:9px;color:var(--muted);margin-bottom:4px;}
+.lt-date-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.lt-date-day{text-align:center;padding:5px 0;border-radius:4px;cursor:pointer;font-size:11px;color:var(--text);font-family:'IBM Plex Mono';}
+.lt-date-day:hover{background:var(--bg3);}
+.lt-date-day.dim{color:var(--dim);}
+.lt-date-day.today{border:1px solid var(--yellow);}
+.lt-date-day.selected{background:var(--yellow);color:var(--bg);font-weight:700;}
+.lt-date-foot{display:flex;gap:6px;margin-top:8px;}
+.lt-date-foot button{flex:1;background:var(--bg3);border:1px solid var(--line2);color:var(--text);font-size:10px;padding:5px;border-radius:4px;cursor:pointer;font-family:'IBM Plex Sans';}
+.lt-date-foot button:hover{border-color:var(--yellow);color:var(--yellow);}
+
 .tribar{display:flex;height:3px;}
 .tribar span{flex:1;}
 
@@ -609,7 +634,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
             <div id="vacation-form" style="display:none;margin-top:12px;padding:12px;background:var(--bg3);border:1px solid var(--line2);border-radius:6px;">
               <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:6px;">Atostogaujame iki (data):</label>
               <div style="display:flex;gap:8px;">
-                <input type="date" id="vacation-date-input" style="flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:4px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:12.5px;">
+                <input type="text" id="vacation-date-input" class="lt-date-trigger" readonly placeholder="pasirinkite datą" onclick="openLtDatePicker(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLtDatePicker(this);}" style="flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:4px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:12.5px;">
                 <button class="action-btn accept" onclick="submitVacation()">✓ Nustatyti</button>
               </div>
               <button class="action-btn decline" style="margin-top:8px;width:100%;" onclick="clearVacation()">✕ Atšaukti atostogas</button>
@@ -740,6 +765,22 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <div class="cp-thread" id="cp-thread">
       <div class="cp-placeholder">Pasirinkite pokalbį kairėje</div>
     </div>
+  </div>
+</div>
+
+<!-- LIETUVIŠKAS KALENDORIUS — vienas bendras iškylantis kalendorius visiems datos laukams
+     (žr. openLtDatePicker()/pickLtDate() žemiau CSS komentare) -->
+<div class="lt-date-popup" id="lt-date-popup">
+  <div class="lt-date-head">
+    <button type="button" onclick="ltCalNav(-1)">‹</button>
+    <span id="lt-date-month-label"></span>
+    <button type="button" onclick="ltCalNav(1)">›</button>
+  </div>
+  <div class="lt-date-dow"><span>Pr</span><span>An</span><span>Tr</span><span>Kt</span><span>Pn</span><span>Št</span><span>Sk</span></div>
+  <div class="lt-date-grid" id="lt-date-grid"></div>
+  <div class="lt-date-foot">
+    <button type="button" onclick="ltCalToday()">Šiandien</button>
+    <button type="button" onclick="ltCalClear()">Išvalyti</button>
   </div>
 </div>
 
@@ -874,7 +915,7 @@ function formatSchedule(v){
 // data) vis tiek sudaro pilną, galiojantį rezultatą, o ne prarandamas.
 function dateTimePairHtml(idPrefix, title){
   const t = title ? ` title="${title}"` : '';
-  return `<input type="date" id="${idPrefix}-date"${t} style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+  return `<input type="text" id="${idPrefix}-date" class="lt-date-trigger" readonly placeholder="data"${t} onclick="openLtDatePicker(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLtDatePicker(this);}" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:88px;">
     <input type="time" id="${idPrefix}-time" value="09:00" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:76px;">`;
 }
 function combineDateTime(idPrefix){
@@ -882,6 +923,86 @@ function combineDateTime(idPrefix){
   const timeEl = document.getElementById(`${idPrefix}-time`);
   if(!dateEl || !dateEl.value) return null;
   return `${dateEl.value}T${(timeEl && timeEl.value) ? timeEl.value : '09:00'}`;
+}
+
+// ══ LIETUVIŠKAS KALENDORIUS — žr. CSS komentarą prie .lt-date-popup. Vienas bendras
+// iškylantis kalendoriaus elementas (#lt-date-popup), pernaudojamas visiems trims
+// datos laukams (atostogos, laiko nustatymas/pasiūlymas, garantija) — ltCalTargetId
+// saugo, KURIO lauko .value šiuo metu redaguojamas. ══
+const LT_MONTHS = ['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+let ltCalTargetId = null;
+let ltCalViewYear = null;
+let ltCalViewMonth = null;
+
+function openLtDatePicker(el){
+  ltCalTargetId = el.id;
+  const base = el.value ? new Date(el.value+'T00:00:00') : new Date();
+  ltCalViewYear = base.getFullYear();
+  ltCalViewMonth = base.getMonth();
+  renderLtCal();
+  const popup = document.getElementById('lt-date-popup');
+  const rect = el.getBoundingClientRect();
+  popup.classList.add('show');
+  const popupWidth = popup.offsetWidth || 228;
+  popup.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - popupWidth - 4)) + 'px';
+  popup.style.top = (rect.bottom + 4) + 'px';
+  setTimeout(() => document.addEventListener('click', ltCalOutsideClick), 0);
+  window.addEventListener('scroll', closeLtDatePicker, { capture: true, once: true });
+}
+function closeLtDatePicker(){
+  document.getElementById('lt-date-popup').classList.remove('show');
+  document.removeEventListener('click', ltCalOutsideClick);
+  ltCalTargetId = null;
+}
+function ltCalOutsideClick(e){
+  const popup = document.getElementById('lt-date-popup');
+  if(popup.contains(e.target)) return;
+  if(ltCalTargetId && e.target.id === ltCalTargetId) return;
+  closeLtDatePicker();
+}
+function ltCalNav(delta){
+  ltCalViewMonth += delta;
+  if(ltCalViewMonth < 0){ ltCalViewMonth = 11; ltCalViewYear--; }
+  if(ltCalViewMonth > 11){ ltCalViewMonth = 0; ltCalViewYear++; }
+  renderLtCal();
+}
+function renderLtCal(){
+  document.getElementById('lt-date-month-label').textContent = `${LT_MONTHS[ltCalViewMonth]} ${ltCalViewYear}`;
+  const targetEl = ltCalTargetId ? document.getElementById(ltCalTargetId) : null;
+  const selectedVal = targetEl ? targetEl.value : '';
+  const todayStr = new Date().toISOString().slice(0,10);
+  const firstOfMonth = new Date(ltCalViewYear, ltCalViewMonth, 1);
+  const startOffset = (firstOfMonth.getDay() + 6) % 7; // Pirmadienis=0
+  const daysInMonth = new Date(ltCalViewYear, ltCalViewMonth+1, 0).getDate();
+  const daysInPrevMonth = new Date(ltCalViewYear, ltCalViewMonth, 0).getDate();
+  let html = '';
+  for(let i = startOffset - 1; i >= 0; i--){
+    html += `<div class="lt-date-day dim">${daysInPrevMonth - i}</div>`;
+  }
+  for(let d = 1; d <= daysInMonth; d++){
+    const iso = `${ltCalViewYear}-${String(ltCalViewMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const cls = ['lt-date-day'];
+    if(iso === todayStr) cls.push('today');
+    if(iso === selectedVal) cls.push('selected');
+    html += `<div class="${cls.join(' ')}" onclick="pickLtDate('${iso}')">${d}</div>`;
+  }
+  document.getElementById('lt-date-grid').innerHTML = html;
+}
+function pickLtDate(iso){
+  if(!ltCalTargetId) return;
+  const el = document.getElementById(ltCalTargetId);
+  if(el){
+    el.value = iso;
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  closeLtDatePicker();
+}
+function ltCalToday(){ pickLtDate(new Date().toISOString().slice(0,10)); }
+function ltCalClear(){
+  if(!ltCalTargetId) return;
+  const el = document.getElementById(ltCalTargetId);
+  if(el) el.value = '';
+  closeLtDatePicker();
 }
 
 function actionsForOrder(o){
@@ -919,7 +1040,7 @@ function actionsForOrder(o){
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <input type="number" id="price-input-${o.id}" placeholder="Kaina €" value="${o.price!=null?o.price:''}" style="width:80px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
             <input type="number" id="mileage-input-${o.id}" placeholder="Rida, km" style="width:90px;background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
-            <input type="date" id="warranty-input-${o.id}" title="Garantijos pabaigos data (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;">
+            <input type="text" id="warranty-input-${o.id}" class="lt-date-trigger" readonly placeholder="garantija iki" title="Garantijos pabaigos data (nebūtina)" onclick="openLtDatePicker(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openLtDatePicker(this);}" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;width:106px;">
           </div>
           <textarea id="explanation-input-${o.id}" rows="2" placeholder="Atliktų darbų aprašymas (privaloma) — įrašoma į kliento serviso knygą" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:11px;resize:vertical;"></textarea>
           <input type="text" id="parts-input-${o.id}" placeholder="Pakeistos dalys (nebūtina)" style="background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:5px 8px;color:var(--text);font-family:'IBM Plex Sans';font-size:11px;">

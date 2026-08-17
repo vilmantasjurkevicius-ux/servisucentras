@@ -1627,6 +1627,18 @@ Vartotojas atsiuntė realios (production) svetainės ekrano nuotrauką: "Naujas 
 
 ---
 
+## Serviso dashboard: lietuviškas kalendorius vietoj naršyklės natūralaus (2026-08-17)
+
+Vartotojas atsiuntė ekrano nuotrauką iš production svetainės: serviso dashboard'e ("Užklausos" → laiko nustatymas) atsivėręs datos pasirinkimo kalendorius rodė ANGLIŠKAI ("August 2026", "Su Mo Tu We Th Fr Sa") ir JAV formatą ("mm/dd/yyyy") — tai naršyklės NATŪRALUS `<input type="date">` iškylantis kalendorius, kurio kalbą/formatą lemia naršyklės/OS kalba, NE puslapio `lang="lt"` atributas ar bet koks CSS/JS.
+
+**Sprendimas**: visi 3 `automeistrai-dashboard.html` failo `<input type="date">` laukai (atostogų data, laiko nustatymas/pasiūlymas per `dateTimePairHtml()`, garantijos data "Pažymėti atlikta" formoje) pakeisti į `<input type="text" readonly class="lt-date-trigger">`, kurie atidaro VIENĄ bendrą, savo pačių nupieštą lietuvišką kalendoriaus iškylantį langą (`#lt-date-popup`) — mėnesio pavadinimai lietuviškai (Sausis...Gruodis), savaitės dienos Pr/An/Tr/Kt/Pn/Št/Sk (pirmadienis pirmas), naršymas tarp mėnesių, "Šiandien"/"Išvalyti" mygtukai. Lauko `.value` IR TOLIAU lieka ISO `YYYY-MM-DD` formatu (tas pats, ką native `<input type="date">` grąžindavo) — tad VISAS esamas kodas (`combineDateTime()`, `submitVacation()`'o praeities datos tikrinimas, `submitSchedule()`'o klaidos stiliaus nustatymas, `submitComplete()`) liko VISIŠKAI NEPAKEISTAS, tik pats `<input>` elementas pakeistas.
+
+**Pozicionavimas**: `position:fixed` + `getBoundingClientRect()`, apskaičiuojamas kiekvieną kartą atidarant (ne CSS `position:relative` aplink kiekvieną lauką — paprasčiau, veikia neatsižvelgiant į tėvinio konteinerio `overflow`); popup užsidaro paspaudus už jo ribų arba slenkant puslapį (`{once:true}` scroll listener), kad neliktų "atsikabinęs" nuo savo lauko.
+
+**Patikrinta gyvai**: sukurtas testinis servisas + klientas + užsakymas. (1) Atostogų data — kalendoris atsidarė rodydamas "Rugpjūtis 2026" (patikrinta ir mėnulio perejimas abiem kryptimis su metų perėjimu: Rugpjūtis→...→Sausis 2027→...→Liepa 2026), pasirinkus 2026-08-25 ir pateikus — DB `vacation_until` gavo tiksliai `"2026-08-25"`. (2) Laiko nustatymas (`schedule-input-63-date`+`-time`) — pasirinkus datą kalendoriuje ir laiką, `combineDateTime()` teisingai sujungė į `"2026-08-28T14:30"`, po pateikimo DB `scheduled_time` atitiko tiksliai. (3) Garantijos data "Pažymėti atlikta" formoje — pasirinkus 2027-08-28 ir užpildžius likusius privalomus laukus, užsakymas sėkmingai pažymėtas `status:'done'`. Jokių JS klaidų konsolėje per visą testavimą, visi API kvietimai (`PATCH /orders/:id/schedule`, `POST /orders/:id/complete`, `PATCH /services/me`) grąžino 200 OK. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
