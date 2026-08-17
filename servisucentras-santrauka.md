@@ -1651,6 +1651,16 @@ Vartotojas paprašė, kad pokalbio žinutės tekstas serviso dashboard'e IR klie
 
 **Patikrinta gyvai**: sukurtas testinis servisas+klientas+užsakymas+žinutė; abiejose vietose (dashboard'o įterptas pokalbis IR mano-paskyra.html) `getComputedStyle(bubble).color` grąžino `"rgb(245, 196, 0)"` — tiksliai `#F5C400`. `npm test` → 26/26.
 
+## Papildoma: aišku kas rašo + kompaktiškesnė pokalbio dėžė (2026-08-17)
+
+Vartotojas atsiuntė ekrano nuotrauką: pokalbis atrodė sunkiai atskiriamas (kas rašė nebuvo iš karto aišku), o pokalbio langas atrodė per didelis.
+
+**Kas raSo**: prie kiekvienos žinutės "kas rašė" eilutės pridėtas mažas avataro ženkliukas — 🔧 (raktas/veržliaraktis) servisui, 👤 klientui — abiejuose failuose (`mano-paskyra.html`'o `loadOrderChat()`, `automeistrai-dashboard.html`'o bendroje `buildBubblesHtml()`). `automeistrai-dashboard.html`'e trys siuntėjo tipai (mano servisas / kitas servisas / klientas) — abu servisų atvejai gauna 🔧, klientas — 👤. Papildomai sustiprintas jau esantis vizualinis skirtumas: `mano-paskyra.html`'e pridėtas kairysis spalvotas rėmelis serviso burbului ir skirtingi burbulo kampų "uodegos" pagal siuntėją (dešinė/kairė aštri kampo pusė).
+
+**Kompaktiškumas**: sumažintas `.order-chat`/`.ochat` vidinis tarpas (`padding`/`gap`) ir burbulo `padding`/`font-size`; svarbiausia — pridėtas `max-height` (280px kliento pusėje, 260px dashboard'e) + `overflow-y:auto`, tad ilgas pokalbis dabar SLENKA savo dėžėje, o ne tempia visą puslapį į begalybę.
+
+**Patikrinta gyvai**: sukurtas testinis servisas+klientas+2 žinutės (viena iš kiekvienos pusės). Kliento paskyroje — 👤 auksinis burbulas dešinėje ("Jūs"), 🔧 tamsus burbulas kairėje (servisas), abu su aiškiu avataru ir siuntėjo vardu. Dashboard'e — atvirkščiai (👤 klientas kairėje, 🔧 "Jūs" žaliai-auksiniu burbulu dešinėje). Abi dėžės vizualiai kompaktiškesnės. `npm test` → 26/26.
+
 ---
 
 ## Kaip tęsti naujame pokalbyje

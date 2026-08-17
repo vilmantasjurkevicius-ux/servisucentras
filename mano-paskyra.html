@@ -167,14 +167,16 @@ nav{
    kliento pusės UI. ══ */
 .order-chat-toggle{margin-top:12px;background:transparent;border:1px solid var(--line2);color:var(--muted);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:var(--radius);cursor:pointer;}
 .order-chat-toggle:hover{border-color:rgba(245,196,0,0.4);color:var(--y);}
-.order-chat{margin-top:12px;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px;}
-.order-chat-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:12px 0;}
+.order-chat{margin-top:10px;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:7px;max-height:280px;overflow-y:auto;}
+.order-chat-empty{color:var(--muted);font-size:12.5px;text-align:center;padding:10px 0;}
 .order-chat-msg{max-width:80%;display:flex;flex-direction:column;}
 .order-chat-msg.mine{align-self:flex-end;align-items:flex-end;}
 .order-chat-msg.other{align-self:flex-start;align-items:flex-start;}
-.order-chat-msg .who{font-size:10.5px;color:var(--muted);margin-bottom:3px;}
-.order-chat-msg .bubble{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:8px 12px;font-size:13px;line-height:1.4;color:var(--y);}
-.order-chat-msg.mine .bubble{background:var(--ydim);border-color:rgba(245,196,0,0.25);}
+.order-chat-msg .who{font-size:10px;color:var(--muted);margin-bottom:2px;display:flex;align-items:center;gap:3px;}
+.order-chat-msg .msg-avatar{font-size:10.5px;}
+.order-chat-msg .bubble{background:var(--bg2);border:1px solid var(--line2);border-radius:10px;padding:6px 10px;font-size:12.5px;line-height:1.35;color:var(--y);}
+.order-chat-msg.mine .bubble{background:var(--ydim);border-color:rgba(245,196,0,0.25);border-radius:10px 10px 2px 10px;}
+.order-chat-msg.other .bubble{border-left:2px solid var(--y);border-radius:10px 10px 10px 2px;}
 .order-chat-offer{margin-top:4px;font-size:12px;color:var(--y);}
 .order-chat-input-row{display:flex;gap:8px;}
 .order-chat-input-row input{flex:1;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;outline:none;}
@@ -1013,9 +1015,10 @@ async function loadOrderChat(id, force){
             const timeLabel = m.available_time ? formatOrderTime(m.available_time) : '';
             offerHtml = `<div class="order-chat-offer">💰 Pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel?' · '+timeLabel:''}</div>`;
           }
+          const avatar = mine ? '👤' : '🔧';
           return `
             <div class="order-chat-msg ${mine?'mine':'other'}">
-              <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgoShort(m.created_at)})</div>
+              <div class="who"><span class="msg-avatar">${avatar}</span>${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgoShort(m.created_at)})</div>
               ${m.message ? `<div class="bubble">${escapeHtml(m.message)}</div>` : ''}
               ${offerHtml}
             </div>`;

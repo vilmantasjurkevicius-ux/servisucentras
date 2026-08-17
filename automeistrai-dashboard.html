@@ -270,15 +270,16 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 .ocard-chat-toggle{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
 .ocard-chat-toggle:hover{color:var(--text);}
-.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px;}
+.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;}
 .ochat-msg{max-width:88%;}
-.ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:3px;}
+.ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:3px;}
+.ochat-msg .msg-avatar{font-size:10px;}
 /* #F5C400 tiesiogiai, ne var(--yellow) — šiame faile --yellow iš tikrųjų yra raudona
    (#E63946, žr. :root), tad naudojant ją čia tekstas būtų raudonas, ne geltonas. */
-.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line2);border-radius:3px 10px 10px 10px;padding:8px 12px;font-size:12.5px;line-height:1.45;color:#F5C400;}
+.ochat-msg .bubble{background:var(--bg3);border:1px solid var(--line2);border-radius:3px 10px 10px 10px;padding:6px 10px;font-size:12px;line-height:1.4;color:#F5C400;}
 
 .ochat-msg.mine{align-self:flex-end;}
-.ochat-msg.mine .who{text-align:right;}
+.ochat-msg.mine .who{justify-content:flex-end;}
 .ochat-msg.mine .bubble{background:var(--green-dim);border-color:rgba(61,107,74,0.4);border-radius:10px 3px 10px 10px;}
 .ochat-msg.mine .offer-line{color:#6fbf8a;font-family:'IBM Plex Mono';font-weight:600;font-size:11.5px;margin-top:5px;display:block;}
 
@@ -1180,9 +1181,10 @@ function buildBubblesHtml(messages, emptyClass){
       offerHtml = `<span class="offer-line">💰 Jūsų pasiūlymas: ${fmtEUR(m.price_quote)}${timeLabel ? ' · Laikas: '+timeLabel : ''}</span>`;
     }
     const privateNote = other ? `<div class="price-hidden">🔒 Kaina/laikas privatu (matys tik klientas)</div>` : '';
+    const avatar = (mine || other) ? '🔧' : '👤';
     return `
       <div class="ochat-msg ${mine?'mine':(other?'other':'')}">
-        <div class="who">${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgo(m.created_at)})</div>
+        <div class="who"><span class="msg-avatar">${avatar}</span>${escapeHtml(who)} · ${formatMsgTime(m.created_at)} (${timeAgo(m.created_at)})</div>
         ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
       </div>`;
   }).join('');
