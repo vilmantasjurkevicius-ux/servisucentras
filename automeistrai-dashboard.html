@@ -953,8 +953,16 @@ function openLtDatePicker(el){
   const rect = el.getBoundingClientRect();
   popup.classList.add('show');
   const popupWidth = popup.offsetWidth || 228;
+  const popupHeight = popup.offsetHeight || 300;
   popup.style.left = Math.max(4, Math.min(rect.left, window.innerWidth - popupWidth - 4)) + 'px';
-  popup.style.top = (rect.bottom + 4) + 'px';
+  // Jei žemiau lauko nepakanka vietos (laukas arti puslapio apačios — pvz. ilgame
+  // užklausų sąraše), o virš lauko vietos pakanka, kalendorius "apverčiamas" į
+  // viršų — kitaip jis nusidriekdavo UŽ matomo lango ribų, iš esmės NEMATOMAS.
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const top = (spaceBelow < popupHeight + 8 && rect.top > popupHeight + 8)
+    ? (rect.top - popupHeight - 4)
+    : (rect.bottom + 4);
+  popup.style.top = Math.max(4, Math.min(top, window.innerHeight - popupHeight - 4)) + 'px';
   setTimeout(() => document.addEventListener('click', ltCalOutsideClick), 0);
   window.addEventListener('scroll', closeLtDatePicker, { capture: true, once: true });
 }

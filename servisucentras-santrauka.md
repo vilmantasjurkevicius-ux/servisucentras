@@ -1697,6 +1697,18 @@ Vartotojas paprašė: prie žinutės "Naujas pokalbis" formoje pridėti kategori
 
 ---
 
+## Lietuviškas kalendorius nebuvo matomas — pozicionavimo klaida (2026-08-17)
+
+Vartotojas atsiuntė ekrano nuotrauką: paspaudus datos lauką, iškylantis lietuviškas kalendorius (žr. aukščiau "Serviso dashboard: lietuviškas kalendorius") atsivėrė beveik nematomas — nustumtas į ekrano pakraštį, persidengiantis su kita turinio dalimi.
+
+**Šaknies priežastis**: `openLtDatePicker()` pozicionavimas (`position:fixed` + `getBoundingClientRect()`) horizontaliai apribodavo poziciją langelio ribose, BET vertikaliai VISADA dėjo kalendorių `rect.bottom + 4` (po lauku), niekada netikrindamas, ar apačioje užtenka vietos. Jei datos laukas yra arti puslapio (lango) apačios — pvz. ilgame užklausų sąraše arba "Greiti veiksmai" atostogų formoje — kalendorius nusidriekdavo UŽ matomo lango ribų.
+
+**Fix**: pridėtas standartinis iškylančiojo lango "apvertimo" (flip) elgesys — jei vietos apačioje nepakanka (`spaceBelow < popupHeight`), o virš lauko vietos užtenka, kalendorius atsidaro VIRŠ lauko (`rect.top - popupHeight - 4`) vietoj po juo; papildomai `top` reikšmė visada apribojama tarp `4px` ir `window.innerHeight - popupHeight - 4px`, kad net kraštutiniu atveju (labai mažas langas) kalendorius liktų bent iš dalies matomas.
+
+**Patikrinta gyvai**: sukurtas testinis laukas arti lango apačios (top=570px, langas 600px aukščio) — prieš taisymą kalendorius (aukštis ~250px) būtų prasidėjęs ties y=574 ir baigęsis už matomos srities (y=824 > 600); po taisymo automatiškai apsivertė į viršų (`popupTop:308, popupBottom:566`), pilnai telpa (`popupFitsInViewport:true`). Regresijos patikra su lauku arti viršaus (top=80px, daug vietos apačioje) patvirtino, kad kalendorius IR TOLIAU atsidaro po lauku kaip anksčiau (`positionedBelowTrigger:true`). `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
