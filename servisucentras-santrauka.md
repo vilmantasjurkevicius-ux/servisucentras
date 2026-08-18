@@ -1729,6 +1729,16 @@ Vartotojas atsiuntė ekrano nuotrauką su mažu raudonu "📞 Skambinti" mygtuku
 
 ---
 
+## Kalendoriaus "Nesuplanuoti darbai" sąraše dabar matoma automobilio markė/modelis (2026-08-18)
+
+Vartotojas atsiuntė ekrano nuotrauką iš Kalendoriaus puslapio "Nesuplanuoti darbai" sąrašo (rodė tik "🔍 Diagnostika — Vardas Pavardė") ir paprašė: "prie vardo pridėk automobilio markę ir modelį".
+
+**Fix**: `renderCalendarPage()` (`automeistrai-dashboard.html`) `.svc-row-name` eilutėje po kliento vardo pridėtas `o.car_info` (jau egzistuojantis, užsakymo sukūrimo metu užšaldytas automobilio aprašymo laukas, TAS PATS naudojamas pagrindinėje užklausos kortelėje) su apsauga nuo tuščios reikšmės — jei automobilio informacijos nėra (pvz. svečio užklausa be automobilio), tiesiog nieko papildomo nerodoma, jokio tarpo/brūkšnelio likučio.
+
+**Patikrinta gyvai**: sukurti du testiniai patvirtinti-nesuplanuoti užsakymai tam pačiam servisui — vienas su `car_info:"Volvo S80 (2000)"`, kitas be jo. Kalendoriaus puslapyje pirmasis rodomas kaip "🔍 Diagnostika — Testas SuAuto · Volvo S80 (2000)", antrasis — "🔍 Diagnostika — Testas BeAuto" (be jokio likučio). Testiniai įrašai (servisas, 2 klientai, užsakymai) išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

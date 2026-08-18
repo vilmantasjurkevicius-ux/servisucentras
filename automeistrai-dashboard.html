@@ -2035,7 +2035,7 @@ function renderCalendarPage(){
         <div style="padding:8px 0;">
           ${unscheduled.map(o=>`
             <div class="svc-row">
-              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}</div>
+              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}</div>
               ${dateTimePairHtml(`cal-time-${o.id}`)}
               <button class="action-btn accept" onclick="assignCalendarTime(${o.id})">✓ Priskirti</button>
             </div>`).join('')}
