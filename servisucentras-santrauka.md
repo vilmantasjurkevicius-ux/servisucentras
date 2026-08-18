@@ -1749,6 +1749,16 @@ Vartotojas po ankstesnio pakeitimo paprašė: "ir pačiam kalendoriui pridėk mo
 
 ---
 
+## Skirtuko pavadinimas "Patvirtintos" → "Užsakymai" (2026-08-18)
+
+Vartotojas paprašė pakeisti "Gautos užklausos" skirtukų ("Naujos / Patvirtintos / Atliktos") vidurinio skirtuko pavadinimą į "Užsakymai".
+
+**Fix**: `TAB_LABELS` objekte (`automeistrai-dashboard.html`) `confirmed:'Patvirtintos'` → `confirmed:'Užsakymai'`. Vienintelė vieta faile, kurioje šis tekstas rodomas vartotojui (kitur "Patvirtintos" buvo tik kodo komentare, nekeista).
+
+**Patikrinta gyvai**: skirtukų juosta dabar rodo "Naujos 0 / Užsakymai 0 / Atliktos 0". `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

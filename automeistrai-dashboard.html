@@ -857,7 +857,7 @@ const apiPost = (path, body) => apiRequest('POST', path, body || {});
 const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
 
 const TAB_STATUS = ['new','confirmed','done'];
-const TAB_LABELS = {new:'Naujos', confirmed:'Patvirtintos', done:'Atliktos'};
+const TAB_LABELS = {new:'Naujos', confirmed:'Užsakymai', done:'Atliktos'};
 
 function tabFilter(o, tab){
   const myId = serviceProfile.id;
