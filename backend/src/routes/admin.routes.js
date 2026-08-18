@@ -197,6 +197,30 @@ router.get('/orders', (req, res) => {
   res.json(orders);
 });
 
+// Testinių/klaidingų užklausų valymas — leidžia ištrinti vieną ar kelias užklausas vienu
+// metu (frontend'as tiek pavienį, tiek masinį trynimą kviečia per šį patį endpoint'ą).
+// order_messages/order_declines turi ON DELETE CASCADE, tad išsivalo automatiškai. Tačiau
+// service_book ir reviews REFERENCES orders(id) BE cascade (žr. schema.sql) — jei užklausa
+// jau turi serviso knygos įrašą ar atsiliepimą, DELETE meta FOREIGN KEY klaidą ir ČIA ji
+// gaunama kaip "ok:false" (ne tyliai praleidžiama), kad admin matytų — tai jau REALUS,
+// ne testinis įrašas, ir jo apsaugotai neištrynė.
+router.post('/orders/bulk-delete', (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids) || !ids.length) return res.status(400).json({ error: 'Trūksta ids sąrašo' });
+
+  const results = ids.map((id) => {
+    const order = db.prepare('SELECT id FROM orders WHERE id = ?').get(id);
+    if (!order) return { id, ok: false, error: 'Užklausa nerasta' };
+    try {
+      db.prepare('DELETE FROM orders WHERE id = ?').run(id);
+      return { id, ok: true };
+    } catch (err) {
+      return { id, ok: false, error: 'Turi susijusių įrašų (serviso knyga arba atsiliepimas) — negalima ištrinti' };
+    }
+  });
+  res.json({ results });
+});
+
 // ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
 // "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
 // buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).

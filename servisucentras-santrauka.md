@@ -1759,6 +1759,20 @@ Vartotojas paprašė pakeisti "Gautos užklausos" skirtukų ("Naujos / Patvirtin
 
 ---
 
+## Admin panelė: masinis testinių užklausų trynimas (2026-08-18)
+
+Vartotojas paprašė būdo išvalyti serviso "Dainava auto" dashboard'e susikaupusias testines/senas užklausas (pasikartojantys "Vilmantas Jurkevičius / Volvo S80" įrašai) — arba per naują admin panelės funkciją, arba tiesiogiai per DB, su patvirtinimu prieš bet kokį trynimą.
+
+**Svarbu**: "Dainava auto" servisas NEEGZISTUOJA lokalioje kūrimo DB (`backend/data/servisucentras.db`) — vartotojas matė jį PRODUKCINIAME (servisucentras.lt) diegime, prie kurio šis Claude Code seansas neturi tiesioginės prieigos. Tad tiesioginis DB trynimas (2 variantas) nebuvo galimas — vietoj to įgyvendintas 1 variantas (admin panelės funkcija), kurią vartotojas pats panaudos production admin panelėje, PILNAI matydamas, kurie įrašai bus ištrinti, prieš patvirtindamas.
+
+**Fix**:
+- Backend: naujas `POST /admin/orders/bulk-delete` (`admin.routes.js`) — priima `{ids: [...]}`, kiekvieną ID bando ištrinti atskirai ir grąžina `{id, ok, error?}` sąrašą. `order_messages`/`order_declines` turi `ON DELETE CASCADE` (išsivalo automatiškai), bet `service_book`/`reviews` REFERENCES orders(id) BE cascade — jei užklausa jau turi serviso knygos įrašą ar atsiliepimą, DELETE meta FK klaidą, kuri grąžinama kaip `ok:false` su aiškiu pranešimu, o NE tyliai praleidžiama. Tai apsauga nuo atsitiktinio realių, jau atliktų darbų ištrynimo.
+- Frontend (`servisucentras-admin.html`, "Užklausos" puslapis): žymimasis langelis kiekvienoje eilutėje + "Pasirinkti visas matomas" antraštėje, raudonas "🗑 Ištrinti pasirinktas (N)" mygtukas (rodomas tik pasirinkus bent vieną), bei pavienis 🗑 mygtukas kiekvienoje eilutėje greitam vieno įrašo trynimui. Prieš bet kokį DELETE užklausos siuntimą — naršyklės `confirm()` dialogas, kuriame IŠVARDYTA (ID, klientas, servisas, data) TIKSLIAI kas bus ištrinta, iki 15 eilučių + "ir dar N".
+
+**Patikrinta gyvai**: sukurti 3 testiniai "Vilmantas Jurkevičius / Volvo S80" tipo užklausų įrašai (status='new') — pavienis trynimas (🗑 prie #0077) ir masinis trynimas (pažymėjus #0078+#0079, "Ištrinti pasirinktas (2)") abu VEIKĖ, `confirm()` dialogo tekstas patvirtintas turintis tikslų sąrašą prieš patvirtinant, po trynimo DB tikrai neliko šių įrašų. Papildomai sukurtas APSAUGOS testas — "done" statuso užklausa SU service_book įrašu (realaus atlikto darbo simuliacija): bandymas ištrinti grąžino klaidą "Turi susijusių įrašų... — negalima ištrinti", įrašas DB LIKO nepaliestas. Visi testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -407,7 +407,11 @@ tr:hover td{background:rgba(255,255,255,0.015);}
     </div>
     <div style="padding:16px 20px;">
       <div class="table-wrap">
-        <div class="table-head"><div class="table-title">Visos užklausos</div><input class="search-input" id="orders-search" placeholder="🔍 Ieškoti..."></div>
+        <div class="table-head">
+          <div class="table-title">Visos užklausos</div>
+          <button class="btn" id="orders-bulk-delete-btn" onclick="bulkDeleteSelectedOrders()" style="display:none;background:#3a1518;border-color:#7a2a2f;color:#ff8a8a;">🗑 Ištrinti pasirinktas (0)</button>
+          <input class="search-input" id="orders-search" placeholder="🔍 Ieškoti...">
+        </div>
         <div class="tabs" id="orders-tabs">
           <button class="tab on" data-filter="all">Visos <span class="n">0</span></button>
           <button class="tab" data-filter="new">Naujos <span class="n">0</span></button>
@@ -415,7 +419,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
           <button class="tab" data-filter="done">Atliktos <span class="n">0</span></button>
         </div>
         <table>
-          <tr><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Mokestis</th><th>Statusas</th></tr>
+          <tr><th style="width:24px;"><input type="checkbox" id="orders-select-all" onchange="toggleAllOrderSelect(this.checked)"></th><th>ID</th><th>Klientas</th><th>Kategorija</th><th>Servisas</th><th>Kaina</th><th>Data</th><th>Mokestis</th><th>Statusas</th><th></th></tr>
           <tbody id="orders-table-body"></tbody>
         </table>
       </div>
@@ -948,6 +952,12 @@ async function unbanService(id){ await apiPatch(`/admin/services/${id}/unban`); 
 
 // ── UŽKLAUSOS ──
 async function loadOrders(){ ordersCache = await apiGet('/admin/orders'); renderOrders(); }
+
+// Pasirinktų (žymimuoju langeliu) užklausų ID rinkinys — testinių/senų įrašų
+// masiniam valymui. Laikomas atskirai nuo ordersCache, kad išliktų per re-render'us
+// (pvz. filtro/paieškos keitimą), kol admin pats paspaudžia "Ištrinti" arba perkrauna.
+let selectedOrderIds = new Set();
+
 function renderOrders(){
   const q = (document.getElementById('orders-search').value || '').toLowerCase();
   let list = ordersCache;
@@ -958,6 +968,7 @@ function renderOrders(){
 
   document.getElementById('orders-table-body').innerHTML = list.map(o=>`
     <tr>
+      <td><input type="checkbox" class="order-select" data-id="${o.id}" ${selectedOrderIds.has(o.id)?'checked':''} onchange="toggleOrderSelect(${o.id}, this.checked)"></td>
       <td style="font-family:'IBM Plex Mono';font-size:10px;color:var(--muted);">#${String(o.id).padStart(4,'0')}</td>
       <td>${o.first_name||''} ${o.last_name||''}</td>
       <td>${categoryLabel(o.category_id)}</td>
@@ -966,7 +977,8 @@ function renderOrders(){
       <td>${(o.created_at||'').slice(0,10)}</td>
       <td style="color:${o.contact_fee_amount>0?'var(--y)':'var(--muted)'};font-family:'IBM Plex Mono';">${o.client_accepted_at?fmtEUR(o.contact_fee_amount):'—'}</td>
       <td>${orderStatusBadge(o.status)}</td>
-    </tr>`).join('') || emptyRow(8);
+      <td><button title="Ištrinti" onclick="deleteOneOrder(${o.id})" style="background:none;border:none;cursor:pointer;font-size:13px;color:#ff8a8a;padding:2px 4px;">🗑</button></td>
+    </tr>`).join('') || emptyRow(10);
 
   const counts = {
     all: ordersCache.length,
@@ -975,6 +987,70 @@ function renderOrders(){
     done: ordersCache.filter(o=>o.status==='done').length,
   };
   document.querySelectorAll('#orders-tabs .tab').forEach(t=>{ t.querySelector('.n').textContent = counts[t.dataset.filter]; });
+
+  // Pasirinkti likę tik tie ID, kurie VIS DAR matomi po filtro/paieškos — nerodomas
+  // (paslėptas kitu filtru) pasirinkimas nedingsta iš selectedOrderIds, bet "Pasirinkti
+  // visas" varnelė atspindi TIK dabar matomą sąrašą.
+  const visibleIds = new Set(list.map(o=>o.id));
+  const allVisibleSelected = list.length>0 && list.every(o=>selectedOrderIds.has(o.id));
+  document.getElementById('orders-select-all').checked = allVisibleSelected;
+  updateBulkDeleteButton();
+}
+
+function toggleOrderSelect(id, checked){
+  if(checked) selectedOrderIds.add(id); else selectedOrderIds.delete(id);
+  updateBulkDeleteButton();
+  const allCb = document.getElementById('orders-select-all');
+  if(allCb && !checked) allCb.checked = false;
+}
+
+function toggleAllOrderSelect(checked){
+  document.querySelectorAll('#orders-table-body .order-select').forEach(cb=>{
+    const id = Number(cb.dataset.id);
+    cb.checked = checked;
+    if(checked) selectedOrderIds.add(id); else selectedOrderIds.delete(id);
+  });
+  updateBulkDeleteButton();
+}
+
+function updateBulkDeleteButton(){
+  const btn = document.getElementById('orders-bulk-delete-btn');
+  if(!btn) return;
+  btn.style.display = selectedOrderIds.size ? 'inline-flex' : 'none';
+  btn.textContent = `🗑 Ištrinti pasirinktas (${selectedOrderIds.size})`;
+}
+
+function orderDeletePreviewLines(rows){
+  const preview = rows.slice(0,15).map(o=>`#${String(o.id).padStart(4,'0')} — ${(o.first_name||'')+' '+(o.last_name||'')} — ${o.service_name||'nepriskirta'} — ${(o.created_at||'').slice(0,10)}`).join('\n');
+  const more = rows.length>15 ? `\n... ir dar ${rows.length-15}` : '';
+  return preview + more;
+}
+
+async function applyOrderDelete(ids){
+  const { results } = await apiPost('/admin/orders/bulk-delete', { ids });
+  const failed = results.filter(r=>!r.ok);
+  ids.forEach(id=>selectedOrderIds.delete(id));
+  await loadOrders();
+  if(failed.length){
+    alert(`Nepavyko ištrinti ${failed.length} įrašo(-ų):\n` + failed.map(f=>`#${f.id}: ${f.error}`).join('\n'));
+  }
+}
+
+async function bulkDeleteSelectedOrders(){
+  if(!selectedOrderIds.size) return;
+  const ids = [...selectedOrderIds];
+  const rows = ordersCache.filter(o=>ids.includes(o.id));
+  const ok = confirm(`Ar tikrai ištrinti ${rows.length} užklausą(-as)?\n\n${orderDeletePreviewLines(rows)}\n\nŠio veiksmo atšaukti negalima.`);
+  if(!ok) return;
+  await applyOrderDelete(ids);
+}
+
+async function deleteOneOrder(id){
+  const o = ordersCache.find(x=>x.id===id);
+  const label = o ? `#${String(o.id).padStart(4,'0')} — ${(o.first_name||'')+' '+(o.last_name||'')} — ${o.service_name||'nepriskirta'} — ${(o.created_at||'').slice(0,10)}` : `#${id}`;
+  const ok = confirm(`Ištrinti šią užklausą?\n\n${label}\n\nŠio veiksmo atšaukti negalima.`);
+  if(!ok) return;
+  await applyOrderDelete([id]);
 }
 
 // ── PAJAMOS ──
