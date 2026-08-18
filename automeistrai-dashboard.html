@@ -271,7 +271,6 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
 .ocard-chat-toggle{font-family:'IBM Plex Mono';font-size:10.5px;color:var(--muted);background:none;border:none;cursor:pointer;padding:0;text-decoration:underline;text-underline-offset:2px;}
 .ocard-chat-toggle:hover{color:var(--text);}
-.ochat{margin-top:10px;padding-top:10px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;}
 .ochat-msg{max-width:88%;}
 .ochat-msg .who{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);margin-bottom:3px;display:flex;align-items:center;gap:3px;}
 .ochat-msg .msg-avatar{font-size:10px;}
@@ -291,8 +290,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   font-family:'IBM Plex Mono';border-top:1px dashed var(--line2);padding-top:5px;
 }
 
-.ochat-empty{color:var(--muted);font-size:12px;text-align:center;padding:6px 0;}
-
+/* Naudojama cpInputBarHtml() — Chat skydelio kainos pasiūlymo/žinutės įvesties juosta. */
 .ochat-price-box{
   display:flex;gap:8px;align-items:center;flex-wrap:wrap;
   background:var(--yellow-dim);border:1px solid rgba(230,57,70,0.25);border-radius:3px;
@@ -322,6 +320,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   padding:0 14px;cursor:pointer;font-size:11.5px;white-space:nowrap;
 }
 .ochat-text-row button:hover{border-color:var(--yellow);color:var(--yellow);}
+
 
 .ocard-actions{display:flex;flex-direction:column;gap:6px;align-items:flex-end;justify-content:center;}
 .action-btn{
@@ -805,7 +804,6 @@ let ordersCache = [];
 let activeTab = 'new';
 let quotingOrderId = null;
 let quotingMode = null;
-let expandedOrderId = null;
 let chatUnreadOrderIds = new Set();  // užklausų id, kuriose paskutinę žinutę rašė klientas ir servisas jos dar nematė
 let cpActiveOrderId = null;          // kuris pokalbis pasirinktas chat skydelyje
 let cpOpen = false;
@@ -1132,52 +1130,28 @@ function renderOrders(){
         <div class="ocard-footer">
           <span class="ocard-client">📞 ${o.phone||'—'}</span>
           <span class="ocard-slot">#${String(o.id).padStart(4,'0')}</span>
-          <button class="ocard-chat-toggle" onclick="toggleChatThread(${o.id})">${expandedOrderId===o.id?'▲ Slėpti pokalbį':'💬 Pokalbis'}</button>
+          <button class="ocard-chat-toggle" onclick="openChatPanelFor(${o.id})">💬 Pokalbis</button>
         </div>
-        ${expandedOrderId===o.id ? `<div class="ochat" id="ochat-${o.id}"><div class="ochat-empty">Kraunama...</div></div>` : ''}
       </div>
       <div class="ocard-actions">${actionsForOrder(o)}</div>
     </div>`;
   }).join('');
-  if(expandedOrderId !== null) loadChatThread(expandedOrderId);
 }
 
 function escapeHtml(s){
   return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-function toggleChatThread(id){
-  if(expandedOrderId === id){
-    expandedOrderId = null;
-    renderOrders();
-    return;
-  }
-  expandedOrderId = id;
-  renderOrders();
-  loadChatThread(id, true);
+// Užklausos kortelės "💬 Pokalbis" atidaro TĄ PATĮ Chat skydelio modalą, kurį
+// atidaro ir topbar 💬 ikona — anksčiau kortelėje būdavo atskiras, susiaurintas
+// pokalbio langas (žr. git istoriją), bet tai dubliuodavo Chat skydelio funkcionalumą
+// dviejose vietose, tad konsoliduota į vieną (žr. openChatPanel()/selectConversation()).
+function openChatPanelFor(orderId){
+  cpActiveOrderId = orderId;
+  openChatPanel();
 }
 
-function chatInputBarHtml(id){
-  const o = ordersCache.find(x=>x.id===id);
-  const canQuote = o && (o.status === 'new' || o.status === 'pending');
-  return `
-    ${canQuote ? `
-    <div class="ochat-price-box">
-      <label>Jūsų kaina/laikas šiai užklausai:</label>
-      <input type="number" id="ochat-price-${id}" placeholder="Kaina €">
-      ${dateTimePairHtml(`ochat-time-${id}`)}
-      <button onclick="submitChatQuote(${id})">Atnaujinti pasiūlymą</button>
-    </div>
-    <div id="ochat-price-error-${id}" class="ochat-price-error" style="display:none;"></div>` : ''}
-    <div class="ochat-text-row">
-      <input type="text" id="ochat-text-${id}" placeholder="Rašykite žinutę klientui..." onkeydown="if(event.key==='Enter') sendChatText(${id})">
-      <button onclick="sendChatText(${id})">Siųsti →</button>
-    </div>`;
-}
-
-// Vieno pokalbio žinučių burbulų HTML — naudoja IR embed'intas pokalbis Užklausos
-// kortelėje (loadChatThread), IR naujas chat skydelis (loadConversationThread), kad
-// ta pati (netrivialaus) žinučių atvaizdavimo logika nebūtų dubliuota dviejose vietose.
+// Vieno pokalbio žinučių burbulų HTML — naudoja Chat skydelis (loadConversationThread).
 function buildBubblesHtml(messages, emptyClass, order){
   // Užklausos aprašymas (order.description) — tai PIRMOJI kliento žinutė (parašyta
   // KURIANT užklausą, dar prieš pirmą order_messages įrašą), bet saugoma atskirame
@@ -1211,56 +1185,6 @@ function buildBubblesHtml(messages, emptyClass, order){
         ${m.message ? `<div class="bubble">${escapeHtml(m.message)}${offerHtml}${privateNote}</div>` : (offerHtml ? `<div class="bubble">${offerHtml}</div>` : '')}
       </div>`;
   }).join('');
-}
-
-async function loadChatThread(id, force){
-  const container = document.getElementById(`ochat-${id}`);
-  if(!container) return;
-  if(!force){
-    const activeInThread = document.activeElement && container.contains(document.activeElement);
-    if(activeInThread) return; // nepertraukiam vartotojo, kol jis rašo kainą/žinutę
-  }
-  try{
-    const messages = await apiGet(`/orders/${id}/messages`);
-    if(expandedOrderId !== id) return;
-    const o = ordersCache.find(x=>x.id===id);
-    container.innerHTML = buildBubblesHtml(messages, 'ochat-empty', o) + chatInputBarHtml(id);
-  } catch(err){
-    container.innerHTML = `<div class="ochat-empty">Nepavyko įkelti pokalbio.</div>` + chatInputBarHtml(id);
-  }
-}
-
-async function submitChatQuote(id){
-  const priceInput = document.getElementById(`ochat-price-${id}`);
-  const errEl = document.getElementById(`ochat-price-error-${id}`);
-  const price = parseFloat(priceInput.value);
-  if(!price || price <= 0){
-    priceInput.style.borderColor = 'rgba(192,57,43,0.6)';
-    if(errEl){ errEl.textContent = 'Įveskite kainą (didesnę už 0)'; errEl.style.display = 'block'; }
-    priceInput.focus();
-    return;
-  }
-  priceInput.style.borderColor = '';
-  if(errEl) errEl.style.display = 'none';
-  try{
-    const availableTime = combineDateTime(`ochat-time-${id}`);
-    await apiPost(`/orders/${id}/quote`, { price, availableTime });
-    await loadOrders();
-  } catch(err){
-    if(errEl){ errEl.textContent = err.message; errEl.style.display = 'block'; }
-  }
-}
-
-async function sendChatText(id){
-  const input = document.getElementById(`ochat-text-${id}`);
-  const txt = input.value.trim();
-  if(!txt) return;
-  try{
-    await apiPost(`/orders/${id}/messages`, { message: txt });
-    await loadOrders();
-  } catch(err){
-    alert(err.message);
-  }
 }
 
 // ═══ CHAT SKYDELIS — visų pokalbių sąrašas + gija (atskira nuo Užklausos kortelių,
@@ -1734,12 +1658,10 @@ async function pollOrders(){
     renderTabs();
     renderWeekBars();
     renderTimeline();
-    // Kol servisas kažką redaguoja (kainos/laiko laukelis atidarytas arba rašo pokalbio
-    // gijoje), sąrašo neperpiešiame, kad neprarastume jo įvedamų duomenų — renderOrders()
-    // visada perkuria VISĄ order-list HTML iš naujo (taigi ir atviro pokalbio įvesties
-    // laukus), tad šio patikrinimo nepakanka atlikti tik loadChatThread() viduje.
-    const typingInChat = document.activeElement && document.activeElement.closest('.ochat');
-    if(quotingOrderId === null && !typingInChat){
+    // Kol servisas kažką redaguoja (kainos/laiko/pažymėjimo laukelis atidarytas),
+    // sąrašo neperpiešiame, kad neprarastume jo įvedamų duomenų — renderOrders()
+    // visada perkuria VISĄ order-list HTML iš naujo (taigi ir atviro redagavimo laukus).
+    if(quotingOrderId === null){
       renderOrders();
     }
     if(newlyArrived.length && quotingOrderId === null && activeTab === 'new'){

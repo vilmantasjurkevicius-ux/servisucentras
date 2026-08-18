@@ -1709,6 +1709,16 @@ Vartotojas atsiuntė ekrano nuotrauką: paspaudus datos lauką, iškylantis liet
 
 ---
 
+## Užklausos kortelės "Pokalbis" dabar atidaro Chat skydelį (2026-08-18)
+
+Vartotojas atsiuntė ekrano nuotrauką su raudonai pažymėtu "💬 Pokalbis" mygtuku užklausos kortelėje ir paaiškino: nori, kad paspaudus JĮ atsidarytų PILNAS "Chat skydelis" modalas (tas pats, kurį atidaro topbar 💬 ikona), o ne anksčiau veikęs įterptas, susiaurintas pokalbio langas pačioje kortelėje. (Ankstesni du pranešimai apie "netikėtai atsidarantį modalą" iš tikrųjų buvo BŪTENT šio pageidavimo aprašymas, ne klaidos pranešimas — nesupratimas išsiaiškintas šiuo paskutiniu patikslinimu.)
+
+**Fix**: kortelės mygtuko `onclick` pakeistas iš `toggleChatThread(o.id)` į naują `openChatPanelFor(orderId)` (nustato `cpActiveOrderId` ir iškviečia jau esantį `openChatPanel()` — tą patį, kurį naudoja topbar ikona), mygtuko tekstas supaprastintas į visada-statinį "💬 Pokalbis" (nebe perjungiamas "▲ Slėpti pokalbį"). Kadangi ĮTERPTAS pokalbio langas kortelėje tapo NEBENAUDOJAMAS, PILNAI pašalintas jo kodas: `expandedOrderId` kintamasis, `toggleChatThread()`, `loadChatThread()`, `chatInputBarHtml()`, `submitChatQuote()`, `sendChatText()`, atitinkama HTML atvaizdavimo šaka `renderOrders()` viduje, ir dabar tikrai nebenaudojama `.ochat{}`/`.ochat-empty{}` CSS (KLAIDINGAI iš pradžių pašalinau IR `.ochat-price-box`/`.ochat-price-error`/`.ochat-text-row` — pasirodo, tas PAČias klases pernaudoja `cpInputBarHtml()` Chat skydelio įvesties juostai, tad jas grąžinau atgal su paaiškinančiu komentaru). `buildBubblesHtml()` (žinučių burbulų atvaizdavimas) liko nepakeistas — jį dabar naudoja TIK `loadConversationThread()` (Chat skydelis).
+
+**Patikrinta gyvai**: TIKRU DOM click event'u (ne tiesioginiu funkcijos iškvietimu) paspaudus "💬 Pokalbis" ant patvirtintos užklausos kortelės — `cpModalShown:true`, `cpOverlayShown:true`, `cpActiveOrderId` atitiko TIKSLIAI paspaustos kortelės užsakymo ID, gijos antraštėje ir žinutėse teisingai matomas TO konkretaus kliento vardas ir jo užklausos aprašymas kaip pirma žinutė. Išsiųsta testinė žinutė per modalo įvesties juostą (`cpSendMessage`) — atsirado teisingai suformatuota kaip antra žinutė. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
