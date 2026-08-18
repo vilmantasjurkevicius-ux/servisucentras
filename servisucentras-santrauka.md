@@ -1739,6 +1739,16 @@ Vartotojas atsiuntė ekrano nuotrauką iš Kalendoriaus puslapio "Nesuplanuoti d
 
 ---
 
+## Ir pačiame savaitės kalendoriuje (suplanuoti darbai) rodoma markė/modelis + telefonas (2026-08-18)
+
+Vartotojas po ankstesnio pakeitimo paprašė: "ir pačiam kalendoriui pridėk modelį ir markę" — t.y. tas pats turėtų būti matoma ir suplanuotų darbų savaitės tinklelyje (ne tik "Nesuplanuoti darbai" sąraše). Mid-pokalbio papildomai paprašyta "tel nr" — pridėti ir telefono numerį.
+
+**Fix**: `renderCalendarPage()` savaitės tinklelio dienos langelyje (`dayOrders.map(...)`, kur rodomas laikas/kategorija/vardas) po vardu pridėtas `o.car_info` IR `o.phone` (abu su apsauga nuo tuščios reikšmės — automobilio info arba telefonas gali būti neatskleisti/nežinomi). Tas pats `· 📞 ${o.phone}` priedas pridėtas ir prie ankstesnio pakeitimo — "Nesuplanuoti darbai" eilutės — kad abi vietos liktų nuoseklios. Telefonas naudoja jau esantį `o.phone` lauką, kurį backend'as (`GET /orders`) automatiškai užmaskuoja `null`, kol klientas nepriimtas arba komisinis mokestis įjungtas (žr. [[phone_reveal_fee_toggle]]) — jokios naujos logikos nereikėjo, tiesiog rodoma, jei reikšmė jau atskleista.
+
+**Patikrinta gyvai**: sukurtas testinis suplanuotas (šiandienai 14:00) užsakymas su `car_info:"Ford Kuga (2014)"` ir priimtu klientu (`client_accepted_at` nustatytas, kad telefonas būtų atskleistas) — savaitės tinklelio langelis parodė "14:00 / 🔍 Diagnostika / Testas SuAutoSched · Ford Kuga (2014) · 📞 +37063333333". Tas pats užsakymas su išvalytu `scheduled_time` (nesuplanuotas) parodė identišką formatą "Nesuplanuoti darbai" sąraše. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

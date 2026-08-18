@@ -2018,7 +2018,7 @@ function renderCalendarPage(){
             <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font-size:11px;">
               <div style="color:var(--yellow);font-family:'IBM Plex Mono';font-size:10px;">${(o.scheduled_time.split('T')[1]||'')}</div>
               <div style="font-weight:600;">${categoryInfo(o.category_id).label}</div>
-              <div style="color:var(--muted);font-size:10px;">${(o.first_name||'')+' '+(o.last_name||'')}</div>
+              <div style="color:var(--muted);font-size:10px;">${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
             </div>`).join('')}
         </div>
       </div>`;
@@ -2035,7 +2035,7 @@ function renderCalendarPage(){
         <div style="padding:8px 0;">
           ${unscheduled.map(o=>`
             <div class="svc-row">
-              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}</div>
+              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
               ${dateTimePairHtml(`cal-time-${o.id}`)}
               <button class="action-btn accept" onclick="assignCalendarTime(${o.id})">✓ Priskirti</button>
             </div>`).join('')}
