@@ -1808,6 +1808,16 @@ Vartotojas paprašė pakeisti veiksmų mygtukų tvarką kortelėje — anksčiau
 
 ---
 
+## Kalendoriaus puslapyje po savaitės tinkleliu — pilnas užsakymų sąrašas (2026-08-18)
+
+Vartotojas paprašė: "po kalendorium noriu matyti uzsakymus kad servisui butu patogiau" — po savaitės kalendoriaus tinklelio pridėti sąrašinį visų užsakymų vaizdą, kad servisas nesikeistų puslapiais tarp Kalendoriaus ir Užklausų.
+
+**Fix**: `renderCalendarPage()` (`automeistrai-dashboard.html`) — naujas panelis "Užsakymai" po savaitės tinklelio, rodantis VISUS serviso `mine` (in_progress/done) užsakymus sąrašo pavidalu (kaip jau esantis "Nesuplanuoti darbai" eilutės stilius), rikiuotus pagal `scheduled_time` (suplanuoti anksčiausiai pirmi, nesuplanuoti — pabaigoje). Kiekviena eilutė rodo statuso ženkliuką (pakartotinai panaudota `cpStatusInfo()`), kategoriją, kliento vardą, automobilį, telefoną ir laiką ("laikas nepaskirtas", jei dar neturi). Paspaudus eilutę — atsidaro Chat skydelis tam konkrečiam užsakymui (`openChatPanelFor()`, ta pati funkcija, kurią naudoja "💬 Pokalbis" mygtukas pagrindiniame sąraše).
+
+**Patikrinta gyvai**: sukurti 2 testiniai `in_progress` užsakymai (1 suplanuotas šiandienai 15:00, 1 nesuplanuotas) — naujas "Užsakymai 2" panelis atsirado PO savaitės tinklelio, teisingai rodė "18 rugp 15:00" ir "laikas nepaskirtas". Paspaudus eilutę TIKRU DOM click event'u — Chat skydelis atsidarė (`cp-overlay` gavo `show` klasę). Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

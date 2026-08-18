@@ -2071,6 +2071,23 @@ function renderCalendarPage(){
         </div>
         <div style="display:flex;">${dayColumns}</div>
       </div>
+
+      <div class="orders-panel" style="border:1px solid var(--line);border-radius:var(--r);margin-top:20px;">
+        <div class="panel-header"><div class="panel-title">Užsakymai <span class="status-badge sb-new">${mine.length}</span></div></div>
+        <div style="padding:8px 0;">
+          ${mine.length ? mine.slice().sort((a,b)=>(a.scheduled_time||'9999').localeCompare(b.scheduled_time||'9999')).map(o=>{
+            const st = cpStatusInfo(o);
+            return `
+            <div class="svc-row" style="cursor:pointer;" onclick="openChatPanelFor(${o.id})">
+              <div class="svc-row-name">
+                <span class="status-badge ${st.cls}" style="margin-right:6px;">${st.label}</span>
+                ${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}
+              </div>
+              <div style="color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;">${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'laikas nepaskirtas'}</div>
+            </div>`;
+          }).join('') : '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">Užsakymų nėra.</div>'}
+        </div>
+      </div>
     </div>
   `;
 }
