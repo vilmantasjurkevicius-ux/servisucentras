@@ -1719,6 +1719,16 @@ Vartotojas atsiuntė ekrano nuotrauką su raudonai pažymėtu "💬 Pokalbis" my
 
 ---
 
+## Pašalintas nereikalingas "📞 Skambinti" mygtukas kortelėje (2026-08-18)
+
+Vartotojas atsiuntė ekrano nuotrauką su mažu raudonu "📞 Skambinti" mygtuku ir paprašė jį pašalinti — "net nežinau kam jis buvo skirtas". Tai buvo `actionsForOrder()` viduje esantis `.action-btn.call` mygtukas, kviečiantis `callClient(vardas, telefonas)` — atidaro naršyklės `tel:` nuorodą. Buvo DVI vietos: naujoms (dar niekam nepriskirtoms) užklausoms ir patvirtintoms/vykdomoms užklausoms.
+
+**Fix**: pašalinti abu `<button class="action-btn call" onclick="callClient(...)">📞 Skambinti</button>` iš `actionsForOrder()`. `callClient()` funkcija PALIKTA nepaliesta — ją tebenaudoja VISAI KITAS, atskiras "Greiti veiksmai" skydelio "☎ Skambinti" mygtukas (`callLastClient()`), kurio vartotojas NEMINĖJO ir kuris ekrano nuotraukoje nesimatė. Taip pat pašalintas dabar nebenaudojamas `clientName` kintamasis `actionsForOrder()` viduje (buvo skaičiuojamas TIK šiems dviem pašalintiems mygtukams).
+
+**Patikrinta gyvai**: sukurtas testinis patvirtintas užsakymas — kortelės veiksmų sąrašas nebeturi "📞 Skambinti" (patikrinta per `.ocard-actions` HTML turinį), o "Greiti veiksmai" skydelio "Skambinti" plytelė liko nepaliesta. Jokių JS klaidų. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

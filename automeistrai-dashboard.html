@@ -1021,7 +1021,6 @@ function ltCalClear(){
 }
 
 function actionsForOrder(o){
-  const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
   if(quotingOrderId === o.id){
     if(quotingMode === 'schedule'){
       return `
@@ -1079,9 +1078,7 @@ function actionsForOrder(o){
       </div>`;
   }
   if(o.service_id === null){
-    return `
-      <button class="action-btn accept" onclick="startQuoting(${o.id},'quote')">✓ Pasiūlyti kainą</button>
-      <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>`;
+    return `<button class="action-btn accept" onclick="startQuoting(${o.id},'quote')">✓ Pasiūlyti kainą</button>`;
   }
   if(o.status === 'in_progress' || (o.order_type === 'direct' && o.status === 'new')){
     // "Priimti klientą" — NAUJAS, ATSKIRAS veiksmas nuo kainos pasiūlymo (žr. Žingsnis 2/6
@@ -1095,7 +1092,6 @@ function actionsForOrder(o){
          <button class="action-btn decline" onclick="startQuoting(${o.id},'decline')">✕ Atsisakyti</button>`;
     return `
       ${acceptBlock}
-      <button class="action-btn call" onclick="callClient('${clientName}','${o.phone||''}')">📞 Skambinti</button>
       <button class="action-btn call" onclick="startScheduling(${o.id})">📅 ${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'Priskirti laiką'}</button>
       <button class="action-btn done" onclick="startQuoting(${o.id},'complete')">✓ Pažymėti atlikta</button>`;
   }
