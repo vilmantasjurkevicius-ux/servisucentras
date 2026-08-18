@@ -1788,6 +1788,26 @@ Vartotojas norėjo, kad serviso dashboard'e "Naujos" skirtukas (rodo dar niekam 
 
 ---
 
+## "✓ Priimti klientą" / "✓ Pažymėti atlikta" — didesni, pirmasis mirksi (2026-08-18)
+
+Vartotojas paprašė, kad "Užsakymai" sąraše šie du pagrindiniai veiksmų mygtukai būtų didesni/ryškesni, o "✓ Priimti klientą" dar ir mirksėtų, kai atsiranda (t.y. kol laukia priėmimo).
+
+**Fix** (`automeistrai-dashboard.html`): nauja CSS klasė `.action-btn.big` (didesnis `font-size`/`padding`, storesnis kraštas) uždėta ant abiejų mygtukų `actionsForOrder()` viduje. Papildoma `.action-btn.accept-blink` klasė (nauja `@keyframes acceptBlink` — pakaitomis skaidrus/žalsvai paryškintas fonas, analogiškai jau esančiai `.ptab.tab-flash` logikai virš skirtukų) uždėta TIK ant "✓ Priimti klientą", ir TIK kol `!o.client_accepted_at` (t.y. dingsta, klientą priėmus — vietoj jo tada rodomas statinis "✓ Priimta" ženkliukas).
+
+**Patikrinta gyvai**: sukurti 2 testiniai `in_progress` užsakymai tam pačiam servisui — vienas dar nepriimtas (rodė didesnį "✓ Priimti klientą" su `animationName:'acceptBlink'`), kitas jau priimtas (`client_accepted_at` nustatytas — rodė "✓ Priimta · 0.00€" ženkliuką BE mirksėjimo). Abiejų kortelių "✓ Pažymėti atlikta" mygtukas patvirtintas didesnis (`font-size:12.5px` vs bazinis `10px`). Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
+## Mygtukų eiliškumas pakeistas: Priimti → Pažymėti atlikta → Priskirti laiką (2026-08-18)
+
+Vartotojas paprašė pakeisti veiksmų mygtukų tvarką kortelėje — anksčiau buvo "Priimti klientą" → "📅 Priskirti laiką" → "✓ Pažymėti atlikta", norima "Priimti klientą" → "✓ Pažymėti atlikta" → "📅 Priskirti laiką".
+
+**Fix**: `actionsForOrder()` (`automeistrai-dashboard.html`) — sukeisti vietomis `<button class="action-btn done big">✓ Pažymėti atlikta</button>` ir `<button class="action-btn call">📅 Priskirti laiką</button>` eilučių tvarka grąžinamame HTML.
+
+**Patikrinta gyvai**: sukurtas testinis priimtas (`in_progress`, `client_accepted_at` nustatytas) užsakymas — kortelės veiksmų sąrašas patvirtintas: "✓ Priimta · 0.00€" → "✕ Atsisakyti" → "✓ Pažymėti atlikta" → "📅 Priskirti laiką". Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

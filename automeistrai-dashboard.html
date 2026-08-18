@@ -335,6 +335,18 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .action-btn.call:hover{background:var(--yellow-dim);}
 .action-btn.done{color:var(--muted);border-color:var(--line2);}
 
+/* Didesnis, ryškesnis stilius pagrindiniams veiksmams ("Priimti klientą" / "Pažymėti
+   atlikta") — vartotojo pageidavimu, kad jie labiau išsiskirtų kortelėje nuo mažesnių
+   antrinių mygtukų (📅 Priskirti laiką, ✕ Atsisakyti). */
+.action-btn.big{font-size:12.5px;padding:8px 16px;font-weight:700;border-width:2px;}
+@keyframes acceptBlink{
+  0%,100%{background:transparent;}
+  50%{background:var(--green-dim);}
+}
+/* Mirksi NUOLAT, kol laukia priėmimo — atkreipia dėmesį, kad atsirado naujas klientas,
+   kurį reikia priimti (analogiškai .ptab.tab-flash logikai virš skirtukų). */
+.action-btn.accept-blink{animation:acceptBlink 1.4s ease-in-out infinite;}
+
 .status-badge{font-family:'IBM Plex Mono';font-size:9.5px;padding:3px 8px;border-radius:2px;font-weight:500;}
 .sb-new{background:var(--yellow-dim);color:var(--yellow);}
 .sb-confirmed{background:var(--green-dim);color:#6fa382;}
@@ -1091,13 +1103,13 @@ function actionsForOrder(o){
     // kurios gauna service_id iškart, bet lieka status='new' kol servisas nepriima —
     // žr. Žingsnis 6/6 santrauka.md. Kontaktų slėpimas veikia identiškai abiem atvejais.
     const acceptBlock = !o.client_accepted_at
-      ? `<button class="action-btn accept" onclick="acceptClient(${o.id})">✓ Priimti klientą</button>`
+      ? `<button class="action-btn accept big accept-blink" onclick="acceptClient(${o.id})">✓ Priimti klientą</button>`
       : `<span class="status-badge sb-done">✓ Priimta${o.contact_fee_amount!=null?' · '+fmtEUR(o.contact_fee_amount):''}</span>
          <button class="action-btn decline" onclick="startQuoting(${o.id},'decline')">✕ Atsisakyti</button>`;
     return `
       ${acceptBlock}
-      <button class="action-btn call" onclick="startScheduling(${o.id})">📅 ${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'Priskirti laiką'}</button>
-      <button class="action-btn done" onclick="startQuoting(${o.id},'complete')">✓ Pažymėti atlikta</button>`;
+      <button class="action-btn done big" onclick="startQuoting(${o.id},'complete')">✓ Pažymėti atlikta</button>
+      <button class="action-btn call" onclick="startScheduling(${o.id})">📅 ${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'Priskirti laiką'}</button>`;
   }
   if(o.status === 'done'){
     return `<span class="status-badge sb-done">✓ Atlikta${o.price!=null?' · '+fmtEUR(o.price):''}</span>`;
