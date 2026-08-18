@@ -1818,6 +1818,16 @@ Vartotojas paprašė: "po kalendorium noriu matyti uzsakymus kad servisui butu p
 
 ---
 
+## Kalendoriuje rodoma svečias ar registruotas klientas (2026-08-18)
+
+Vartotojas paprašė: "kaledoryje parasyk kur svecias o kur uziregistraves" — Kalendoriaus puslapyje aiškiai matyti, kuris klientas svečias, o kuris registruotas.
+
+**Fix**: `automeistrai-dashboard.html` — jau buvo `.cp-guest-badge`/`.cp-reg-badge` ženkliukai (naudoti Chat skydelyje), bet logika buvo dubliuota DVIEJOSE vietose (`cpRowHtml()`, `cpThreadHeaderHtml()`) — sukurta bendra `guestBadgeHtml(o)` funkcija, abi vietos perrašytos ją naudoti (mažas DRY sutvarkymas pakeliui). Ženkliukas pridėtas VISOSE trijose Kalendoriaus puslapio vietose: savaitės tinklelio dienos korteles (šalia kategorijos), "Nesuplanuoti darbai" sąrašo eilutėse, ir naujajame "Užsakymai" sąraše po tinkleliu.
+
+**Patikrinta gyvai**: sukurti 2 testiniai užsakymai (1 registruoto kliento, suplanuotas; 1 svečio, nesuplanuotas) — savaitės tinklelyje registruoto kliento kortelė rodė "✓ Registruotas", abu sąrašai ("Nesuplanuoti darbai" ir "Užsakymai") teisingai rodė "Svečias"/"✓ Registruotas" atitinkamai. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

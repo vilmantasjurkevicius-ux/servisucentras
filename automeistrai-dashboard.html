@@ -1263,9 +1263,14 @@ function cpStatusInfo(o){
 function cpSortedOrders(){
   return [...ordersCache].sort((a,b) => (b.last_message_at||b.created_at).localeCompare(a.last_message_at||a.created_at));
 }
+// Svečio/registruoto kliento ženkliukas — pakartotinai naudojamas Chat skydelio sąraše/
+// antraštėje IR Kalendoriaus puslapio užsakymų sąrašuose.
+function guestBadgeHtml(o){
+  return o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
+}
 function cpRowHtml(o){
   const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
-  const guestBadge = o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
+  const guestBadge = guestBadgeHtml(o);
   const status = cpStatusInfo(o);
   const desc = [o.car_info, o.description].filter(Boolean).join(' — ');
   return `
@@ -1289,7 +1294,7 @@ function renderConversationList(){
 
 function cpThreadHeaderHtml(o){
   const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
-  const guestBadge = o.is_guest ? '<span class="cp-guest-badge">Svečias</span>' : '<span class="cp-reg-badge">✓ Registruotas</span>';
+  const guestBadge = guestBadgeHtml(o);
   // Pasitikime backend'o sprendimu (GET /orders jau redaguoja o.phone į null, kai neleista —
   // žr. orders.routes.js: priėmus klientą ARBA kai mokesčio surinkimas globaliai išjungtas),
   // ne perkuriame tą pačią sąlygą čia iš naujo — taip išvengiama dviejų vietų išsiderinimo.
@@ -2038,7 +2043,7 @@ function renderCalendarPage(){
           ${dayOrders.map(o=>`
             <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font-size:11px;">
               <div style="color:var(--yellow);font-family:'IBM Plex Mono';font-size:10px;">${(o.scheduled_time.split('T')[1]||'')}</div>
-              <div style="font-weight:600;">${categoryInfo(o.category_id).label}</div>
+              <div style="font-weight:600;display:flex;align-items:center;gap:5px;">${categoryInfo(o.category_id).label} ${guestBadgeHtml(o)}</div>
               <div style="color:var(--muted);font-size:10px;">${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
             </div>`).join('')}
         </div>
@@ -2056,7 +2061,7 @@ function renderCalendarPage(){
         <div style="padding:8px 0;">
           ${unscheduled.map(o=>`
             <div class="svc-row">
-              <div class="svc-row-name">${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
+              <div class="svc-row-name">${guestBadgeHtml(o)} ${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
               ${dateTimePairHtml(`cal-time-${o.id}`)}
               <button class="action-btn accept" onclick="assignCalendarTime(${o.id})">✓ Priskirti</button>
             </div>`).join('')}
@@ -2081,6 +2086,7 @@ function renderCalendarPage(){
             <div class="svc-row" style="cursor:pointer;" onclick="openChatPanelFor(${o.id})">
               <div class="svc-row-name">
                 <span class="status-badge ${st.cls}" style="margin-right:6px;">${st.label}</span>
+                ${guestBadgeHtml(o)}
                 ${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}
               </div>
               <div style="color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;">${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'laikas nepaskirtas'}</div>
