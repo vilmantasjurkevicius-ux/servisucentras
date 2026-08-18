@@ -410,7 +410,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   0%,100%{background:transparent;color:var(--yellow);}
   50%{background:rgba(230,57,70,0.55);color:var(--bg);}
 }
-/* Nebe vienkartinė animacija — mirksi NUOLAT, kol servisas neatidaro "Naujos" skirtuko
+/* Nebe vienkartinė animacija — mirksi NUOLAT, kol servisas neatidaro "Užsakymai" skirtuko
    (žr. setTab()), kad pranešimas nebūtų praleistas, jei servisas žiūri kitą puslapį. */
 .ptab.tab-flash{animation:tabFlash 1.4s ease-in-out infinite;}
 
@@ -801,13 +801,13 @@ let serviceToken = localStorage.getItem('sc_service_token');
 let serviceProfile = null;
 let categoriesCache = [];
 let ordersCache = [];
-let activeTab = 'new';
+let activeTab = 'confirmed';
 let quotingOrderId = null;
 let quotingMode = null;
 let chatUnreadOrderIds = new Set();  // užklausų id, kuriose paskutinę žinutę rašė klientas ir servisas jos dar nematė
 let cpActiveOrderId = null;          // kuris pokalbis pasirinktas chat skydelyje
 let cpOpen = false;
-let newOrderUnseenIds = new Set();   // naujos užklausos, kurių servisas dar NEPERŽIŪRĖJO (atidarius "Naujos" skirtuką)
+let newOrderUnseenIds = new Set();   // naujos užklausos, kurių servisas dar NEPERŽIŪRĖJO (atidarius "Užsakymai" skirtuką)
 
 if(!serviceToken){
   window.location.href = 'automeistrai-login.html?type=service&action=login';
@@ -856,16 +856,20 @@ const apiGet = (path) => apiRequest('GET', path);
 const apiPost = (path, body) => apiRequest('POST', path, body || {});
 const apiPatch = (path, body) => apiRequest('PATCH', path, body || {});
 
-const TAB_STATUS = ['new','confirmed','done'];
-const TAB_LABELS = {new:'Naujos', confirmed:'Užsakymai', done:'Atliktos'};
+const TAB_STATUS = ['confirmed','done'];
+const TAB_LABELS = {confirmed:'Užsakymai', done:'Atliktos'};
 
+// Anksčiau buvo atskiras "Naujos" skirtukas (dar niekam nepriskirtos užklausos) —
+// vartotojo pageidavimu sujungtas su "Užsakymai" į vieną bendrą sąrašą, kad
+// nereikėtų persijunginėti tarp dviejų vietų. Kiekviena eilutė gauna savo
+// statuso ženkliuką (žr. renderOrders() → cpStatusInfo()), tad naujos vis tiek
+// aiškiai atskiriamos vizualiai, tik nebe atskirame skirtuke.
 function tabFilter(o, tab){
   const myId = serviceProfile.id;
-  if(tab==='new') return o.service_id === null;
   // Tiesioginė rezervacija (order_type='direct') gauna service_id IŠKART, bet lieka
   // status='new' kol servisas nepaspaudžia "Priimti klientą" — žr. Žingsnis 6/6 santrauka.md.
-  // Konceptualiai tai jau "man priskirta" užklausa, tad rodoma "Patvirtintos" skiltyje.
-  if(tab==='confirmed') return o.service_id === myId && (o.status === 'in_progress' || (o.order_type === 'direct' && o.status === 'new'));
+  // Konceptualiai tai jau "man priskirta" užklausa, tad rodoma "Užsakymai" skiltyje.
+  if(tab==='confirmed') return (o.service_id === null) || (o.service_id === myId && (o.status === 'in_progress' || (o.order_type === 'direct' && o.status === 'new')));
   if(tab==='done') return o.service_id === myId && o.status === 'done';
   return false;
 }
@@ -873,16 +877,16 @@ function tabFilter(o, tab){
 function renderTabs(){
   document.getElementById('panel-tabs').innerHTML = TAB_STATUS.map(s => {
     const count = ordersCache.filter(o => tabFilter(o, s)).length;
-    // "new" skirtukas mirksi NUOLAT (žr. .ptab.tab-flash CSS), kol newOrderUnseenIds
+    // "Užsakymai" skirtukas mirksi NUOLAT (žr. .ptab.tab-flash CSS), kol newOrderUnseenIds
     // netuščias — perpiešiama kiekvieną renderTabs() kvietimą, tad klasė čia įrašoma
     // tiesiai į šabloną, o ne pridedama atskirai per classList (kitaip ją ištrintų
     // kitas renderTabs() perpiešimas per kitą poll ciklą).
-    const flash = (s === 'new' && newOrderUnseenIds.size > 0) ? ' tab-flash' : '';
+    const flash = (s === 'confirmed' && newOrderUnseenIds.size > 0) ? ' tab-flash' : '';
     return `<button class="ptab ${s===activeTab?'active':''}${flash}" data-tab="${s}" onclick="setTab('${s}')">${TAB_LABELS[s]} <span class="n">${count}</span></button>`;
   }).join('');
 }
 
-// Atidarius "Naujos" skirtuką ARBA 💬 chat skydelį — abu yra peržiūrėjimo veiksmai,
+// Atidarius "Užsakymai" skirtuką ARBA 💬 chat skydelį — abu yra peržiūrėjimo veiksmai,
 // sustabdantys pasikartojantį garsą/mirksėjimą dėl naujų (dar niekieno nepriimtų)
 // užklausų (žr. pollOrders() / checkAlarm()). updateChatBadge() čia BŪTINAS — kitaip
 // 💬 ikona liktų mirksėti iki kito poll ciklo, nors garsas jau būtų nutilęs.
@@ -895,7 +899,7 @@ function acknowledgeNewOrders(){
 
 function setTab(status){
   activeTab = status;
-  if(status === 'new') acknowledgeNewOrders();
+  if(status === 'confirmed') acknowledgeNewOrders();
   renderTabs();
   renderOrders();
 }
@@ -1111,10 +1115,15 @@ function renderOrders(){
   list.innerHTML = filtered.map(o => {
     const cat = categoryInfo(o.category_id);
     const clientName = `${o.first_name||''} ${o.last_name||''}`.trim() || 'Klientas';
+    // "Naujos" ir "Užsakymai" dabar viename sąraše (žr. tabFilter()) — statuso ženkliukas
+    // kiekvienoje eilutėje leidžia vizualiai atskirti dar nepriskirtas užklausas nuo
+    // jau priimtų/vykdomų, nors jos nebe atskirtos skirtingais skirtukais.
+    const st = cpStatusInfo(o);
     return `
     <div class="ocard" data-order-id="${o.id}">
       <div>
         <div class="ocard-top">
+          <span class="status-badge ${st.cls}">${st.label}</span>
           <span class="ocard-cat ${cat.cls}">${cat.label}</span>
           ${o.order_type==='direct' ? `<span class="ocard-cat" style="background:rgba(122,176,240,0.15);color:#7ab0f0;">📅 Tiesioginė rezervacija</span>` : ''}
           <span class="ocard-time">${timeAgo(o.created_at)}</span>
@@ -1202,7 +1211,7 @@ function computeUnreadOrders(){
 }
 // Skaičius/mirksėjimas ant 💬 apima IR neskaitytas žinutes, IR neperžiūrėtas naujas
 // užklausas (newOrderUnseenIds) — RASTA GYVAI: garsas (checkAlarm()) groja dėl abiejų
-// priežasčių, bet "Naujos" skirtuko mirksėjimas (tab-flash) yra Užklausos puslapio
+// priežasčių, bet "Užsakymai" skirtuko mirksėjimas (tab-flash) yra Užklausos puslapio
 // VIDUJE, tad NEMATOMAS, kai servisas žiūri Kalendorių/Statistiką/kt. — servisas girdi
 // pyptelėjimą, bet niekur nemato JOKIO blyksėjimo. 💬 ikona yra vienintelis VISADA
 // matomas elementas (topbar), tad ji turi atspindėti PILNĄ "yra ką peržiūrėti" būseną.
@@ -1643,7 +1652,7 @@ async function pollOrders(){
     ordersCache = fresh;
 
     // Naujos, dar NEPERŽIŪRĖTOS užklausos — laikomos "neatidarytomis", kol servisas
-    // paspaudžia "Naujos" skirtuką (žr. setTab()), NEPRIKLAUSOMAI nuo to, kiek poll ciklų
+    // paspaudžia "Užsakymai" skirtuką (žr. setTab()), NEPRIKLAUSOMAI nuo to, kiek poll ciklų
     // praeis ar kokiame puslapyje servisas šiuo metu yra. Pašalinam id, kurie nebe 'new'
     // (kitas servisas spėjo priimti/servisas pats atmetė), pridedam ką tik atėjusius.
     const freshNewIds = new Set(fresh.filter(o => o.status === 'new').map(o => o.id));
@@ -1660,7 +1669,7 @@ async function pollOrders(){
     if(quotingOrderId === null){
       renderOrders();
     }
-    if(newlyArrived.length && quotingOrderId === null && activeTab === 'new'){
+    if(newlyArrived.length && quotingOrderId === null && activeTab === 'confirmed'){
       highlightNewCards(newlyArrived.map(o=>o.id));
     }
 
@@ -1697,7 +1706,7 @@ async function pollOrders(){
 // vien duomenims atnaujinti, kas nereikalinga vien tam, kad pypsėtų greičiau).
 // Vartotojo pageidavimas: pranešimas privalo veikti nuolat, nepriklausomai nuo to,
 // kuriame dashboard'o puslapyje servisas šiuo metu yra, kol jis realiai peržiūri
-// (atidaro "Naujos" skirtuką arba tą konkretų pokalbį). Garsą galima išjungti
+// (atidaro "Užsakymai" skirtuką arba tą konkretų pokalbį). Garsą galima išjungti
 // Nustatymai puslapyje / topbar 🔊 mygtuku (soundNotifEnabled) — playNewOrderSound() tai jau tikrina.
 function checkAlarm(){
   if(newOrderUnseenIds.size > 0 || chatUnreadOrderIds.size > 0){

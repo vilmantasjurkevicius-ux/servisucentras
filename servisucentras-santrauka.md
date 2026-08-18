@@ -1773,6 +1773,21 @@ Vartotojas paprašė būdo išvalyti serviso "Dainava auto" dashboard'e susikaup
 
 ---
 
+## "Naujos" skirtukas pašalintas — sujungtas su "Užsakymai" (2026-08-18)
+
+Vartotojas norėjo, kad serviso dashboard'e "Naujos" skirtukas (rodo dar niekam nepriskirtas užklausas) visai neliktų sistemoje. Patikslinus (žr. AskUserQuestion) — pasirinktas variantas: sujungti su "Užsakymai" į vieną bendrą sąrašą, o ne tik paslėpti/panaikinti diskavimo galimybę.
+
+**Fix** (`automeistrai-dashboard.html`, "Gautos užklausos" panelė):
+- `TAB_STATUS`/`TAB_LABELS` — nebeliko `'new'` įrašo, liko tik `['confirmed','done']` → "Užsakymai" / "Atliktos".
+- `tabFilter(o, 'confirmed')` dabar grąžina TIEK dar niekam nepriskirtas (`o.service_id === null`), TIEK jau priimtas/vykdomas (buvęs `'new'` + `'confirmed'` sujungti į vieną sąlygą).
+- `renderOrders()` — kiekviena kortelė gauna statuso ženkliuką (pakartotinai panaudota jau esanti `cpStatusInfo(o)` funkcija, anksčiau naudota tik Chat skydelio sąraše: "Nauja" / "Laukia" / "Priimta" / "Atlikta" / "Atsisakyta"), kad vizualiai liktų aišku, kurios dar neskirtos, net jei jos nebe atskirame skirtuke.
+- `activeTab` numatytoji reikšmė, tab-flash mirksėjimo sąlyga, `acknowledgeNewOrders()` iškvietimas `setTab()` viduje, ir `pollOrders()` "naujai atėjusios" paryškinimo sąlyga — visur `'new'` pakeista į `'confirmed'` (nauja užklausa dabar "peržiūrima" atidarius "Užsakymai", ne atskirą skirtuką).
+- Su tuo susiję komentarai atnaujinti, kad neminėtų nebeegzistuojančio "Naujos" skirtuko.
+
+**Patikrinta gyvai**: sukurti 3 testiniai užsakymai (1 neskirtas/"new", 1 priimtas/"in_progress", 1 baigtas/"done") tam pačiam servisui — skirtukų juosta rodė TIK "Užsakymai 2" ir "Atliktos 1" (jokio "Naujos"). "Užsakymai" sąraše abi (neskirta + priimta) užklausos rodomos KARTU, su teisingais statuso ženkliukais "Nauja" ir "Laukia". Paspaudus "Atliktos" — teisingai atskirtas, rodo tik "Atlikta" ženkliuką turinčią eilutę. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
