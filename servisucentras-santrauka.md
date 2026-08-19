@@ -1828,6 +1828,20 @@ Vartotojas paprašė: "kaledoryje parasyk kur svecias o kur uziregistraves" — 
 
 ---
 
+## Kalendoriuje: "✓ Atlikta" tiesiai iš sąrašo + raudona/žalia spalva pagal statusą (2026-08-18)
+
+Vartotojas atsiuntė ekrano nuotrauką su raudonai pažymėtu "Atlikta" kampe ir paprašė: galimybę paspausti ir pažymėti užsakymą atliktu (parašyti, kas padaryta) tiesiai Kalendoriaus puslapyje, be persijungimo į "Užsakymai"; taip pat kad užsakymo fonas taptų raudonas (dar vykdoma) arba žalias (atlikta), su paaiškinimu virš kalendoriaus. Patikslinus (AskUserQuestion) — pasirinkta: pilna "Pažymėti atlikta" forma atsidaro TIESIAI kalendoriuje, ne persijungimu į kitą puslapį.
+
+**Fix** (`automeistrai-dashboard.html`):
+- Nauja `refreshCalendarIfActive()` funkcija — patikrina, ar Kalendoriaus puslapis šiuo metu matomas, ir jei taip, perpiešia `renderCalendarPage()`. Iškviesta iš `loadOrders()` (duomenų atnaujinimas po bet kokio veiksmo) IR `startQuoting()`/`cancelQuoting()` (UI būsenos keitimas atidarant/uždarant formą) — anksčiau šios funkcijos perpiešdavo TIK pagrindinį (nematomą, kai esi Kalendoriuje) `#order-list`, tad Kalendoriaus sąrašas likdavo pasenęs.
+- Kalendoriaus "Užsakymai" sąrašo eilutėje: jei `quotingOrderId === o.id` (t.y. servisas ką tik paspaudė "✓ Atlikta"), rodoma TA PATI `actionsForOrder(o)` forma (kaina, rida, garantija, darbų aprašymas, pakeistos dalys), kuri jau naudojama pagrindiniame "Užklausai" puslapyje — jokio kodo dubliavimo. Kol užsakymas dar ne atliktas, prie kiekvienos eilutės rodomas mažas "✓ Atlikta" mygtukas (su `event.stopPropagation()`, kad neatidarytų pokalbio vietoj to).
+- Fono spalva: TIEK savaitės tinklelio dienos kortelėse, TIEK "Užsakymai" sąrašo eilutėse — `var(--red-dim)` kol `o.status !== 'done'`, `var(--green-dim)` kai `o.status === 'done'`.
+- Virš Kalendoriaus pridėtas mažas legendos paaiškinimas: spalvotas kvadratėlis + "Vykdoma — dar nepažymėta atlikta" / "Atlikta".
+
+**Patikrinta gyvai**: sukurtas testinis `in_progress` (priimtas, suplanuotas 09:00) užsakymas — Kalendoriaus sąrašo eilutė iš pradžių raudona su "✓ Atlikta" mygtuku; paspaudus jį TIKRU DOM click event'u, TIESIAI eilutėje atsirado pilna forma (kainos/darbų aprašymo laukai). Užpildžius ir pateikus — eilutė tapo ŽALIA, statuso ženkliukas pasikeitė į "Atlikta", mygtukas dingo; TAS PATS savaitės tinklelio langelis irgi tapo žalias. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 26/26.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

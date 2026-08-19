@@ -1413,9 +1413,10 @@ function closeChatPanel(){
 function startQuoting(id, mode){
   quotingOrderId = id; quotingMode = mode;
   renderOrders();
+  refreshCalendarIfActive();
   setTimeout(()=>{ const el = document.getElementById(`price-input-${id}`); if(el) el.focus(); }, 0);
 }
-function cancelQuoting(){ quotingOrderId = null; quotingMode = null; renderOrders(); }
+function cancelQuoting(){ quotingOrderId = null; quotingMode = null; renderOrders(); refreshCalendarIfActive(); }
 
 async function submitPrice(id){
   const input = document.getElementById(`price-input-${id}`);
@@ -1595,6 +1596,16 @@ async function loadOrders(){
   renderOrders();
   renderWeekBars();
   renderTimeline();
+  refreshCalendarIfActive();
+}
+
+// Kalendoriaus "Užsakymai" sąrašo eilutės dabar irgi gali rodyti "Pažymėti atlikta" formą
+// (žr. renderCalendarPage()) — kai vartotojas ja pasinaudoja BŪDAMAS Kalendoriaus puslapyje,
+// standartinis loadOrders()/startQuoting()/cancelQuoting() renderOrders() kvietimas
+// perpieštų NEMATOMĄ #order-list, o Kalendorius liktų su pasenusia forma. Šis patikrinimas
+// leidžia tas pačias funkcijas naudoti abiejuose puslapiuose be dubliavimo.
+function refreshCalendarIfActive(){
+  if(document.getElementById('page-calendar')?.classList.contains('show')) renderCalendarPage();
 }
 
 // ═══ AUTO-ATNAUJINIMAS (polling, be viso puslapio perkrovimo) ═══
@@ -2041,7 +2052,7 @@ function renderCalendarPage(){
         </div>
         <div style="padding:8px;display:flex;flex-direction:column;gap:6px;min-height:90px;">
           ${dayOrders.map(o=>`
-            <div style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font-size:11px;">
+            <div style="background:${o.status==='done'?'var(--green-dim)':'var(--red-dim)'};border:1px solid var(--line2);border-radius:3px;padding:6px 8px;font-size:11px;">
               <div style="color:var(--yellow);font-family:'IBM Plex Mono';font-size:10px;">${(o.scheduled_time.split('T')[1]||'')}</div>
               <div style="font-weight:600;display:flex;align-items:center;gap:5px;">${categoryInfo(o.category_id).label} ${guestBadgeHtml(o)}</div>
               <div style="color:var(--muted);font-size:10px;">${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}</div>
@@ -2055,6 +2066,10 @@ function renderCalendarPage(){
 
   document.getElementById('page-calendar').innerHTML = `
     <div style="padding:16px 24px;">
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:16px;font-size:11.5px;color:var(--muted);">
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--red-dim);border:1px solid var(--line2);display:inline-block;"></span> Vykdoma — dar nepažymėta atlikta</span>
+        <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:2px;background:var(--green-dim);border:1px solid var(--line2);display:inline-block;"></span> Atlikta</span>
+      </div>
       ${unscheduled.length ? `
       <div class="orders-panel" style="border:1px solid var(--line);border-radius:var(--r);margin-bottom:20px;">
         <div class="panel-header"><div class="panel-title">Nesuplanuoti darbai <span class="status-badge sb-new">${unscheduled.length}</span></div></div>
@@ -2081,15 +2096,26 @@ function renderCalendarPage(){
         <div class="panel-header"><div class="panel-title">Užsakymai <span class="status-badge sb-new">${mine.length}</span></div></div>
         <div style="padding:8px 0;">
           ${mine.length ? mine.slice().sort((a,b)=>(a.scheduled_time||'9999').localeCompare(b.scheduled_time||'9999')).map(o=>{
+            if(quotingOrderId === o.id){
+              return `
+              <div class="svc-row" style="background:var(--red-dim);align-items:flex-start;">
+                <div class="svc-row-name" style="flex:1;">${guestBadgeHtml(o)} ${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}</div>
+                ${actionsForOrder(o)}
+              </div>`;
+            }
             const st = cpStatusInfo(o);
+            const canComplete = o.status !== 'done';
             return `
-            <div class="svc-row" style="cursor:pointer;" onclick="openChatPanelFor(${o.id})">
+            <div class="svc-row" style="cursor:pointer;background:${o.status==='done'?'var(--green-dim)':'var(--red-dim)'};" onclick="openChatPanelFor(${o.id})">
               <div class="svc-row-name">
                 <span class="status-badge ${st.cls}" style="margin-right:6px;">${st.label}</span>
                 ${guestBadgeHtml(o)}
                 ${categoryInfo(o.category_id).label} — ${(o.first_name||'')+' '+(o.last_name||'')}${o.car_info ? ` · ${o.car_info}` : ''}${o.phone ? ` · 📞 ${o.phone}` : ''}
               </div>
-              <div style="color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;">${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'laikas nepaskirtas'}</div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="color:var(--muted);font-family:'IBM Plex Mono';font-size:11px;">${o.scheduled_time ? formatSchedule(o.scheduled_time) : 'laikas nepaskirtas'}</div>
+                ${canComplete ? `<button class="action-btn done" onclick="event.stopPropagation(); startQuoting(${o.id},'complete')">✓ Atlikta</button>` : ''}
+              </div>
             </div>`;
           }).join('') : '<div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">Užsakymų nėra.</div>'}
         </div>
