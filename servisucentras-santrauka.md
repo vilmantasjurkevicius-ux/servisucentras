@@ -1864,6 +1864,21 @@ Vartotojas paprašė naujos funkcijos: registruoti servisai gali susisiekti VIEN
 
 ---
 
+## Servisų bendruomenė: paieška/naršymas pagal miestą (2026-08-20)
+
+Vartotojas paprašė: "del pokalbiu tarp servisu gali paska padaryti pagal miestus" — Servisų bendruomenės paieškos panelį papildyti miesto filtru, kad būtų patogu naršyti/rasti kitus tos pačios (ar bet kurios) vietovės servisus, ne tik vardu ieškoti.
+
+**Fix**:
+- Backend (`serviceChat.routes.js` `GET /search`) — priima papildomą `city` parametrą (tikslus atitikmuo), kurį galima naudoti ATSKIRAI (naršyti visus miesto servisus) ARBA KARTU su `q` (susiaurinti iki pavadinimo tame mieste). Be JOKIO filtro (nei `q`, nei `city`) grąžinama tuščia — apsauga nuo netyčinio viso servisų sąrašo atidavimo.
+- Frontend (`automeistrai-dashboard.html`) — naujas `<select id="s2s-city-filter">` virš paieškos lauko, užpildomas iš `LT_CITIES` (bendras `lt-cities.js`, pridėtas šio failo `<script>` sąrašas — anksčiau naudotas tik `mano-paskyra.html`/`automeistrai-login.html`, dabar pakartotinai panaudotas trečią kartą, ne dubliuotas). Pirmą kartą atidarius panelį, filtras automatiškai nustatomas į PAČIO serviso miestą (`serviceProfile.city`) ir iškart parodo to miesto kolegas — po to vartotojo pasirinkimas išlieka per visą sesiją, nebekeičiamas automatiškai.
+- Pakeliui rastas ir ištaisytas susijęs bug'as: `s2sEnterThread()` išvalo paieškos rezultatų talpyklą (`s2sSearchResults`) atidarant pokalbį, bet `s2sShowList()` (mygtukas "←") anksčiau tiesiog perpiešdavo TUŠČIĄ talpyklą vietoj to, kad iš naujo užklaustų — grįžus atgal rodydavo klaidingą "Servisų nerasta", nors jų realiai buvo. Pataisyta: `s2sShowList()` dabar kviečia `s2sSearch()` (perkrauna pagal esamą miesto/teksto filtrą), ne `renderS2SList()` tiesiogiai.
+
+**Testai**: naujas `service-chat.test.js` atvejis — `city` filtras rodo TIK to miesto servisus (ne save, ne kito miesto), `city`+`q` kartu susiaurina iki tikslaus atitikmens, be jokio filtro grąžina tuščią masyvą.
+
+**Patikrinta gyvai**: sukurti 3 testiniai servisai (2 Vilniuje, 1 Kaune). Atidarius panelį serviso A (Vilnius) vardu — filtras automatiškai "Vilnius", sąraše TIK kitas Vilniaus servisas (ne Kauno, ne savęs). Perjungus į "Kaunas" — sąrašas atsinaujino į Kauno servisą. Atidarius pokalbį su juo ir paspaudus "←" — sąrašas TEISINGAI išliko "Kaunas" (ne klaidingas "nerasta"). Miesto+teksto derinys ("Vilnius" + "SVC B") susiaurino iki vieno tikslaus atitikmens. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 31/31.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

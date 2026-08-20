@@ -868,7 +868,10 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   </div>
   <div id="s2s-list-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
     <div class="s2s-search-wrap">
-      <input class="s2s-search-input" id="s2s-search-input" placeholder="🔍 Ieškoti serviso — pavadinimas arba miestas..." oninput="s2sSearch()">
+      <select class="s2s-search-input" id="s2s-city-filter" onchange="s2sSearch()" style="margin-bottom:8px;">
+        <option value="">Visi miestai</option>
+      </select>
+      <input class="s2s-search-input" id="s2s-search-input" placeholder="🔍 Ieškoti serviso pagal pavadinimą..." oninput="s2sSearch()">
     </div>
     <div class="s2s-list" id="s2s-list"></div>
   </div>
@@ -899,6 +902,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   </div>
 </div>
 
+<script src="lt-cities.js"></script>
 <script>
 // Date
 const now = new Date();
@@ -1589,24 +1593,32 @@ function s2sSearchResultRowHtml(s){
 function renderS2SList(){
   const list = document.getElementById('s2s-list');
   const q = (document.getElementById('s2s-search-input').value || '').trim();
-  if(q){
+  const city = document.getElementById('s2s-city-filter').value;
+  if(q || city){
+    const label = q ? 'Paieškos rezultatai' : `Servisai — ${city}`;
     list.innerHTML = s2sSearchResults.length
-      ? `<div class="s2s-list-label">Paieškos rezultatai</div>` + s2sSearchResults.map(s2sSearchResultRowHtml).join('')
+      ? `<div class="s2s-list-label">${label}</div>` + s2sSearchResults.map(s2sSearchResultRowHtml).join('')
       : '<div class="s2s-empty">Servisų nerasta.</div>';
     return;
   }
   list.innerHTML = s2sConversations.length
     ? `<div class="s2s-list-label">Pokalbiai</div>` + s2sConversations.map(s2sRowHtml).join('')
-    : '<div class="s2s-empty">Pokalbių dar nėra — susiraskite servisą paieškoje viršuje.</div>';
+    : '<div class="s2s-empty">Pokalbių dar nėra — pasirinkite miestą arba ieškokite pavadinimo viršuje.</div>';
 }
 
 function s2sSearch(){
   clearTimeout(s2sSearchTimer);
   const q = document.getElementById('s2s-search-input').value.trim();
-  if(!q){ s2sSearchResults = []; renderS2SList(); return; }
+  const city = document.getElementById('s2s-city-filter').value;
+  if(!q && !city){ s2sSearchResults = []; renderS2SList(); return; }
   s2sSearchTimer = setTimeout(async ()=>{
-    try{ s2sSearchResults = await s2sApiGet('/search?q='+encodeURIComponent(q)); renderS2SList(); }
-    catch(e){ /* tylus nepavykimas — vartotojas gali tiesiog bandyti dar kartą */ }
+    try{
+      const params = new URLSearchParams();
+      if(q) params.set('q', q);
+      if(city) params.set('city', city);
+      s2sSearchResults = await s2sApiGet('/search?'+params.toString());
+      renderS2SList();
+    } catch(e){ /* tylus nepavykimas — vartotojas gali tiesiog bandyti dar kartą */ }
   }, 250);
 }
 
@@ -1660,7 +1672,10 @@ function s2sShowList(){
   document.getElementById('s2s-head-sub').textContent = 'Privatus pokalbis su kitais servisais';
   document.getElementById('s2s-thread-view').style.display = 'none';
   document.getElementById('s2s-list-view').style.display = 'flex';
-  renderS2SList();
+  // s2sSearch() (ne tiesiog renderS2SList()) — s2sEnterThread() išvalo s2sSearchResults
+  // atidarant giją, tad grįžus atgal reikia PERKROVI paieškos/miesto filtro rezultatus
+  // iš naujo, kitaip rodytų klaidingą "servisų nerasta", nors iš tikrųjų jų yra.
+  s2sSearch();
 }
 
 async function s2sSend(){
@@ -1678,10 +1693,29 @@ function s2sKey(event){
   if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); s2sSend(); }
 }
 
+let s2sCityFilterReady = false;
+// Miestų sąrašas (LT_CITIES, žr. lt-cities.js) — TAS PATS bendras failas, kurį jau naudoja
+// mano-paskyra.html/automeistrai-login.html, kad sąrašas nebūtų dubliuojamas trečią kartą.
+function initS2SCityFilter(){
+  if(s2sCityFilterReady) return;
+  s2sCityFilterReady = true;
+  const sel = document.getElementById('s2s-city-filter');
+  sel.innerHTML = '<option value="">Visi miestai</option>'
+    + LT_CITIES.map(c=>`<option value="${c}">${c}</option>`).join('');
+  // Numatytas filtras — SAVO miestas (kiti to paties miesto servisai dažniausiai
+  // aktualiausi bendradarbiavimui), bet tik PIRMĄ kartą atidarius — po to vartotojo
+  // pasirinkimas nebekeičiamas automatiškai.
+  if(serviceProfile.city && LT_CITIES.includes(serviceProfile.city)){
+    sel.value = serviceProfile.city;
+    s2sSearch();
+  }
+}
+
 async function openS2SPanel(){
   s2sOpen = true;
   document.getElementById('s2s-overlay').classList.add('show');
   document.getElementById('s2s-panel').classList.add('show');
+  initS2SCityFilter();
   await loadS2SConversations();
   if(s2sActiveConversationId === null) s2sShowList();
   else await s2sLoadThread(s2sActiveConversationId, true);

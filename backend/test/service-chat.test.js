@@ -110,6 +110,25 @@ test('du servisai susirašinėja privačiai — trečias servisas NEMATO pokalbi
   assert.equal(search.data.some((s) => s.id === a.id), false, 'paieška neturi rodyti paties savęs');
 });
 
+test('paieška: city filtruoja tikslaus miesto servisus, derinasi su q', async () => {
+  const vilniusA = await registerService('Vilniečių Servisas Rytas', 'Vilnius');
+  const vilniusB = await registerService('Vilniečių Servisas Vakaras', 'Vilnius');
+  const kaunas = await registerService('Kauniečių Servisas', 'Kaunas');
+
+  const onlyCity = await api('GET', '/api/service-chat/search?city=Vilnius', { token: vilniusA.token });
+  assert.equal(onlyCity.status, 200);
+  assert.ok(onlyCity.data.some((s) => s.id === vilniusB.id), 'kito Vilniaus serviso turi būti sąraše');
+  assert.equal(onlyCity.data.some((s) => s.id === kaunas.id), false, 'Kauno servisas neturi rodytis filtruojant pagal Vilnių');
+  assert.equal(onlyCity.data.some((s) => s.id === vilniusA.id), false, 'paieška neturi rodyti paties savęs');
+
+  const cityAndQ = await api('GET', '/api/service-chat/search?city=Vilnius&q=Vakaras', { token: vilniusA.token });
+  assert.equal(cityAndQ.data.length, 1);
+  assert.equal(cityAndQ.data[0].id, vilniusB.id, 'city+q kartu turi susiaurinti iki tikslaus atitikmens');
+
+  const noFilters = await api('GET', '/api/service-chat/search', { token: vilniusA.token });
+  assert.deepEqual(noFilters.data, [], 'be jokio filtro (nei q, nei city) grąžinama tuščia — ne visas servisų sąrašas');
+});
+
 test('admin mato pokalbio EGZISTAVIMĄ, bet NE turinį', async () => {
   const a = await registerService('Servisas Admin Test A', 'Šiauliai');
   const b = await registerService('Servisas Admin Test B', 'Šiauliai');

@@ -12,15 +12,24 @@ function pairIds(a, b) {
 }
 
 // ── PAIEŠKA — kitų aktyvių, ne-bot servisų sąrašas naujam pokalbiui pradėti ──
+// `city` (tikslus miestas, iš dropdown'o dashboard'e) IR `q` (laisvas tekstas — pavadinimas)
+// gali būti naudojami KARTU (AND) — leidžia naršyti "visus miesto servisus" (vien city) arba
+// susiaurinti iki konkretaus pavadinimo tame mieste (city + q).
 router.get('/search', (req, res) => {
   const q = (req.query.q || '').trim();
-  if (!q) return res.json([]);
-  const like = `%${q}%`;
+  const city = (req.query.city || '').trim();
+  if (!q && !city) return res.json([]);
+
+  const conditions = ['id != ?', 'is_bot = 0', "status = 'active'"];
+  const params = [req.user.id];
+  if (city) { conditions.push('city = ?'); params.push(city); }
+  if (q) { conditions.push('(name LIKE ? OR city LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+
   const rows = db.prepare(`
     SELECT id, name, city, service_type FROM services
-    WHERE id != ? AND is_bot = 0 AND status = 'active' AND (name LIKE ? OR city LIKE ?)
-    ORDER BY name LIMIT 20
-  `).all(req.user.id, like, like);
+    WHERE ${conditions.join(' AND ')}
+    ORDER BY name LIMIT 50
+  `).all(...params);
   res.json(rows);
 });
 
