@@ -221,6 +221,27 @@ router.post('/orders/bulk-delete', (req, res) => {
   res.json({ results });
 });
 
+// ── SERVISŲ TARPUSAVIO POKALBIAI (God Mode — TIK EGZISTAVIMO faktas, NE TURINYS) ──
+// Sąmoningai NESELEKTUOJAME service_chat_messages.message — admin mato, kad ir kada du
+// servisai susirašinėjo (ginčų kontekstui), bet ne PATĮ pokalbio turinį — tai privatus
+// servisų susirašinėjimas (žr. "Privatumas ir apsauga" servisucentras-santrauka.md).
+router.get('/service-conversations', (req, res) => {
+  const rows = db.prepare(`
+    SELECT c.id, c.created_at,
+      sa.name AS service_a_name, sa.city AS service_a_city,
+      sb.name AS service_b_name, sb.city AS service_b_city,
+      COUNT(m.id) AS message_count,
+      MAX(m.created_at) AS last_message_at
+    FROM service_conversations c
+    JOIN services sa ON sa.id = c.service_a_id
+    JOIN services sb ON sb.id = c.service_b_id
+    LEFT JOIN service_chat_messages m ON m.conversation_id = c.id
+    GROUP BY c.id
+    ORDER BY last_message_at IS NULL, last_message_at DESC, c.id DESC
+  `).all();
+  res.json(rows);
+});
+
 // ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
 // "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
 // buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).

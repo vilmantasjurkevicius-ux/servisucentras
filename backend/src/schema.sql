@@ -203,6 +203,29 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Servisų TARPUSAVIO privatus pokalbis (ne su klientais, nesusijęs su jokia konkrečia
+-- kliento užklausa) — TYČIA atskira struktūra nuo orders/order_messages, kad neteiktų
+-- klaidingų duomenų dešimtims esamų vietų, kurios skaičiuoja/filtruoja orders pagal
+-- client_id (statistika, kalendorius, admin pajamos ir t.t.). service_a_id VISADA MAŽESNIS
+-- už service_b_id (normalizuota pora, žr. serviceChat.routes.js pairIds()) — UNIQUE apsaugo,
+-- kad ta pati dviejų servisų pora negautų DVIEJŲ atskirų pokalbio įrašų, nepriklausomai nuo
+-- to, kuris servisas pradėjo pirmas.
+CREATE TABLE IF NOT EXISTS service_conversations (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  service_a_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  service_b_id INTEGER NOT NULL REFERENCES services(id) ON DELETE CASCADE,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(service_a_id, service_b_id)
+);
+
+CREATE TABLE IF NOT EXISTS service_chat_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  conversation_id INTEGER NOT NULL REFERENCES service_conversations(id) ON DELETE CASCADE,
+  sender_service_id INTEGER NOT NULL REFERENCES services(id),
+  message TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE INDEX IF NOT EXISTS idx_services_city ON services(city);
 CREATE INDEX IF NOT EXISTS idx_invoices_service ON service_invoices(service_id);
 CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);
@@ -212,3 +235,6 @@ CREATE INDEX IF NOT EXISTS idx_order_declines_order ON order_declines(order_id);
 CREATE INDEX IF NOT EXISTS idx_order_declines_service ON order_declines(service_id);
 CREATE INDEX IF NOT EXISTS idx_cars_client ON cars(client_id);
 CREATE INDEX IF NOT EXISTS idx_service_book_car ON service_book(car_id);
+CREATE INDEX IF NOT EXISTS idx_service_conv_a ON service_conversations(service_a_id);
+CREATE INDEX IF NOT EXISTS idx_service_conv_b ON service_conversations(service_b_id);
+CREATE INDEX IF NOT EXISTS idx_service_chat_msgs_conv ON service_chat_messages(conversation_id);

@@ -496,6 +496,72 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   .cp-list{width:100%;border-right:none;border-bottom:1px solid var(--line);max-height:40vh;}
   .cp-list.cp-hide-mobile,.cp-thread.cp-hide-mobile{display:none;}
 }
+
+/* ═══ SERVISŲ BENDRUOMENĖ — privatus 1-su-1 pokalbis TARP SERVISŲ (ne su klientais).
+   Tyčia VIZUALIAI ir spalviškai atskirta nuo kliento Chat skydelio (cp-* aukščiau) —
+   mėlyna (var(--blue)), ne geltona/raudona — kad servisas iš karto atskirtų, kuris
+   pranešimas nuo kito serviso, o kuris nuo kliento. Slenkantis šoninis panelis (ne
+   centrinis modalas), stiliaus pagrindas paimtas iš servisucentras-pagrindinis.html
+   svečio chat FAB/panelio (.chat-panel/.chat-msgs/.msg-c/.msg-s), pritaikytas šio
+   failo spalvų paletei. */
+@keyframes s2sIconFlash{
+  0%,100%{color:var(--muted);}
+  15%,45%{color:var(--blue);transform:scale(1.15);}
+  30%{color:var(--muted);transform:scale(1);}
+}
+.nav-icon-btn.s2s-flash{animation:s2sIconFlash 1.4s ease-in-out infinite;}
+#s2s-badge{background:var(--blue);animation:badgePulse 0.8s linear infinite;}
+
+.s2s-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:870;opacity:0;pointer-events:none;transition:opacity .2s;}
+.s2s-overlay.show{opacity:1;pointer-events:auto;}
+.s2s-panel{
+  position:fixed;right:0;top:0;bottom:0;width:400px;max-width:100vw;
+  background:var(--bg2);border-left:1px solid var(--line);z-index:880;
+  transform:translateX(100%);transition:transform .25s cubic-bezier(0.4,0,0.2,1);
+  display:flex;flex-direction:column;
+}
+.s2s-panel.show{transform:translateX(0);}
+.s2s-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;background:var(--bg3);flex-shrink:0;}
+.s2s-head-icon{width:36px;height:36px;border-radius:50%;background:var(--blue);color:#fff;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.s2s-head-info{flex:1;min-width:0;}
+.s2s-head-title{font-size:14px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.s2s-head-sub{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);}
+.s2s-head-back,.s2s-head-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:4px;flex-shrink:0;}
+.s2s-head-back:hover,.s2s-head-close:hover{color:var(--text);}
+
+.s2s-search-wrap{padding:10px 14px;border-bottom:1px solid var(--line);flex-shrink:0;}
+.s2s-search-input{width:100%;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;padding:8px 14px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;outline:none;}
+.s2s-search-input:focus{border-color:var(--blue);}
+
+.s2s-list{flex:1;overflow-y:auto;}
+.s2s-list-label{padding:10px 14px 4px;font-family:'IBM Plex Mono';font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.05em;}
+.s2s-row{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px;}
+.s2s-row:hover{background:rgba(255,255,255,0.03);}
+.s2s-row-av{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;}
+.s2s-row-info{flex:1;min-width:0;}
+.s2s-row-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.s2s-row-city{font-size:11px;color:var(--muted);}
+.s2s-row-preview{font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;}
+.s2s-unread-dot{width:8px;height:8px;border-radius:50%;background:var(--blue);flex-shrink:0;}
+.s2s-empty{padding:28px 16px;color:var(--muted);font-size:12.5px;text-align:center;}
+
+.s2s-msgs{flex:1;overflow-y:auto;padding:16px 14px;display:flex;flex-direction:column;gap:10px;}
+.s2s-msg-mine{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+.s2s-msg-mine .bubble{background:var(--blue);color:#fff;padding:9px 13px;border-radius:14px 3px 14px 14px;max-width:82%;font-size:13px;line-height:1.5;}
+.s2s-msg-other{display:flex;flex-direction:column;align-items:flex-start;gap:2px;}
+.s2s-msg-other .bubble{background:var(--bg3);color:var(--text);padding:9px 13px;border-radius:3px 14px 14px 14px;max-width:82%;font-size:13px;line-height:1.5;border:1px solid var(--line2);}
+.s2s-msg-time{font-family:'IBM Plex Mono';font-size:9px;color:var(--dim);}
+
+.s2s-input-area{padding:12px 14px;border-top:1px solid var(--line);flex-shrink:0;}
+.s2s-input-row{display:flex;gap:8px;align-items:flex-end;}
+.s2s-textarea{flex:1;background:var(--bg3);border:1px solid var(--line2);border-radius:20px;padding:9px 15px;color:var(--text);font-family:'IBM Plex Sans';font-size:13.5px;outline:none;resize:none;max-height:100px;line-height:1.4;}
+.s2s-textarea:focus{border-color:var(--blue);}
+.s2s-send{width:38px;height:38px;border-radius:50%;background:var(--blue);color:#fff;border:none;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s;}
+.s2s-send:hover{background:#4d8ce0;}
+
+@media(max-width:700px){
+  .s2s-panel{width:100vw;}
+}
 </style>
 </head>
 <body>
@@ -516,9 +582,13 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <button class="status-pill open" id="status-toggle" onclick="toggleStatus()">● DIRBA</button>
   </div>
   <div class="nav-right">
-    <button class="nav-icon-btn" id="chat-nav-btn" title="Pokalbiai" onclick="openChatPanel()">
+    <button class="nav-icon-btn" id="chat-nav-btn" title="Pokalbiai su klientais" onclick="openChatPanel()">
       💬
       <div class="notif-badge" id="chat-badge" style="display:none;">0</div>
+    </button>
+    <button class="nav-icon-btn" id="s2s-nav-btn" title="Servisų bendruomenė — privatus pokalbis su kitais servisais" onclick="openS2SPanel()">
+      🤝
+      <div class="notif-badge" id="s2s-badge" style="display:none;background:var(--blue);">0</div>
     </button>
     <button class="nav-icon-btn" id="sound-toggle-btn" title="Garso pranešimai" onclick="toggleSoundQuick()">🔊</button>
     <button class="nav-icon-btn" title="Pranešimai" onclick="showNotifications()">
@@ -783,6 +853,36 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   </div>
 </div>
 
+<!-- SERVISŲ BENDRUOMENĖ — privatus servisas-su-servisu pokalbis, VIZUALIAI ir spalviškai
+     atskirtas nuo kliento Chat skydelio aukščiau (žr. CSS komentarą prie .s2s-panel). -->
+<div class="s2s-overlay" id="s2s-overlay" onclick="closeS2SPanel()"></div>
+<div class="s2s-panel" id="s2s-panel">
+  <div class="s2s-head">
+    <button class="s2s-head-back" id="s2s-back-btn" onclick="s2sShowList()" style="display:none;">←</button>
+    <div class="s2s-head-icon">🤝</div>
+    <div class="s2s-head-info">
+      <div class="s2s-head-title" id="s2s-head-title">Servisų bendruomenė</div>
+      <div class="s2s-head-sub" id="s2s-head-sub">Privatus pokalbis su kitais servisais</div>
+    </div>
+    <button class="s2s-head-close" onclick="closeS2SPanel()">✕</button>
+  </div>
+  <div id="s2s-list-view" style="display:flex;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="s2s-search-wrap">
+      <input class="s2s-search-input" id="s2s-search-input" placeholder="🔍 Ieškoti serviso — pavadinimas arba miestas..." oninput="s2sSearch()">
+    </div>
+    <div class="s2s-list" id="s2s-list"></div>
+  </div>
+  <div id="s2s-thread-view" style="display:none;flex-direction:column;flex:1;overflow:hidden;">
+    <div class="s2s-msgs" id="s2s-msgs"></div>
+    <div class="s2s-input-area">
+      <div class="s2s-input-row">
+        <textarea class="s2s-textarea" id="s2s-input" rows="1" placeholder="Rašykite žinutę kitam servisui..." onkeydown="s2sKey(event)"></textarea>
+        <button class="s2s-send" onclick="s2sSend()">➤</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- LIETUVIŠKAS KALENDORIUS — vienas bendras iškylantis kalendorius visiems datos laukams
      (žr. openLtDatePicker()/pickLtDate() žemiau CSS komentare) -->
 <div class="lt-date-popup" id="lt-date-popup">
@@ -820,6 +920,15 @@ let chatUnreadOrderIds = new Set();  // užklausų id, kuriose paskutinę žinut
 let cpActiveOrderId = null;          // kuris pokalbis pasirinktas chat skydelyje
 let cpOpen = false;
 let newOrderUnseenIds = new Set();   // naujos užklausos, kurių servisas dar NEPERŽIŪRĖJO (atidarius "Užsakymai" skirtuką)
+
+// ═══ SERVISŲ BENDRUOMENĖ — atskira nuo kliento chat'o (cp*) būsena ═══
+let s2sOpen = false;
+let s2sConversations = [];        // GET /service-chat/conversations atsakymas (jau su other_service_* laukais)
+let s2sActiveConversationId = null;
+let s2sActiveOtherName = '';
+let s2sActiveOtherCity = '';
+let s2sSearchResults = [];
+let s2sUnreadIds = new Set();      // pokalbių id, kuriuose paskutinę žinutę parašė KITAS servisas ir aš jos dar nemačiau
 
 if(!serviceToken){
   window.location.href = 'automeistrai-login.html?type=service&action=login';
@@ -1410,6 +1519,179 @@ function closeChatPanel(){
   document.getElementById('cp-modal').classList.remove('show');
 }
 
+// ═══ SERVISŲ BENDRUOMENĖ — privatus servisas-su-servisu pokalbis (žr. .s2s-* CSS aukščiau).
+// Atskira DB struktūra (service_conversations/service_chat_messages, žr. schema.sql) IR
+// atskira frontend būsena nuo kliento Chat skydelio (cp*) — kad niekada nesusimaišytų. ═══
+const s2sApiGet = (path) => apiGet('/service-chat'+path);
+const s2sApiPost = (path, body) => apiPost('/service-chat'+path, body);
+let s2sSearchTimer = null;
+
+function s2sAvatarLetter(name){
+  return (name||'?').trim().charAt(0).toUpperCase() || '?';
+}
+
+async function loadS2SConversations(){
+  s2sConversations = await s2sApiGet('/conversations');
+  s2sUnreadIds = computeS2SUnread();
+  updateS2SBadge();
+}
+
+// GRYNAI šio serviso naršyklės pusėje (localStorage 'sc_svcchat_seen_<id>') — ta pati
+// technika kaip kliento pokalbių computeUnreadOrders() aukščiau, dėl tos pačios priežasties
+// (nėra bendro DB "skaityta" lauko, kiekvienas dalyvis seka savo skaitymą atskirai).
+function computeS2SUnread(){
+  const unread = new Set();
+  s2sConversations.forEach(c=>{
+    if(!c.last_message_at || c.last_sender_service_id === serviceProfile.id) return;
+    const lastSeen = localStorage.getItem('sc_svcchat_seen_'+c.id) || '';
+    if(c.last_message_at > lastSeen) unread.add(c.id);
+  });
+  return unread;
+}
+function markS2SConversationSeen(conversationId){
+  const c = s2sConversations.find(x=>x.id===conversationId);
+  if(c && c.last_message_at) localStorage.setItem('sc_svcchat_seen_'+conversationId, c.last_message_at);
+  if(s2sUnreadIds.delete(conversationId)) updateS2SBadge();
+}
+
+function updateS2SBadge(){
+  const badge = document.getElementById('s2s-badge');
+  const n = s2sUnreadIds.size;
+  badge.textContent = n > 9 ? '9+' : String(n);
+  badge.style.display = n > 0 ? 'flex' : 'none';
+  document.getElementById('s2s-nav-btn').classList.toggle('s2s-flash', n > 0);
+}
+
+function s2sRowHtml(c){
+  const unread = s2sUnreadIds.has(c.id);
+  return `
+    <div class="s2s-row" onclick="s2sOpenExisting(${c.id})">
+      <div class="s2s-row-av">${s2sAvatarLetter(c.other_service_name)}</div>
+      <div class="s2s-row-info">
+        <div class="s2s-row-name">${escapeHtml(c.other_service_name)}</div>
+        <div class="s2s-row-city">${escapeHtml(c.other_service_city||'')}</div>
+        ${c.last_message ? `<div class="s2s-row-preview">${escapeHtml(c.last_message)}</div>` : ''}
+      </div>
+      ${unread ? '<div class="s2s-unread-dot"></div>' : ''}
+    </div>`;
+}
+function s2sSearchResultRowHtml(s){
+  return `
+    <div class="s2s-row" onclick="s2sOpenFromSearch(${s.id})">
+      <div class="s2s-row-av">${s2sAvatarLetter(s.name)}</div>
+      <div class="s2s-row-info">
+        <div class="s2s-row-name">${escapeHtml(s.name)}</div>
+        <div class="s2s-row-city">${escapeHtml(s.city||'')}</div>
+      </div>
+    </div>`;
+}
+
+function renderS2SList(){
+  const list = document.getElementById('s2s-list');
+  const q = (document.getElementById('s2s-search-input').value || '').trim();
+  if(q){
+    list.innerHTML = s2sSearchResults.length
+      ? `<div class="s2s-list-label">Paieškos rezultatai</div>` + s2sSearchResults.map(s2sSearchResultRowHtml).join('')
+      : '<div class="s2s-empty">Servisų nerasta.</div>';
+    return;
+  }
+  list.innerHTML = s2sConversations.length
+    ? `<div class="s2s-list-label">Pokalbiai</div>` + s2sConversations.map(s2sRowHtml).join('')
+    : '<div class="s2s-empty">Pokalbių dar nėra — susiraskite servisą paieškoje viršuje.</div>';
+}
+
+function s2sSearch(){
+  clearTimeout(s2sSearchTimer);
+  const q = document.getElementById('s2s-search-input').value.trim();
+  if(!q){ s2sSearchResults = []; renderS2SList(); return; }
+  s2sSearchTimer = setTimeout(async ()=>{
+    try{ s2sSearchResults = await s2sApiGet('/search?q='+encodeURIComponent(q)); renderS2SList(); }
+    catch(e){ /* tylus nepavykimas — vartotojas gali tiesiog bandyti dar kartą */ }
+  }, 250);
+}
+
+function s2sOpenExisting(conversationId){
+  const c = s2sConversations.find(x=>x.id===conversationId);
+  if(c) s2sEnterThread(c.other_service_id, c.other_service_name, c.other_service_city, c.id);
+}
+function s2sOpenFromSearch(otherServiceId){
+  const s = s2sSearchResults.find(x=>x.id===otherServiceId);
+  if(s) s2sEnterThread(s.id, s.name, s.city, null);
+}
+
+async function s2sEnterThread(otherServiceId, otherName, otherCity, knownConversationId){
+  document.getElementById('s2s-search-input').value = '';
+  s2sSearchResults = [];
+  document.getElementById('s2s-head-title').textContent = otherName;
+  document.getElementById('s2s-head-sub').textContent = otherCity || 'Servisų bendruomenė';
+  document.getElementById('s2s-back-btn').style.display = '';
+  document.getElementById('s2s-list-view').style.display = 'none';
+  document.getElementById('s2s-thread-view').style.display = 'flex';
+  document.getElementById('s2s-msgs').innerHTML = '<div class="s2s-empty">Kraunama...</div>';
+
+  const conversationId = knownConversationId || (await s2sApiPost('/start', { otherServiceId })).id;
+  s2sActiveConversationId = conversationId;
+  markS2SConversationSeen(conversationId);
+  await loadS2SConversations();
+  await s2sLoadThread(conversationId, true);
+}
+
+function s2sBubbleHtml(m){
+  const mine = m.sender_service_id === serviceProfile.id;
+  return `
+    <div class="${mine?'s2s-msg-mine':'s2s-msg-other'}">
+      <div class="bubble">${escapeHtml(m.message)}</div>
+      <div class="s2s-msg-time">${formatMsgTime(m.created_at)}</div>
+    </div>`;
+}
+
+async function s2sLoadThread(conversationId, forceScroll){
+  const messages = await s2sApiGet(`/${conversationId}/messages`);
+  if(s2sActiveConversationId !== conversationId) return; // vartotojas jau perjungė kitur, kol laukėme atsakymo
+  const wrap = document.getElementById('s2s-msgs');
+  wrap.innerHTML = messages.length ? messages.map(s2sBubbleHtml).join('') : '<div class="s2s-empty">Pokalbio dar nėra — parašykite pirmas.</div>';
+  if(forceScroll) wrap.scrollTop = wrap.scrollHeight;
+}
+
+function s2sShowList(){
+  s2sActiveConversationId = null;
+  document.getElementById('s2s-back-btn').style.display = 'none';
+  document.getElementById('s2s-head-title').textContent = 'Servisų bendruomenė';
+  document.getElementById('s2s-head-sub').textContent = 'Privatus pokalbis su kitais servisais';
+  document.getElementById('s2s-thread-view').style.display = 'none';
+  document.getElementById('s2s-list-view').style.display = 'flex';
+  renderS2SList();
+}
+
+async function s2sSend(){
+  const input = document.getElementById('s2s-input');
+  const message = input.value.trim();
+  if(!message || s2sActiveConversationId === null) return;
+  input.value = '';
+  try{
+    await s2sApiPost(`/${s2sActiveConversationId}/messages`, { message });
+    await loadS2SConversations();
+    await s2sLoadThread(s2sActiveConversationId, true);
+  } catch(err){ alert(err.message); }
+}
+function s2sKey(event){
+  if(event.key === 'Enter' && !event.shiftKey){ event.preventDefault(); s2sSend(); }
+}
+
+async function openS2SPanel(){
+  s2sOpen = true;
+  document.getElementById('s2s-overlay').classList.add('show');
+  document.getElementById('s2s-panel').classList.add('show');
+  await loadS2SConversations();
+  if(s2sActiveConversationId === null) s2sShowList();
+  else await s2sLoadThread(s2sActiveConversationId, true);
+}
+function closeS2SPanel(){
+  s2sOpen = false;
+  document.getElementById('s2s-overlay').classList.remove('show');
+  document.getElementById('s2s-panel').classList.remove('show');
+}
+
 function startQuoting(id, mode){
   quotingOrderId = id; quotingMode = mode;
   renderOrders();
@@ -1662,6 +1944,31 @@ function playNewOrderSound(){
   } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
 }
 
+// Servisų bendruomenės žinutėms — TAS PATS mechanizmas (Web Audio oscillatorius) kaip
+// playNewOrderSound(), bet SĄMONINGAI kitoks garsas (du trumpi žemesni tonai vietoj vieno
+// aukšto), kad servisas IŠ AUSIES atskirtų "nauja serviso žinutė" nuo "nauja kliento
+// užklausa/žinutė" — nereikia žiūrėti į ekraną, kad suprastum, kuris pranešimas atėjo.
+function playS2SSound(){
+  if(!soundNotifEnabled) return;
+  try{
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    [0, 0.16].forEach(delay=>{
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = 600;
+      const t = audioCtx.currentTime + delay;
+      gain.gain.setValueAtTime(0.13, t);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.14);
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      osc.start(t);
+      osc.stop(t + 0.14);
+    });
+    if(navigator.vibrate) navigator.vibrate([80, 60, 80]);
+  } catch(e){ /* garso signalas neprivalomas — tylus fallback jei naršyklė neleidžia */ }
+}
+
 function highlightNewCards(ids){
   ids.forEach(id=>{
     const el = document.querySelector(`.ocard[data-order-id="${id}"]`);
@@ -1725,6 +2032,37 @@ async function pollOrders(){
   } catch(err){
     // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
   }
+  await pollS2SConversations();
+}
+
+// Servisų bendruomenės atitikmuo aukščiau esančiam kliento pokalbių poll'inimui — TAS PATS
+// 12s ciklas (kviečiama pollOrders() pabaigoje), kad nereikėtų atskiro setInterval laikmačio.
+async function pollS2SConversations(){
+  try{
+    const oldUnread = s2sUnreadIds;
+    await loadS2SConversations();
+    // Jei skydelis atidarytas IR servisas šiuo metu žiūri BŪTENT į tą pokalbį — nauja
+    // žinutė iškart laikoma pamatyta (jis ją mato gyvai), bet vis tiek pyptelime, kad
+    // žinotų, jog kažkas atsakė (žr. analogišką logiką pollOrders() cpOpen šakoje).
+    if(s2sOpen && s2sActiveConversationId !== null && s2sUnreadIds.has(s2sActiveConversationId)){
+      playS2SSound();
+      markS2SConversationSeen(s2sActiveConversationId);
+    } else if(s2sUnreadIds.size > oldUnread.size){
+      playS2SSound();
+    }
+    if(s2sOpen){
+      if(s2sActiveConversationId === null) renderS2SList();
+      else {
+        // Tikriname TIK patį teksto lauką (ne visą #s2s-thread-view) — po žinutės
+        // išsiuntimo fokusas dažnai lieka ant "Siųsti" mygtuko (jis IRGI yra šio
+        // konteinerio viduje), o tai klaidingai sustabdytų gijos atnaujinimą.
+        const typingInInput = document.activeElement && document.activeElement.id === 's2s-input';
+        if(!typingInInput) s2sLoadThread(s2sActiveConversationId);
+      }
+    }
+  } catch(err){
+    // Tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo.
+  }
 }
 
 // Garsas KARTOJASI kas 3s, kol lieka bent viena neperžiūrėta nauja užklausa ARBA
@@ -1739,6 +2077,11 @@ async function pollOrders(){
 function checkAlarm(){
   if(newOrderUnseenIds.size > 0 || chatUnreadOrderIds.size > 0){
     playNewOrderSound();
+  }
+  // Servisų bendruomenės neskaitytos žinutės kartojasi TUO PAČIU 3s laikmačiu, bet
+  // ATSKIRU, kitokiu garsu (playS2SSound()) — žr. jos komentarą aukščiau.
+  if(s2sUnreadIds.size > 0){
+    playS2SSound();
   }
 }
 
@@ -2212,6 +2555,7 @@ async function init(){
   // po prisijungimo jau senos neatsakytos žinutės rodytų badge, bet nesukeltų "naujos" reakcijos.
   chatUnreadOrderIds = computeUnreadOrders();
   updateChatBadge();
+  await loadS2SConversations();
 
   // Polling paleidžiamas VISADA (net jei tab'as iškart atidaromas fone) — žr. komentarą
   // prie stopPolling() aukščiau, kodėl nebestabdoma pagal document.hidden.

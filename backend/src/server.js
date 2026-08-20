@@ -11,6 +11,7 @@ const adminRoutes = require('./routes/admin.routes');
 const categoriesRoutes = require('./routes/categories.routes');
 const diagnostikaRoutes = require('./routes/diagnostika.routes');
 const carsRoutes = require('./routes/cars.routes');
+const serviceChatRoutes = require('./routes/serviceChat.routes');
 const { startRetentionSchedule } = require('./utils/retention');
 
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5500,http://localhost:3000')
@@ -45,6 +46,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/categories', categoriesRoutes);
 app.use('/api/diagnostika', diagnostikaRoutes);
 app.use('/api/cars', carsRoutes);
+app.use('/api/service-chat', serviceChatRoutes);
 
 // Statiniai HTML/CSS/JS failai projekto šaknyje (vienas viešas adresas — ir API, ir frontend'as)
 const STATIC_ROOT = path.join(__dirname, '..', '..');
