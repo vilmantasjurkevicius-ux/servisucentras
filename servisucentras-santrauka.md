@@ -1879,6 +1879,23 @@ Vartotojas paprašė: "del pokalbiu tarp servisu gali paska padaryti pagal miest
 
 ---
 
+## Kaimo/rajono servisai — miestas nebe laisvas tekstas, redaguojamas Nustatymuose (2026-08-20)
+
+Vartotojas rado konkretų atvejį: production'e sukurtas servisas "DNV ŠUMINSKAS" (valentas@gmail.com) niekur nerandamas paieškoje. Ištyrus per production API (`curl` prieš `www.servisucentras.lt/api/services`, be autentifikacijos — tai VIEŠAS endpoint'as) — servisas TIKRAI egzistuoja (`status:'active'`), bet jo `city` laukas — `"DAINAVOS.K"`, laisvai įrašytas kaimo pavadinimas per registracijos formos "Kita vietovė..." variantą. Kadangi VISOS šio projekto paieškos pagal miestą (`services.routes.js` `WHERE s.city = ?`) ieško TIKSLIU sutapimu su standartiniu 55 miestų/rajonų sąrašu (`LT_CITIES`), bet koks laisvas tekstas ten padaro servisą nerandamą jokioje paieškoje — net teisingai pasirinkus artimiausią miestą. Papildomai paaiškėjo — servisas NETURĖJO JOKIO BŪDO pats pasikeisti miestą po registracijos (Nustatymų puslapyje buvo tik "Adresas", ne "Miestas").
+
+Vartotojo patvirtintas sprendimas: kaimo servisas registracijos/nustatymų METU renkasi ARTIMIAUSIĄ miestą/rajoną IŠ SĄRAŠO (pvz. "Ukmergė" — Lietuvos savivaldybės apima visą teritoriją, tad kiekvienas kaimas priklauso kažkuriai iš jų), o tikslų kaimo/gatvės pavadinimą įrašo Adreso lauke (pvz. "Ukmergės raj., Dainavos k.").
+
+**Fix**:
+- `backend/src/routes/services.routes.js` — `PATCH /services/me` leidžiamų laukų sąrašas papildytas `city` (anksčiau backend'as JOKIU BŪDU nepriimdavo miesto keitimo iš serviso pusės, net jei frontend'as būtų siuntęs).
+- `automeistrai-dashboard.html` (Nustatymai/"Serviso profilis") — naujas "Miestas / rajonas" `<select>` (iš `LT_CITIES`, dabar pridėtas ir šio failo `<script>` sąrašas), pre-pildomas dabartine reikšme; jei esama reikšmė NEATITINKA standartinio sąrašo (sena, prieš šį pataisymą įvesta laisvo teksto reikšmė) — vis tiek įtraukiama kaip papildoma parinktis su aiškiu "(nežinomas — pasirinkite tikrą miestą/rajoną)" paaiškinimu, kad servisas TIKRAI pastebėtų ir pasitaisytų, o ne tyliai išnyktų iš `<select>`. "Adresas" lauko placeholder atnaujintas su kaimo pavyzdžiu.
+- `automeistrai-login.html` (registracijos forma) — PAŠALINTAS "Kita vietovė..." laisvo teksto variantas VISIŠKAI (`reg-s-city-other` laukas, `onRegCityChange()` funkcija) — miestas dabar VISADA renkamasi iš `LT_CITIES`, `readRegCity()` supaprastinta. "Tikslus adresas" placeholder'yje pridėtas kaimo/rajono pavyzdys.
+
+**Patikrinta gyvai**: sukurtas testinis servisas su `city:'DAINAVOS.K'` (imituojant realų atvejį) — Nustatymų "Miestas" laukas teisingai parodė esamą reikšmę kaip "nežinomą", pakeitus į "Ukmergė" + atnaujinus adresą į "Ukmergės raj., Dainavos k., Algirdų g." ir išsaugojus — `GET /services?city=Ukmergė` (viešas endpoint'as) servisą JAU RADO. Registracijos formoje patvirtinta, kad "Kita vietovė..." parinkties ir laisvo teksto lauko nebeliko (55 tikros parinktys). Testiniai įrašai išvalyti po patikrinimo. `npm test` → 31/31.
+
+**Kaip pats(-i) pataisysite production'e esantį "DNV ŠUMINSKAS"**: kai šis pakeitimas bus deploy'intas, prisijunkite prie TO serviso paskyros (valentas@gmail.com) → Nustatymai → pakeiskite "Miestas / rajonas" į "Ukmergė" (arba tikslų rajoną) → "Adresas" lauke įrašykite "Ukmergės raj., Dainavos k., ..." → Išsaugoti. Neturiu tiesioginės rašymo prieigos prie production DB, tad šio konkretaus įrašo pats ištaisyti negaliu — bet įrankis tam dabar yra.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

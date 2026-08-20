@@ -306,13 +306,12 @@ select.field{cursor:pointer;}
               <input class="field" type="text" id="reg-s-name" placeholder="Garažas pas Tomą">
             </div>
             <div class="field-group">
-              <label class="field-label">Miestas</label>
-              <select class="field" id="reg-s-city" onchange="onRegCityChange()"></select>
-              <input class="field" id="reg-s-city-other" type="text" style="display:none;margin-top:8px;" placeholder="Įrašykite miestą arba kaimo/vietovės pavadinimą">
+              <label class="field-label">Miestas / rajonas</label>
+              <select class="field" id="reg-s-city"></select>
             </div>
             <div class="field-group">
               <label class="field-label">Tikslus adresas</label>
-              <input class="field" type="text" id="reg-s-address" placeholder="Gedimino pr. 1, Vilnius">
+              <input class="field" type="text" id="reg-s-address" placeholder="Gedimino pr. 1, Vilnius — kaimo vietovėms: rajonas, kaimas (pvz. Ukmergės raj., Dainavos k.)">
             </div>
             <div class="field-row">
               <div class="field-group">
@@ -567,20 +566,19 @@ function populateWorkHourSelects(){
 }
 
 // MIESTAS — visų Lietuvos savivaldybių centrų sąrašas (LT_CITIES, žr. lt-cities.js).
-// Kaimams ir kitoms vietovėms, kurių sąraše nėra, "Kita vietovė..." atveria laisvo teksto lauką.
+// Laisvo teksto varianto ("Kita vietovė...") TYČIA nebėra — visos šio projekto paieškos
+// pagal miestą ieško TIKSLIU sutapimu su šiuo sąrašu, tad bet koks laisvai įrašytas miesto
+// pavadinimas (pvz. kaimo pavadinimas) padarydavo servisą NERANDAMĄ jokioje paieškoje.
+// Kaimo/vietovės servisai renkasi ARTIMIAUSIĄ miestą/rajoną iš šio sąrašo (Lietuvos
+// savivaldybės apima visą teritoriją, tad kiekvienas kaimas priklauso kažkuriai iš jų), o
+// tikslų kaimo/gatvės pavadinimą įrašo "Tikslus adresas" lauke žemiau.
 function populateCitySelect(){
   const sel = document.getElementById('reg-s-city');
-  sel.innerHTML = '<option value="">Pasirinkite miestą</option>'
-    + LT_CITIES.map(c=>`<option>${c}</option>`).join('')
-    + '<option value="__other__">Kita vietovė...</option>';
-}
-function onRegCityChange(){
-  const sel = document.getElementById('reg-s-city');
-  document.getElementById('reg-s-city-other').style.display = sel.value === '__other__' ? 'block' : 'none';
+  sel.innerHTML = '<option value="">Pasirinkite miestą/rajoną</option>'
+    + LT_CITIES.map(c=>`<option>${c}</option>`).join('');
 }
 function readRegCity(){
-  const sel = document.getElementById('reg-s-city');
-  return sel.value === '__other__' ? document.getElementById('reg-s-city-other').value.trim() : sel.value;
+  return document.getElementById('reg-s-city').value;
 }
 
 // CATEGORIJOS — realios, iš GET /api/categories

@@ -744,8 +744,12 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
               <input class="pf-input" id="profile-name" placeholder="Serviso pavadinimas">
             </div>
             <div class="pf-group">
+              <label class="pf-label">Miestas / rajonas</label>
+              <select class="pf-input" id="profile-city"></select>
+            </div>
+            <div class="pf-group">
               <label class="pf-label">Adresas</label>
-              <input class="pf-input" id="profile-address" placeholder="Gatvė, miestas">
+              <input class="pf-input" id="profile-address" placeholder="Gatvė, namo nr. — kaimiškoms vietovėms: rajonas, kaimas (pvz. Ukmergės raj., Dainavos k.)">
             </div>
             <div class="pf-row">
               <div class="pf-group">
@@ -2208,6 +2212,17 @@ function onWorkHoursToggle(day){
 
 function loadProfileForm(){
   document.getElementById('profile-name').value = serviceProfile.name || '';
+  // Kaimiškų vietovių servisai renkasi ARTIMIAUSIĄ miestą/rajoną (pvz. "Ukmergė" už
+  // "Ukmergės raj., Dainavos k."), kad liktų randami paieškoje pagal miestą (visos
+  // paieškos šiame projekte ieško TIKSLIU sutapimu su LT_CITIES) — tikslų kaimo/gatvės
+  // pavadinimą įrašo Adreso lauke. Jei dabartinė reikšmė NEATITINKA sąrašo (sena, prieš
+  // šį pataisymą įvesta laisvo teksto reikšmė) — vis tiek įtraukiama, kad neišnyktų tyliai.
+  const citySel = document.getElementById('profile-city');
+  const currentCity = serviceProfile.city || '';
+  const knownCity = LT_CITIES.includes(currentCity);
+  citySel.innerHTML = '<option value="">— pasirinkite miestą/rajoną —</option>'
+    + LT_CITIES.map(c=>`<option value="${c}"${currentCity===c?' selected':''}>${c}</option>`).join('')
+    + (currentCity && !knownCity ? `<option value="${escapeHtml(currentCity)}" selected>${escapeHtml(currentCity)} (nežinomas — pasirinkite tikrą miestą/rajoną)</option>` : '');
   document.getElementById('profile-address').value = serviceProfile.address || '';
   document.getElementById('profile-phone').value = serviceProfile.phone || '';
   document.getElementById('profile-email').value = serviceProfile.email || '';
@@ -2253,6 +2268,7 @@ async function saveProfile(){
   });
   const payload = {
     name: document.getElementById('profile-name').value.trim(),
+    city: document.getElementById('profile-city').value,
     address: document.getElementById('profile-address').value.trim(),
     phone: document.getElementById('profile-phone').value.trim(),
     email: document.getElementById('profile-email').value.trim(),
