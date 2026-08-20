@@ -962,6 +962,10 @@ function renderOrderHistory(){
       : '';
     // Mirksi, kol klientas neatsidaro pokalbio — žr. paChatUnreadIds (PRANEŠIMŲ ŽENKLIUKAS + GARSAS).
     const hasNewMsg = paChatUnreadIds.has(o.id);
+    // Google Maps paieškos frazė — adresas IR miestas/rajonas KARTU (žr. tą pačią logiką
+    // servisucentras-pagrindinis.html renderServiceCards() — vien adresas be miesto gali
+    // sutapti su tokiu pat pavadinimu kitame mieste, tad geokodavimas būtų netikslus).
+    const mapQuery = [o.service_address, o.service_city].filter(Boolean).join(', ');
     return `
       <div class="order-card${hasNewMsg ? ' pa-new-msg' : ''}">
         <div class="order-card-head">
@@ -973,7 +977,7 @@ function renderOrderHistory(){
         </div>
         <div class="order-card-meta">
           <span>Servisas: <b>${o.service_name || '— dar nepriskirta —'}</b></span>
-          ${(o.service_address || o.service_city) ? `<a class="order-map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.service_address || o.service_city)}" target="_blank" rel="noopener noreferrer">📍 Rodyti žemėlapyje</a>` : ''}
+          ${mapQuery ? `<a class="order-map-link" href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}" target="_blank" rel="noopener noreferrer">📍 Rodyti žemėlapyje</a>` : ''}
           ${o.car_info ? `<span>Automobilis: <b>${o.car_info}</b></span>` : ''}
         </div>
         <div class="order-card-desc">${o.description||''}</div>

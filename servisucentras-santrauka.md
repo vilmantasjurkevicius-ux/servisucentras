@@ -1896,6 +1896,18 @@ Vartotojo patvirtintas sprendimas: kaimo servisas registracijos/nustatymų METU 
 
 ---
 
+## Google Maps nuoroda — adresas IR miestas KARTU, ne vien vienas (2026-08-20)
+
+Vartotojas pastebėjo (tiesiogiai susiję su aukščiau esančiu kaimo/rajono pataisymu): "📍 Rodyti žemėlapyje" nuoroda turi tiksliai rasti servisą Google Maps, ypač kaimo vietovėms (pvz. "Algirdų g. 3, Dainava, Ukmergės raj.").
+
+**Rasta**: abi vietos, kur ši nuoroda generuojama (`servisucentras-pagrindinis.html` viešų kortelių sąrašas, `mano-paskyra.html` užsakymų istorija), naudojo `adresas || miestas` — t.y. JEI adresas įvestas, MIESTAS Į PAIEŠKĄ APSKRITAI NEPATENKA. Tai netikslu: vien gatvės pavadinimas be miesto/rajono gali sutapti su tokiu pat pavadinimu kitame Lietuvos mieste, tad Google Maps geokodavimas gali nuvesti į VISAI KITĄ vietą.
+
+**Fix**: abiejose vietose `adresas || miestas` pakeista į `[adresas, miestas].filter(Boolean).join(', ')` — paieškos frazė dabar VISADA jungia abu (kai abu yra), pvz. "Algirdų g. 3, Dainava, Ukmergė" vietoj vien "Algirdų g. 3, Dainava". Papildomai patikslinti adreso lauko placeholder'iai (registracijos formoje ir Nustatymuose) — dabar rodo pavyzdį "Algirdų g. 3, Dainava, Ukmergės raj." (gatvė → kaimas → rajonas), atitinkantį įprastą Lietuvos adreso rašymo tvarką.
+
+**Patikrinta gyvai**: testiniam servisui su `address:'Algirdų g. 7'` ir `city:'Ukmergė'` — abiejose vietose (viešas paieškos sąrašas IR kliento užsakymų istorija) "Rodyti žemėlapyje" nuoroda patvirtinta kaip `...query=Algirdų g. 7, Ukmergė` (abu laukai kartu). Testiniai įrašai išvalyti po patikrinimo. `npm test` → 31/31 (backend nekeistas, testai nepaveikti).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
