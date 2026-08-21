@@ -203,10 +203,10 @@ const CAR_MODEL_GENERATIONS = {
       { code:'G42/G22', startYear:2021, endYear:null },
     ],
     '3 serija': [
-      { code:'E36', startYear:1990, endYear:2000 },
-      { code:'E46', startYear:1998, endYear:2006 },
-      { code:'E90/E91/E92/E93', startYear:2005, endYear:2013 },
-      { code:'F30/F31', startYear:2011, endYear:2019 },
+      { code:'E36', startYear:1990, endYear:1998 },
+      { code:'E46', startYear:1998, endYear:2005 },
+      { code:'E90/E91/E92/E93', startYear:2005, endYear:2011 },
+      { code:'F30/F31', startYear:2011, endYear:2018 },
       { code:'G20/G21', startYear:2018, endYear:null },
     ],
     '4 serija': [
@@ -214,15 +214,15 @@ const CAR_MODEL_GENERATIONS = {
       { code:'G22/G23', startYear:2020, endYear:null },
     ],
     '5 serija': [
-      { code:'E34', startYear:1988, endYear:1996 },
-      { code:'E39', startYear:1995, endYear:2004 },
+      { code:'E34', startYear:1988, endYear:1995 },
+      { code:'E39', startYear:1995, endYear:2003 },
       { code:'E60/E61', startYear:2003, endYear:2010 },
-      { code:'F10/F11', startYear:2010, endYear:2017 },
+      { code:'F10/F11', startYear:2010, endYear:2016 },
       { code:'G30/G31', startYear:2016, endYear:2023 },
       { code:'G60', startYear:2023, endYear:null },
     ],
     '6 serija': [
-      { code:'E63/E64', startYear:2003, endYear:2010 },
+      { code:'E63/E64', startYear:2003, endYear:2011 },
       { code:'F06/F12/F13', startYear:2011, endYear:2018 },
     ],
     '7 serija': [
@@ -254,7 +254,7 @@ const CAR_MODEL_GENERATIONS = {
       { code:'G06', startYear:2019, endYear:null },
     ],
     'Z4': [
-      { code:'E85/E86', startYear:2002, endYear:2008 },
+      { code:'E85/E86', startYear:2002, endYear:2009 },
       { code:'E89', startYear:2009, endYear:2016 },
       { code:'G29', startYear:2018, endYear:null },
     ],
@@ -274,8 +274,8 @@ const CAR_MODEL_GENERATIONS = {
       { code:'XV70', startYear:2017, endYear:null },
     ],
     'Corolla': [
-      { code:'E110', startYear:1997, endYear:2002 },
-      { code:'E120', startYear:2001, endYear:2007 },
+      { code:'E110', startYear:1997, endYear:2000 },
+      { code:'E120', startYear:2000, endYear:2007 },
       { code:'E150', startYear:2007, endYear:2013 },
       { code:'E160/E170', startYear:2013, endYear:2019 },
       { code:'E210', startYear:2019, endYear:null },
@@ -318,9 +318,9 @@ const CAR_MODEL_GENERATIONS = {
       { code:'Mk4', startYear:2021, endYear:null },
     ],
     'Octavia': [
-      { code:'Mk1', startYear:1996, endYear:2010 },
-      { code:'Mk2', startYear:2004, endYear:2013 },
-      { code:'Mk3', startYear:2012, endYear:2020 },
+      { code:'Mk1', startYear:1996, endYear:2004 },
+      { code:'Mk2', startYear:2004, endYear:2012 },
+      { code:'Mk3', startYear:2012, endYear:2019 },
       { code:'Mk4', startYear:2019, endYear:null },
     ],
     'Rapid': [
@@ -336,6 +336,645 @@ const CAR_MODEL_GENERATIONS = {
     ],
     'Yeti': [
       { code:'5L', startYear:2009, endYear:2017 },
+    ],
+  },
+  'Chevrolet': {
+    'Aveo': [
+      { code:'T200', startYear:2002, endYear:2011 },
+      { code:'T300', startYear:2011, endYear:2015 },
+    ],
+    'Cruze': [
+      { code:'J300', startYear:2009, endYear:2016 },
+      { code:'J400', startYear:2016, endYear:2019 },
+    ],
+    'Spark': [
+      { code:'M300', startYear:2009, endYear:2015 },
+      { code:'M400', startYear:2015, endYear:2022 },
+    ],
+  },
+  'Citroën': {
+    'Berlingo': [
+      { code:'Mk1', startYear:1996, endYear:2008 },
+      { code:'Mk2', startYear:2008, endYear:2018 },
+      { code:'Mk3', startYear:2018, endYear:null },
+    ],
+    'C1': [
+      { code:'Mk1', startYear:2005, endYear:2014 },
+      { code:'Mk2', startYear:2014, endYear:2022 },
+    ],
+    'C3': [
+      { code:'Mk1', startYear:2002, endYear:2009 },
+      { code:'Mk2', startYear:2009, endYear:2016 },
+      { code:'Mk3', startYear:2016, endYear:null },
+    ],
+    'C4': [
+      { code:'Mk1', startYear:2004, endYear:2010 },
+      { code:'Mk2', startYear:2010, endYear:2020 },
+      { code:'Mk3', startYear:2020, endYear:null },
+    ],
+    'C5': [
+      { code:'Mk1', startYear:2001, endYear:2008 },
+      { code:'Mk2', startYear:2008, endYear:2017 },
+    ],
+    'Jumpy': [
+      { code:'Mk1', startYear:1994, endYear:2007 },
+      { code:'Mk2', startYear:2007, endYear:2016 },
+      { code:'Mk3', startYear:2016, endYear:null },
+    ],
+  },
+  'Dacia': {
+    'Duster': [
+      { code:'Mk1', startYear:2010, endYear:2017 },
+      { code:'Mk2', startYear:2017, endYear:2024 },
+      { code:'Mk3', startYear:2024, endYear:null },
+    ],
+    'Logan': [
+      { code:'Mk1', startYear:2004, endYear:2012 },
+      { code:'Mk2', startYear:2012, endYear:2020 },
+      { code:'Mk3', startYear:2020, endYear:null },
+    ],
+    'Sandero': [
+      { code:'Mk1', startYear:2007, endYear:2012 },
+      { code:'Mk2', startYear:2012, endYear:2020 },
+      { code:'Mk3', startYear:2020, endYear:null },
+    ],
+  },
+  'Fiat': {
+    'Doblo': [
+      { code:'Mk1', startYear:2000, endYear:2010 },
+      { code:'Mk2', startYear:2010, endYear:2022 },
+    ],
+    'Ducato': [
+      { code:'Mk2', startYear:1994, endYear:2006 },
+      { code:'Mk3', startYear:2006, endYear:2014 },
+      { code:'Mk4', startYear:2014, endYear:null },
+    ],
+    'Panda': [
+      { code:'Mk2', startYear:2003, endYear:2012 },
+      { code:'Mk3', startYear:2012, endYear:null },
+    ],
+    'Punto': [
+      { code:'Mk2', startYear:1999, endYear:2005 },
+      { code:'Mk3', startYear:2005, endYear:2018 },
+    ],
+  },
+  'Ford': {
+    'C-Max': [
+      { code:'Mk1', startYear:2003, endYear:2010 },
+      { code:'Mk2', startYear:2010, endYear:2019 },
+    ],
+    'Fiesta': [
+      { code:'Mk4', startYear:1995, endYear:2002 },
+      { code:'Mk5', startYear:2002, endYear:2008 },
+      { code:'Mk6', startYear:2008, endYear:2017 },
+      { code:'Mk7', startYear:2017, endYear:2023 },
+    ],
+    'Focus': [
+      { code:'Mk1', startYear:1998, endYear:2004 },
+      { code:'Mk2', startYear:2004, endYear:2011 },
+      { code:'Mk3', startYear:2011, endYear:2018 },
+      { code:'Mk4', startYear:2018, endYear:null },
+    ],
+    'Galaxy': [
+      { code:'Mk1', startYear:1995, endYear:2006 },
+      { code:'Mk2', startYear:2006, endYear:2015 },
+      { code:'Mk3', startYear:2015, endYear:null },
+    ],
+    'Kuga': [
+      { code:'Mk1', startYear:2008, endYear:2012 },
+      { code:'Mk2', startYear:2012, endYear:2019 },
+      { code:'Mk3', startYear:2019, endYear:null },
+    ],
+    'Mondeo': [
+      { code:'Mk3', startYear:2000, endYear:2007 },
+      { code:'Mk4', startYear:2007, endYear:2014 },
+      { code:'Mk5', startYear:2014, endYear:2022 },
+    ],
+    'S-Max': [
+      { code:'Mk1', startYear:2006, endYear:2015 },
+      { code:'Mk2', startYear:2015, endYear:null },
+    ],
+    'Transit': [
+      { code:'Mk6/Mk7', startYear:2000, endYear:2013 },
+      { code:'Mk8', startYear:2013, endYear:null },
+    ],
+  },
+  'Honda': {
+    'Accord': [
+      { code:'Mk6', startYear:1998, endYear:2003 },
+      { code:'Mk7', startYear:2003, endYear:2008 },
+      { code:'Mk8', startYear:2008, endYear:2015 },
+    ],
+    'Civic': [
+      { code:'Mk6', startYear:1995, endYear:2001 },
+      { code:'Mk7', startYear:2001, endYear:2005 },
+      { code:'Mk8', startYear:2005, endYear:2011 },
+      { code:'Mk9', startYear:2011, endYear:2017 },
+      { code:'Mk10', startYear:2017, endYear:2022 },
+      { code:'Mk11', startYear:2022, endYear:null },
+    ],
+    'CR-V': [
+      { code:'Mk1', startYear:1995, endYear:2001 },
+      { code:'Mk2', startYear:2001, endYear:2006 },
+      { code:'Mk3', startYear:2006, endYear:2012 },
+      { code:'Mk4', startYear:2012, endYear:2018 },
+      { code:'Mk5', startYear:2018, endYear:null },
+    ],
+    'Jazz': [
+      { code:'Mk1', startYear:2001, endYear:2008 },
+      { code:'Mk2', startYear:2008, endYear:2015 },
+      { code:'Mk3', startYear:2015, endYear:2020 },
+      { code:'Mk4', startYear:2020, endYear:null },
+    ],
+  },
+  'Hyundai': {
+    'i10': [
+      { code:'Mk1', startYear:2007, endYear:2013 },
+      { code:'Mk2', startYear:2013, endYear:2019 },
+      { code:'Mk3', startYear:2019, endYear:null },
+    ],
+    'i20': [
+      { code:'Mk1', startYear:2008, endYear:2014 },
+      { code:'Mk2', startYear:2014, endYear:2020 },
+      { code:'Mk3', startYear:2020, endYear:null },
+    ],
+    'i30': [
+      { code:'Mk1', startYear:2007, endYear:2012 },
+      { code:'Mk2', startYear:2012, endYear:2017 },
+      { code:'Mk3', startYear:2017, endYear:null },
+    ],
+    'Santa Fe': [
+      { code:'Mk1', startYear:2000, endYear:2006 },
+      { code:'Mk2', startYear:2006, endYear:2012 },
+      { code:'Mk3', startYear:2012, endYear:2018 },
+      { code:'Mk4', startYear:2018, endYear:2024 },
+      { code:'Mk5', startYear:2024, endYear:null },
+    ],
+    'Tucson': [
+      { code:'Mk1', startYear:2004, endYear:2010 },
+      { code:'Mk3', startYear:2015, endYear:2020 },
+      { code:'Mk4', startYear:2020, endYear:null },
+    ],
+  },
+  'Jeep': {
+    'Grand Cherokee': [
+      { code:'WJ', startYear:1998, endYear:2004 },
+      { code:'WK', startYear:2004, endYear:2010 },
+      { code:'WK2', startYear:2010, endYear:2021 },
+      { code:'WL', startYear:2021, endYear:null },
+    ],
+    'Compass': [
+      { code:'Mk1', startYear:2006, endYear:2016 },
+      { code:'Mk2', startYear:2016, endYear:null },
+    ],
+  },
+  'Kia': {
+    'Ceed': [
+      { code:'Mk1', startYear:2006, endYear:2012 },
+      { code:'Mk2', startYear:2012, endYear:2018 },
+      { code:'Mk3', startYear:2018, endYear:null },
+    ],
+    'Optima': [
+      { code:'Mk3', startYear:2010, endYear:2015 },
+      { code:'Mk4', startYear:2015, endYear:2020 },
+    ],
+    'Picanto': [
+      { code:'Mk1', startYear:2004, endYear:2011 },
+      { code:'Mk2', startYear:2011, endYear:2017 },
+      { code:'Mk3', startYear:2017, endYear:null },
+    ],
+    'Rio': [
+      { code:'Mk3', startYear:2011, endYear:2017 },
+      { code:'Mk4', startYear:2017, endYear:null },
+    ],
+    'Sorento': [
+      { code:'Mk1', startYear:2002, endYear:2009 },
+      { code:'Mk2', startYear:2009, endYear:2014 },
+      { code:'Mk3', startYear:2014, endYear:2020 },
+      { code:'Mk4', startYear:2020, endYear:null },
+    ],
+    'Sportage': [
+      { code:'Mk2', startYear:2004, endYear:2010 },
+      { code:'Mk3', startYear:2010, endYear:2015 },
+      { code:'Mk4', startYear:2015, endYear:2021 },
+      { code:'Mk5', startYear:2021, endYear:null },
+    ],
+  },
+  'Land Rover': {
+    'Discovery': [
+      { code:'Mk1/Mk2', startYear:1989, endYear:2004 },
+      { code:'Mk3/Mk4', startYear:2004, endYear:2017 },
+      { code:'Mk5', startYear:2017, endYear:null },
+    ],
+    'Freelander': [
+      { code:'Mk1', startYear:1997, endYear:2006 },
+      { code:'Mk2', startYear:2006, endYear:2014 },
+    ],
+    'Range Rover': [
+      { code:'P38A', startYear:1994, endYear:2002 },
+      { code:'L322', startYear:2002, endYear:2012 },
+      { code:'L405', startYear:2012, endYear:2022 },
+      { code:'L460', startYear:2022, endYear:null },
+    ],
+  },
+  'Lexus': {
+    'ES': [
+      { code:'XV60', startYear:2012, endYear:2018 },
+      { code:'XV70', startYear:2018, endYear:null },
+    ],
+    'IS': [
+      { code:'XE10', startYear:1998, endYear:2005 },
+      { code:'XE20', startYear:2005, endYear:2013 },
+      { code:'XE30', startYear:2013, endYear:2020 },
+      { code:'XE30 fl.', startYear:2020, endYear:null },
+    ],
+    'NX': [
+      { code:'AZ10', startYear:2014, endYear:2021 },
+      { code:'AZ20', startYear:2021, endYear:null },
+    ],
+    'RX': [
+      { code:'XU30', startYear:2003, endYear:2008 },
+      { code:'XU40', startYear:2008, endYear:2015 },
+      { code:'XU60', startYear:2015, endYear:2022 },
+      { code:'XU80', startYear:2022, endYear:null },
+    ],
+  },
+  'Mazda': {
+    '2': [
+      { code:'DY', startYear:2003, endYear:2007 },
+      { code:'DE', startYear:2007, endYear:2014 },
+      { code:'DJ', startYear:2014, endYear:null },
+    ],
+    '3': [
+      { code:'BK', startYear:2003, endYear:2009 },
+      { code:'BL', startYear:2009, endYear:2013 },
+      { code:'BM/BN', startYear:2013, endYear:2019 },
+      { code:'BP', startYear:2019, endYear:null },
+    ],
+    '6': [
+      { code:'GG', startYear:2002, endYear:2008 },
+      { code:'GH', startYear:2008, endYear:2013 },
+      { code:'GJ/GL', startYear:2013, endYear:null },
+    ],
+    'CX-5': [
+      { code:'KE', startYear:2012, endYear:2017 },
+      { code:'KF', startYear:2017, endYear:null },
+    ],
+  },
+  'Mini': {
+    'Clubman': [
+      { code:'R55', startYear:2007, endYear:2015 },
+      { code:'F54', startYear:2015, endYear:null },
+    ],
+    'Cooper': [
+      { code:'R50/R53', startYear:2001, endYear:2006 },
+      { code:'R56', startYear:2006, endYear:2014 },
+      { code:'F55/F56', startYear:2014, endYear:2024 },
+      { code:'F65/F66', startYear:2024, endYear:null },
+    ],
+    'Countryman': [
+      { code:'R60', startYear:2010, endYear:2017 },
+      { code:'F60', startYear:2017, endYear:2023 },
+      { code:'U25', startYear:2023, endYear:null },
+    ],
+  },
+  'Mitsubishi': {
+    'Outlander': [
+      { code:'Mk1', startYear:2001, endYear:2006 },
+      { code:'Mk2', startYear:2006, endYear:2012 },
+      { code:'Mk3', startYear:2012, endYear:2021 },
+      { code:'Mk4', startYear:2021, endYear:null },
+    ],
+    'Pajero': [
+      { code:'Mk3', startYear:1999, endYear:2006 },
+      { code:'Mk4', startYear:2006, endYear:2021 },
+    ],
+  },
+  'Nissan': {
+    'Almera': [
+      { code:'N15', startYear:1995, endYear:2000 },
+      { code:'N16', startYear:2000, endYear:2006 },
+    ],
+    'Juke': [
+      { code:'Mk1', startYear:2010, endYear:2019 },
+      { code:'Mk2', startYear:2019, endYear:null },
+    ],
+    'Micra': [
+      { code:'K11', startYear:1992, endYear:2002 },
+      { code:'K12', startYear:2002, endYear:2010 },
+      { code:'K13', startYear:2010, endYear:2016 },
+      { code:'K14', startYear:2016, endYear:null },
+    ],
+    'Note': [
+      { code:'E11', startYear:2006, endYear:2013 },
+      { code:'E12', startYear:2013, endYear:null },
+    ],
+    'Primera': [
+      { code:'P11', startYear:1996, endYear:2001 },
+      { code:'P12', startYear:2001, endYear:2007 },
+    ],
+    'Qashqai': [
+      { code:'J10', startYear:2006, endYear:2013 },
+      { code:'J11', startYear:2013, endYear:2021 },
+      { code:'J12', startYear:2021, endYear:null },
+    ],
+    'X-Trail': [
+      { code:'T30', startYear:2001, endYear:2007 },
+      { code:'T31', startYear:2007, endYear:2014 },
+      { code:'T32', startYear:2014, endYear:2022 },
+      { code:'T33', startYear:2022, endYear:null },
+    ],
+  },
+  'Opel': {
+    'Astra': [
+      { code:'F', startYear:1991, endYear:1998 },
+      { code:'G', startYear:1998, endYear:2004 },
+      { code:'H', startYear:2004, endYear:2009 },
+      { code:'J', startYear:2009, endYear:2015 },
+      { code:'K', startYear:2015, endYear:2021 },
+      { code:'L', startYear:2021, endYear:null },
+    ],
+    'Corsa': [
+      { code:'B', startYear:1993, endYear:2000 },
+      { code:'C', startYear:2000, endYear:2006 },
+      { code:'D', startYear:2006, endYear:2014 },
+      { code:'E', startYear:2014, endYear:2019 },
+      { code:'F', startYear:2019, endYear:null },
+    ],
+    'Insignia': [
+      { code:'A', startYear:2008, endYear:2017 },
+      { code:'B', startYear:2017, endYear:null },
+    ],
+    'Meriva': [
+      { code:'A', startYear:2003, endYear:2010 },
+      { code:'B', startYear:2010, endYear:2017 },
+    ],
+    'Mokka': [
+      { code:'A', startYear:2012, endYear:2020 },
+      { code:'B', startYear:2020, endYear:null },
+    ],
+    'Vectra': [
+      { code:'B', startYear:1995, endYear:2002 },
+      { code:'C', startYear:2002, endYear:2008 },
+    ],
+    'Zafira': [
+      { code:'A', startYear:1999, endYear:2005 },
+      { code:'B', startYear:2005, endYear:2011 },
+      { code:'C', startYear:2011, endYear:2019 },
+    ],
+  },
+  'Peugeot': {
+    '208': [
+      { code:'Mk1', startYear:2012, endYear:2019 },
+      { code:'Mk2', startYear:2019, endYear:null },
+    ],
+    '2008': [
+      { code:'Mk1', startYear:2013, endYear:2019 },
+      { code:'Mk2', startYear:2019, endYear:null },
+    ],
+    '3008': [
+      { code:'Mk1', startYear:2009, endYear:2016 },
+      { code:'Mk2', startYear:2016, endYear:2023 },
+      { code:'Mk3', startYear:2023, endYear:null },
+    ],
+    '308': [
+      { code:'Mk1', startYear:2007, endYear:2013 },
+      { code:'Mk2', startYear:2013, endYear:2021 },
+      { code:'Mk3', startYear:2021, endYear:null },
+    ],
+    '508': [
+      { code:'Mk1', startYear:2010, endYear:2018 },
+      { code:'Mk2', startYear:2018, endYear:null },
+    ],
+    'Partner': [
+      { code:'Mk1', startYear:1996, endYear:2008 },
+      { code:'Mk2', startYear:2008, endYear:2018 },
+      { code:'Mk3', startYear:2018, endYear:null },
+    ],
+  },
+  'Porsche': {
+    '911': [
+      { code:'993', startYear:1993, endYear:1998 },
+      { code:'996', startYear:1998, endYear:2004 },
+      { code:'997', startYear:2004, endYear:2011 },
+      { code:'991', startYear:2011, endYear:2018 },
+      { code:'992', startYear:2018, endYear:null },
+    ],
+    'Cayenne': [
+      { code:'9PA', startYear:2002, endYear:2010 },
+      { code:'92A', startYear:2010, endYear:2017 },
+      { code:'9YA', startYear:2017, endYear:null },
+    ],
+    'Panamera': [
+      { code:'970', startYear:2009, endYear:2016 },
+      { code:'971', startYear:2016, endYear:null },
+    ],
+  },
+  'Renault': {
+    'Captur': [
+      { code:'Mk1', startYear:2013, endYear:2019 },
+      { code:'Mk2', startYear:2019, endYear:null },
+    ],
+    'Clio': [
+      { code:'Mk2', startYear:1998, endYear:2005 },
+      { code:'Mk3', startYear:2005, endYear:2012 },
+      { code:'Mk4', startYear:2012, endYear:2019 },
+      { code:'Mk5', startYear:2019, endYear:null },
+    ],
+    'Kadjar': [
+      { code:'Mk1', startYear:2015, endYear:2022 },
+    ],
+    'Laguna': [
+      { code:'Mk2', startYear:2000, endYear:2007 },
+      { code:'Mk3', startYear:2007, endYear:2015 },
+    ],
+    'Megane': [
+      { code:'Mk2', startYear:2002, endYear:2008 },
+      { code:'Mk3', startYear:2008, endYear:2016 },
+      { code:'Mk4', startYear:2016, endYear:null },
+    ],
+    'Scenic': [
+      { code:'Mk1', startYear:1996, endYear:2003 },
+      { code:'Mk2', startYear:2003, endYear:2009 },
+      { code:'Mk3', startYear:2009, endYear:2016 },
+      { code:'Mk4', startYear:2016, endYear:null },
+    ],
+    'Twingo': [
+      { code:'Mk1', startYear:1993, endYear:2007 },
+      { code:'Mk2', startYear:2007, endYear:2014 },
+      { code:'Mk3', startYear:2014, endYear:null },
+    ],
+  },
+  'Seat': {
+    'Ibiza': [
+      { code:'Mk2', startYear:1993, endYear:2002 },
+      { code:'Mk3', startYear:2002, endYear:2008 },
+      { code:'Mk4', startYear:2008, endYear:2017 },
+      { code:'Mk5', startYear:2017, endYear:null },
+    ],
+    'Leon': [
+      { code:'Mk1', startYear:1999, endYear:2005 },
+      { code:'Mk2', startYear:2005, endYear:2012 },
+      { code:'Mk3', startYear:2012, endYear:2020 },
+      { code:'Mk4', startYear:2020, endYear:null },
+    ],
+    'Toledo': [
+      { code:'Mk1', startYear:1991, endYear:1999 },
+      { code:'Mk2', startYear:1999, endYear:2004 },
+      { code:'Mk3', startYear:2004, endYear:2012 },
+      { code:'Mk4', startYear:2012, endYear:2019 },
+    ],
+  },
+  'Subaru': {
+    'Forester': [
+      { code:'SF', startYear:1997, endYear:2002 },
+      { code:'SG', startYear:2002, endYear:2008 },
+      { code:'SH', startYear:2008, endYear:2012 },
+      { code:'SJ', startYear:2012, endYear:2018 },
+      { code:'SK', startYear:2018, endYear:null },
+    ],
+    'Impreza': [
+      { code:'GC/GF', startYear:1992, endYear:2000 },
+      { code:'GD/GG', startYear:2000, endYear:2007 },
+      { code:'GE/GH', startYear:2007, endYear:2011 },
+      { code:'GJ/GP', startYear:2011, endYear:2016 },
+      { code:'GT/GK', startYear:2016, endYear:null },
+    ],
+    'Legacy': [
+      { code:'BD/BG', startYear:1993, endYear:1998 },
+      { code:'BE/BH', startYear:1998, endYear:2003 },
+      { code:'BL/BP', startYear:2003, endYear:2009 },
+      { code:'BM/BR', startYear:2009, endYear:2014 },
+      { code:'BN/BS', startYear:2014, endYear:2019 },
+      { code:'BT', startYear:2019, endYear:null },
+    ],
+    'Outback': [
+      { code:'BG', startYear:1994, endYear:1999 },
+      { code:'BH', startYear:1999, endYear:2003 },
+      { code:'BP', startYear:2003, endYear:2009 },
+      { code:'BR', startYear:2009, endYear:2014 },
+      { code:'BS', startYear:2014, endYear:2019 },
+      { code:'BT', startYear:2019, endYear:null },
+    ],
+  },
+  'Suzuki': {
+    'Jimny': [
+      { code:'JB23/JB43', startYear:1998, endYear:2018 },
+      { code:'JB64/JB74', startYear:2018, endYear:null },
+    ],
+    'Swift': [
+      { code:'Mk3', startYear:2004, endYear:2010 },
+      { code:'Mk4', startYear:2010, endYear:2017 },
+      { code:'Mk5', startYear:2017, endYear:2023 },
+      { code:'Mk6', startYear:2023, endYear:null },
+    ],
+  },
+  'Volvo': {
+    'S40': [
+      { code:'Mk1', startYear:1995, endYear:2004 },
+      { code:'Mk2', startYear:2004, endYear:2012 },
+    ],
+    'S60': [
+      { code:'Mk1', startYear:2000, endYear:2010 },
+      { code:'Mk2', startYear:2010, endYear:2018 },
+      { code:'Mk3', startYear:2018, endYear:null },
+    ],
+    'S80': [
+      { code:'Mk1', startYear:1998, endYear:2006 },
+      { code:'Mk2', startYear:2006, endYear:2016 },
+    ],
+    'V40': [
+      { code:'Mk1', startYear:1995, endYear:2004 },
+      { code:'Mk2', startYear:2012, endYear:2019 },
+    ],
+    'V60': [
+      { code:'Mk1', startYear:2010, endYear:2018 },
+      { code:'Mk2', startYear:2018, endYear:null },
+    ],
+    'V70': [
+      { code:'Mk1', startYear:1996, endYear:2000 },
+      { code:'Mk2', startYear:2000, endYear:2007 },
+      { code:'Mk3', startYear:2007, endYear:2016 },
+    ],
+    'XC60': [
+      { code:'Mk1', startYear:2008, endYear:2017 },
+      { code:'Mk2', startYear:2017, endYear:null },
+    ],
+    'XC90': [
+      { code:'Mk1', startYear:2002, endYear:2014 },
+      { code:'Mk2', startYear:2014, endYear:null },
+    ],
+  },
+  'Mercedes-Benz': {
+    'A klasė': [
+      { code:'W168', startYear:1997, endYear:2004 },
+      { code:'W169', startYear:2004, endYear:2012 },
+      { code:'W176', startYear:2012, endYear:2018 },
+      { code:'W177', startYear:2018, endYear:null },
+    ],
+    'B klasė': [
+      { code:'W245', startYear:2005, endYear:2011 },
+      { code:'W246', startYear:2011, endYear:2018 },
+      { code:'W247', startYear:2018, endYear:null },
+    ],
+    'C klasė': [
+      { code:'W202', startYear:1993, endYear:2000 },
+      { code:'W203', startYear:2000, endYear:2007 },
+      { code:'W204', startYear:2007, endYear:2014 },
+      { code:'W205', startYear:2014, endYear:2021 },
+      { code:'W206', startYear:2021, endYear:null },
+    ],
+    'E klasė': [
+      { code:'W124', startYear:1993, endYear:1995 },
+      { code:'W210', startYear:1995, endYear:2002 },
+      { code:'W211', startYear:2002, endYear:2009 },
+      { code:'W212', startYear:2009, endYear:2016 },
+      { code:'W213', startYear:2016, endYear:2023 },
+      { code:'W214', startYear:2023, endYear:null },
+    ],
+    'S klasė': [
+      { code:'W140', startYear:1991, endYear:1998 },
+      { code:'W220', startYear:1998, endYear:2005 },
+      { code:'W221', startYear:2005, endYear:2013 },
+      { code:'W222', startYear:2013, endYear:2020 },
+      { code:'W223', startYear:2020, endYear:null },
+    ],
+    'CLA': [
+      { code:'C117', startYear:2013, endYear:2019 },
+      { code:'C118', startYear:2019, endYear:null },
+    ],
+    'GLA': [
+      { code:'X156', startYear:2013, endYear:2020 },
+      { code:'H247', startYear:2020, endYear:null },
+    ],
+    'GLC': [
+      { code:'X253', startYear:2015, endYear:2022 },
+      { code:'X254', startYear:2022, endYear:null },
+    ],
+    'GLE': [
+      { code:'W166', startYear:2015, endYear:2019 },
+      { code:'V167', startYear:2019, endYear:null },
+    ],
+    'ML': [
+      { code:'W163', startYear:1997, endYear:2005 },
+      { code:'W164', startYear:2005, endYear:2011 },
+      { code:'W166', startYear:2011, endYear:2015 },
+    ],
+    'Sprinter': [
+      { code:'W901-905', startYear:1995, endYear:2006 },
+      { code:'W906', startYear:2006, endYear:2018 },
+      { code:'W907', startYear:2018, endYear:null },
+    ],
+    'Vito': [
+      { code:'W638', startYear:1996, endYear:2003 },
+      { code:'W639', startYear:2003, endYear:2014 },
+      { code:'W447', startYear:2014, endYear:null },
+    ],
+  },
+  'Lada': {
+    'Niva': [
+      { code:'2121 (senasis)', startYear:1977, endYear:2020 },
+      { code:'Travel', startYear:2020, endYear:null },
     ],
   },
 };
