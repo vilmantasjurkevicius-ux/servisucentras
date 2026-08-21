@@ -305,17 +305,33 @@ select.field{cursor:pointer;}
               <label class="field-label">Serviso / garažo pavadinimas</label>
               <input class="field" type="text" id="reg-s-name" placeholder="Garažas pas Tomą">
             </div>
-            <div class="field-group">
-              <label class="field-label">Miestas / rajonas</label>
-              <select class="field" id="reg-s-city"></select>
-              <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12.5px;color:#8fa3ac;cursor:pointer;">
-                <input type="checkbox" id="reg-s-rajonas-cb" style="width:15px;height:15px;flex-shrink:0;">
-                Esu rajone, ne pačiame mieste (pvz. kaimas šalia Ukmergės)
-              </label>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Gatvė *</label>
+                <input class="field" type="text" id="reg-s-street" placeholder="Gedimino pr.">
+              </div>
+              <div class="field-group">
+                <label class="field-label">Namo nr. *</label>
+                <input class="field" type="text" id="reg-s-housenr" placeholder="1">
+              </div>
             </div>
             <div class="field-group">
-              <label class="field-label">Tikslus adresas</label>
-              <input class="field" type="text" id="reg-s-address" placeholder="Gedimino pr. 1, Vilnius — kaimo vietovėms: gatvė, kaimas, rajonas (pvz. Algirdų g. 3, Dainava, Ukmergės raj.)">
+              <label class="field-label">Gyvenvietė (nebūtina) — pildykite tik jei kaimas/miestelis</label>
+              <input class="field" type="text" id="reg-s-settlement" placeholder="Dainava">
+            </div>
+            <div class="field-row">
+              <div class="field-group">
+                <label class="field-label">Miestas — jei adresas mieste</label>
+                <select class="field" id="reg-s-city"></select>
+              </div>
+              <div class="field-group">
+                <label class="field-label">Savivaldybė / rajonas — jei adresas kaime</label>
+                <select class="field" id="reg-s-municipality"></select>
+              </div>
+            </div>
+            <div class="field-group">
+              <label class="field-label">Pašto kodas *</label>
+              <input class="field" type="text" id="reg-s-postal" placeholder="01103">
             </div>
             <div class="field-row">
               <div class="field-group">
@@ -569,20 +585,15 @@ function populateWorkHourSelects(){
   document.getElementById('reg-s-work-end').value = '18:00';
 }
 
-// MIESTAS — visų Lietuvos savivaldybių centrų sąrašas (LT_CITIES, žr. lt-cities.js).
-// Laisvo teksto varianto ("Kita vietovė...") TYČIA nebėra — visos šio projekto paieškos
-// pagal miestą ieško TIKSLIU sutapimu su šiuo sąrašu, tad bet koks laisvai įrašytas miesto
-// pavadinimas (pvz. kaimo pavadinimas) padarydavo servisą NERANDAMĄ jokioje paieškoje.
-// Kaimo/vietovės servisai renkasi ARTIMIAUSIĄ miestą/rajoną iš šio sąrašo (Lietuvos
-// savivaldybės apima visą teritoriją, tad kiekvienas kaimas priklauso kažkuriai iš jų), o
-// tikslų kaimo/gatvės pavadinimą įrašo "Tikslus adresas" lauke žemiau.
+// MIESTAS / SAVIVALDYBĖ — struktūrizuotas adresas (žr. santrauka.md "Struktūrizuotas
+// adresas"): "Miestas" pildomas TIK jei adresas mieste, "Savivaldybė/rajonas" — TIK jei
+// adresas kaime/miestelyje (abu iš to paties LT_CITIES sąrašo — Lietuvos savivaldybės
+// apima visą teritoriją, tad kiekvienas kaimas priklauso kažkuriai iš jų). Laisvo teksto
+// miesto varianto TYČIA nėra — visos šio projekto paieškos ieško TIKSLIU sutapimu.
 function populateCitySelect(){
-  const sel = document.getElementById('reg-s-city');
-  sel.innerHTML = '<option value="">Pasirinkite miestą/rajoną</option>'
-    + LT_CITIES.map(c=>`<option>${c}</option>`).join('');
-}
-function readRegCity(){
-  return composeCityWithRajonas(document.getElementById('reg-s-city').value, document.getElementById('reg-s-rajonas-cb').checked);
+  const cityOpts = '<option value="">— nepasirinkta —</option>' + LT_CITIES.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('reg-s-city').innerHTML = cityOpts;
+  document.getElementById('reg-s-municipality').innerHTML = cityOpts;
 }
 
 // CATEGORIJOS — realios, iš GET /api/categories
@@ -722,8 +733,12 @@ async function serviceRegister(){
     phone: document.getElementById('reg-s-phone').value.trim(),
     password: document.getElementById('reg-s-pass').value,
     name: document.getElementById('reg-s-name').value.trim(),
-    city: readRegCity(),
-    address: document.getElementById('reg-s-address').value.trim(),
+    street: document.getElementById('reg-s-street').value.trim(),
+    houseNumber: document.getElementById('reg-s-housenr').value.trim(),
+    settlement: document.getElementById('reg-s-settlement').value.trim(),
+    city: document.getElementById('reg-s-city').value,
+    municipality: document.getElementById('reg-s-municipality').value,
+    postalCode: document.getElementById('reg-s-postal').value.trim(),
     serviceType: document.getElementById('reg-s-type').value,
     mechanicCount: document.getElementById('reg-s-mech').value,
     description: document.getElementById('reg-s-desc').value.trim(),
@@ -731,8 +746,12 @@ async function serviceRegister(){
     workEnd: document.getElementById('reg-s-work-end').value,
     categoryIds: Array.from(document.querySelectorAll('.cat-cb:checked')).map(cb=>cb.value),
   };
-  if(!payload.email || !payload.password || !payload.name || !payload.city){
-    showError('Užpildykite bent el. paštą, slaptažodį, serviso pavadinimą ir miestą');
+  if(!payload.email || !payload.password || !payload.name || !payload.street || !payload.houseNumber || !payload.postalCode){
+    showError('Užpildykite bent el. paštą, slaptažodį, serviso pavadinimą, gatvę, namo nr. ir pašto kodą');
+    return;
+  }
+  if(!payload.city && !payload.municipality){
+    showError('Nurodykite miestą (jei adresas mieste) arba savivaldybę/rajoną (jei adresas kaime)');
     return;
   }
 

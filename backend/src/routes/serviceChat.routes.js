@@ -22,11 +22,14 @@ router.get('/search', (req, res) => {
 
   const conditions = ['id != ?', 'is_bot = 0', "status = 'active'"];
   const params = [req.user.id];
-  if (city) { conditions.push('city = ?'); params.push(city); }
-  if (q) { conditions.push('(name LIKE ? OR city LIKE ?)'); params.push(`%${q}%`, `%${q}%`); }
+  // Miestą pasirinkus, rodomi TIEK to miesto (city), TIEK to paties pavadinimo
+  // savivaldybės/rajono (municipality) servisai — ta pati logika kaip viešoje
+  // paieškoje (services.routes.js GET /), žr. santrauka.md "Struktūrizuotas adresas".
+  if (city) { conditions.push('(city = ? OR municipality = ?)'); params.push(city, city); }
+  if (q) { conditions.push('(name LIKE ? OR city LIKE ? OR municipality LIKE ?)'); params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
 
   const rows = db.prepare(`
-    SELECT id, name, city, service_type FROM services
+    SELECT id, name, city, municipality, service_type FROM services
     WHERE ${conditions.join(' AND ')}
     ORDER BY name LIMIT 50
   `).all(...params);
@@ -39,7 +42,7 @@ router.get('/conversations', (req, res) => {
   const rows = db.prepare(`
     SELECT c.id, c.created_at,
       CASE WHEN c.service_a_id = ? THEN c.service_b_id ELSE c.service_a_id END AS other_service_id,
-      s.name AS other_service_name, s.city AS other_service_city,
+      s.name AS other_service_name, s.city AS other_service_city, s.municipality AS other_service_municipality,
       (SELECT message FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_message,
       (SELECT created_at FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_message_at,
       (SELECT sender_service_id FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_sender_service_id

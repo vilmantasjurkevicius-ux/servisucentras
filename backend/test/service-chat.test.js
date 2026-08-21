@@ -27,7 +27,10 @@ async function api(method, path, { token, body } = {}) {
 
 async function registerService(name, city) {
   const reg = await api('POST', '/api/auth/service/register', {
-    body: { name, email: `${name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${Math.random()}@test.lt`, password: 'slaptas123', city },
+    body: {
+      name, email: `${name.replace(/\s+/g, '-').toLowerCase()}-${Date.now()}-${Math.random()}@test.lt`, password: 'slaptas123', city,
+      street: 'Testų g.', houseNumber: '1', postalCode: '00000',
+    },
   });
   return { token: reg.data.token, id: reg.data.service.id };
 }

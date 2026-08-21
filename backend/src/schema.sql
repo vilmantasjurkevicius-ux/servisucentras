@@ -29,8 +29,13 @@ CREATE TABLE IF NOT EXISTS services (
   email TEXT UNIQUE,
   password_hash TEXT,
   phone TEXT,
-  city TEXT NOT NULL,
-  address TEXT,
+  city TEXT NOT NULL, -- "Miestas" — pildomas TIK jei adresas mieste; kaimo/rajono adresams lieka '' (žr. municipality)
+  address TEXT, -- SENAS laisvo teksto laukas — nebepildomas naujų įrašų, paliktas dėl atgalinio suderinamumo su senais įrašais
+  street TEXT, -- Gatvė (privaloma naujuose įrašuose)
+  house_number TEXT, -- Namo nr. (privaloma naujuose įrašuose)
+  settlement TEXT, -- Gyvenvietė — nebūtina, tik jei kaimas/miestelis
+  municipality TEXT, -- Savivaldybė/rajonas — pildoma TIK jei adresas kaimo/rajono, ne miesto (bent vienas iš city/municipality turi būti nurodytas)
+  postal_code TEXT, -- Pašto kodas (privaloma naujuose įrašuose)
   service_type TEXT,          -- 'Garažiukas' | 'Vidutinis' | 'Didelis' | 'Oficialus'
   mechanic_count TEXT,
   description TEXT,
@@ -227,6 +232,9 @@ CREATE TABLE IF NOT EXISTS service_chat_messages (
 );
 
 CREATE INDEX IF NOT EXISTS idx_services_city ON services(city);
+-- idx_services_municipality NEGALI būti čia — pre-migracinėse DB `municipality` kolona
+-- dar neegzistuoja šiuo momentu (CREATE TABLE IF NOT EXISTS aukščiau yra no-op esamai
+-- lentelei, o migrate() ją prideda TIK VĖLIAU, db.js). Sukuriama db.js, po ALTER TABLE.
 CREATE INDEX IF NOT EXISTS idx_invoices_service ON service_invoices(service_id);
 CREATE INDEX IF NOT EXISTS idx_orders_client ON orders(client_id);
 CREATE INDEX IF NOT EXISTS idx_orders_service ON orders(service_id);

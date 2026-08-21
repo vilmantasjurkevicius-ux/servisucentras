@@ -33,7 +33,11 @@ router.get('/', (req, res) => {
     where.push('sc.category_id = ? AND sc.active = 1');
     params.push(category);
   }
-  if (city) { where.push('s.city = ?'); params.push(city); }
+  // Pasirinkus miestą, rodomi TIEK to miesto (s.city), TIEK to paties pavadinimo
+  // savivaldybės/rajono (s.municipality) servisai — dauguma Lietuvos savivaldybių
+  // pavadintos savo centro miestu, tad kaimo servisas "Ukmergės r." turi atsirasti,
+  // kai klientas ieško "Ukmergė" (žr. santrauka.md "Struktūrizuotas adresas").
+  if (city) { where.push('(s.city = ? OR s.municipality = ?)'); params.push(city, city); }
   if (status) { where.push('s.status = ?'); params.push(status); }
 
   if (where.length) sql += ' WHERE ' + where.join(' AND ');
@@ -50,7 +54,7 @@ router.get('/me', authRequired, requireRole('service'), (req, res) => {
 });
 
 router.patch('/me', authRequired, requireRole('service'), (req, res) => {
-  const allowed = ['name', 'email', 'phone', 'city', 'address', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end', 'temp_closed', 'vacation_until'];
+  const allowed = ['name', 'email', 'phone', 'city', 'street', 'house_number', 'settlement', 'municipality', 'postal_code', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end', 'temp_closed', 'vacation_until'];
   const fields = [];
   const params = [];
   for (const key of allowed) {

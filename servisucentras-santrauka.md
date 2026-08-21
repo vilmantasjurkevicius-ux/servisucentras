@@ -1917,6 +1917,46 @@ Vartotojas paprašė: prie miesto pasirinkimo pridėti varnelę "Rajonas" (pvz. 
 
 **Patikrinta gyvai**: sukurtas testinis servisas su sena laisvo teksto reikšme `city:'DAINAVOS.K'` — Nustatymuose varnelė teisingai NEpažymėta (sena reikšmė neturi priesagos). Pasirinkus "Ukmergė" + pažymėjus varnelę + išsaugojus — `serviceProfile.city` tapo `"Ukmergė (rajonas)"`. PERKROVUS puslapį iš naujo — varnelė vėl teisingai PAŽYMĖTA, o miesto `<select>` rodo bazinį "Ukmergė" (ne visą frazę su priesaga). Viešas `GET /services?city=Ukmergė (rajonas)` servisą RADO. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 31/31 (backend nekeistas).
 
+**SUPERSEDED — žr. kitą įrašą žemiau ("Struktūrizuotas adresas")**: ši "rajono" varnelė (city priesaga) buvo TRUMPALAIKIS sprendimas, tos pačios dienos vėliau PAKEISTAS tikra `municipality` kolona ir pilnai struktūrizuotu adresu — vartotojas paprašė didesnio pertvarkymo, kai suprato, kad reikia atskirti gatvę/namo nr./gyvenvietę/pašto kodą, ne tik miestą.
+
+---
+
+## Struktūrizuotas adresas: gatvė/namo nr./gyvenvietė/miestas/savivaldybė/pašto kodas (2026-08-20)
+
+Vartotojas paprašė pakeisti laisvo teksto "Adresas" lauką + "rajono" varnelę (žr. aukščiau) pilnai struktūrizuotu adreso modeliu su tiksliais laukais ir taisyklėmis:
+
+| Laukas | Privalomas? | Pastaba |
+|---|---|---|
+| gatvė | Taip | |
+| namo_nr | Taip | |
+| gyvenvietė | Ne | Tik jei kaimas/miestelis |
+| miestas | Ne* | Tik jei miesto adresas |
+| savivaldybė | Ne* | Tik jei kaimo/rajono adresas |
+| pašto_kodas | Taip | |
+
+Ir: "servisų paieškoje pasirinkus miestą turi išmesti visus to miesto servisus IR rajono" — t.y. paieška pagal miestą turi matyti tiek `miestas="Ukmergė"`, tiek `savivaldybė="Ukmergė"` servisus (dauguma Lietuvos savivaldybių pavadintos savo centro miestu, tad tas pats LT_CITIES sąrašas tinka abiem laukams).
+
+**DB schema** (`schema.sql`, `db.js` migracija): naujos `services` lentelės kolonos — `street`, `house_number`, `settlement`, `municipality`, `postal_code` (senas `address` laukas PALIKTAS, bet NEBEPILDOMAS naujų įrašų — atgalinio suderinamumo dėlei senų įrašų rodymui). `city` NOT NULL apribojimas PALIKTAS nepakeistas (SQLite ALTER esamai kolonai rizikinga production'e) — kaimo/rajono servisams tiesiog saugoma `city=''` (tuščia eilutė, ne NULL). Vienkartinė migracija automatiškai perkelia BET KOKĮ senos "rajono varnelės" formato įrašą (`city` su `" (rajonas)"` priesaga) į tikrą `municipality` koloną, išvalant `city`.
+
+**⚠️ Rastas ir ištaisytas deploy'o blokuojantis bug'as**: pridėjus `CREATE INDEX ... ON services(municipality)` TIESIOGIAI `schema.sql`, backend'as VISAI nepasileisdavo esamoje (pre-migracinėje) DB — `CREATE TABLE IF NOT EXISTS` esamai lentelei yra no-op, tad `municipality` kolona dar NEEGZISTUOJA tuo momentu, kai vykdomas visas `schema.sql` (migrate(), kuris ją PRIDĖTŲ, paleidžiamas TIK VĖLIAU). Pataisyta — indeksas perkeltas į `db.js`, sukuriamas PO `ALTER TABLE` migracijos.
+
+**Backend**:
+- `auth.routes.js` (registracija) — validuoja `street`/`houseNumber`/`postalCode` kaip privalomus, IR kad bent vienas iš `city`/`municipality` būtų nurodytas (400 kitaip). INSERT dabar rašo visus naujus laukus.
+- `services.routes.js` — `GET /` (viešas sąrašas): `city` filtras dabar `(s.city = ? OR s.municipality = ?)` — implementuoja "rodyti to miesto IR rajono servisus". `PATCH /me` leidžiamų laukų sąraše `address` pakeista naujaisiais 5 laukais.
+- `clients.routes.js` `GET /me/orders` — prideda `service_street`/`service_house_number`/`service_settlement`/`service_municipality`/`service_postal_code` alias'us (mano-paskyra.html užsakymų istorijai).
+- `serviceChat.routes.js` `GET /search` — ta pati `(city = ? OR municipality = ?)` logika Servisų bendruomenės paieškai/naršymui.
+
+**Frontend**:
+- `automeistrai-login.html` (registracija) ir `automeistrai-dashboard.html` (Nustatymai) — laisvo teksto "Adresas" + "Miestas/rajonas" varnelė PAKEISTA 6 atskirais laukais: Gatvė*, Namo nr.*, Gyvenvietė (nebūtina), Miestas (select), Savivaldybė/rajonas (select), Pašto kodas*. Abu select'ai pildomi iš TO PATIES `LT_CITIES` sąrašo. Validacija JS pusėje kartoja backend'o taisykles prieš siunčiant.
+- `lt-cities.js` — pašalintos `composeCityWithRajonas()`/`decomposeCityRajonas()` (nebereikalingos, pakeistos tikra `municipality` kolona).
+- `servisucentras-pagrindinis.html` (viešos kortelės) ir `mano-paskyra.html` (užsakymų istorija) — nauja `serviceAddressLine()`/`serviceOrderAddressLine()` funkcija sudėlioja PILNĄ adreso eilutę (gatvė+namo nr., gyvenvietė, miestas, savivaldybė, pašto kodas) rodymui IR Google Maps nuorodai; SENIEMS įrašams (be struktūrizuotų laukų) automatiškai naudojamas atsarginis `address`+`city`.
+- `mano-paskyra.html` "Naujas pokalbis" miesto filtras — `s.city===city` → `(s.city===city || s.municipality===city)`.
+- Servisų bendruomenės (S2S) sąrašo/gijos rodymas — `other_service_city` su atsarginiu `other_service_municipality`, jei miesto nėra.
+
+**Testai**: naujas `backend/test/service-address.test.js` (5 testų) — trūkstant gatvės/namo/pašto kodo (400), trūkstant IR miesto, IR savivaldybės (400), grynai kaimo servisas (tik `municipality`, `city=''`) randamas paieškoje pagal savivaldybės pavadinimą, MIESTO IR kaimo servisas abu atsiranda ieškant to paties pavadinimo, `PATCH /services/me` pakeičia struktūrizuotą adresą. Esami registracijos testai (`api.test.js`, `password-reset.test.js`, `service-chat.test.js`) atnaujinti — visi dabar siunčia privalomus `street`/`houseNumber`/`postalCode`.
+
+**Patikrinta gyvai** (pilnas srautas, po backend'o perkrovimo dėl schema pakeitimo): (1) registracijos formoje užpildyti struktūrizuoti laukai grynai kaimo servisui (be miesto, tik `municipality:'Ukmergė'`) — registracija pavyko, `GET /services?city=Ukmergė` servisą RADO su `city:''`. (2) Vienkartinė migracija — sukurtas servisas su sena `city:'Ukmergė (rajonas)'` reikšme, PO backend'o perkrovimo automatiškai tapo `city:''`, `municipality:'Ukmergė'`. (3) Nustatymuose pakeistas miesto adresas į kaimo (savivaldybė+gyvenvietė) — išsaugota teisingai. (4) Viešoje paieškoje (servisucentras-pagrindinis.html) kortelė ir Maps nuoroda rodė pilną `"Algirdų g. 3, Dainava, Ukmergė, 20001"`. (5) `mano-paskyra.html` užsakymų istorijos Maps nuoroda — TAS PATS rezultatas. (6) "Naujas pokalbis" miesto filtras pasirinkus "Ukmergė" TEISINGAI parodė rajono (municipality) servisą serviso sąraše. Visi testiniai įrašai išvalyti po patikrinimo. `npm test` → 36/36 (buvo 31).
+
 ---
 
 ## Kaip tęsti naujame pokalbyje

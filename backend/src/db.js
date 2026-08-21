@@ -49,6 +49,28 @@ function migrate() {
   if (!serviceCols.includes('work_hours')) db.exec('ALTER TABLE services ADD COLUMN work_hours TEXT');
   if (!serviceCols.includes('temp_closed')) db.exec('ALTER TABLE services ADD COLUMN temp_closed INTEGER NOT NULL DEFAULT 0');
   if (!serviceCols.includes('vacation_until')) db.exec('ALTER TABLE services ADD COLUMN vacation_until TEXT');
+  // Struktūrizuotas adresas (gatvė/namo nr./gyvenvietė/savivaldybė/pašto kodas) — pakeičia
+  // senąjį laisvo teksto `address` naujiems įrašams (žr. santrauka.md "Struktūrizuotas adresas").
+  const hasStructuredAddress = serviceCols.includes('street');
+  if (!hasStructuredAddress) {
+    db.exec('ALTER TABLE services ADD COLUMN street TEXT');
+    db.exec('ALTER TABLE services ADD COLUMN house_number TEXT');
+    db.exec('ALTER TABLE services ADD COLUMN settlement TEXT');
+    db.exec('ALTER TABLE services ADD COLUMN municipality TEXT');
+    db.exec('ALTER TABLE services ADD COLUMN postal_code TEXT');
+  }
+  // Vienkartinis perkėlimas — trumpai (2026-08-20) egzistavusi "rajono" varnelė koduodavo
+  // pasirinkimą kaip city reikšmės su " (rajonas)" priesaga (žr. buvusią lt-cities.js
+  // composeCityWithRajonas()). Dabar tam yra tikra municipality kolona — bet koks toks
+  // senas įrašas perkeliamas automatiškai, kad neliktų "pakibęs" pusiau senu formatu.
+  const rajonasSuffix = ' (rajonas)';
+  db.prepare(`
+    UPDATE services SET municipality = substr(city, 1, length(city) - ${rajonasSuffix.length}), city = ''
+    WHERE city LIKE '%${rajonasSuffix}' AND municipality IS NULL
+  `).run();
+  // Indeksas SUKURIAMAS ČIA (ne schema.sql) — pre-migracinėse DB `municipality` kolona
+  // neegzistuoja tol, kol ALTER TABLE aukščiau jos nepridės; schema.sql vykdomas ANKSČIAU.
+  db.exec('CREATE INDEX IF NOT EXISTS idx_services_municipality ON services(municipality)');
 
   const settingsCols = db.prepare("PRAGMA table_info(admin_settings)").all().map((c) => c.name);
   if (!settingsCols.includes('collection_mode')) db.exec("ALTER TABLE admin_settings ADD COLUMN collection_mode TEXT NOT NULL DEFAULT 'manual'");

@@ -75,7 +75,7 @@ test(
     // Servisas turi būti IŠKART aktyvus (be atskiro admin "approve" žingsnio), o
     // atitinkamas bot'as turi automatiškai išsijungti tą pačią akimirką.
     const svcReg = await api('POST', '/api/auth/service/register', {
-      body: { name: 'Test Servisas Automatinis', email: `servisas-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Vilnius', categoryIds: ['padangos'] },
+      body: { name: 'Test Servisas Automatinis', email: `servisas-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Vilnius', street: 'Testų g.', houseNumber: '1', postalCode: '00000', categoryIds: ['padangos'] },
     });
     assert.equal(svcReg.status, 201);
     assert.equal(svcReg.data.service.status, 'active', 'servisas turi būti iškart aktyvus registracijos metu');
@@ -159,10 +159,10 @@ test('daugiavendorinis modelis: pokalbio tekstas matomas visiems, kaina ir laika
   const clientToken = clientReg.data.token;
 
   const svcAReg = await api('POST', '/api/auth/service/register', {
-    body: { name: 'Servisas A', email: `svc-a-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', categoryIds: ['stabdziai'] },
+    body: { name: 'Servisas A', email: `svc-a-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', street: 'Testų g.', houseNumber: '1', postalCode: '00000', categoryIds: ['stabdziai'] },
   });
   const svcBReg = await api('POST', '/api/auth/service/register', {
-    body: { name: 'Servisas B', email: `svc-b-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', categoryIds: ['stabdziai'] },
+    body: { name: 'Servisas B', email: `svc-b-${Date.now()}@test.lt`, password: 'slaptas123', city: 'Kaunas', street: 'Testų g.', houseNumber: '2', postalCode: '00000', categoryIds: ['stabdziai'] },
   });
   const tokenA = svcAReg.data.token;
   const tokenB = svcBReg.data.token;

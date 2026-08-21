@@ -67,6 +67,9 @@ router.patch('/me/password', authRequired, requireRole('client'), (req, res) => 
 router.get('/me/orders', authRequired, requireRole('client'), (req, res) => {
   const orders = db.prepare(`
     SELECT o.*, s.name AS service_name, s.address AS service_address, s.city AS service_city,
+      s.street AS service_street, s.house_number AS service_house_number,
+      s.settlement AS service_settlement, s.municipality AS service_municipality,
+      s.postal_code AS service_postal_code,
       (SELECT reason FROM order_declines WHERE order_id = o.id ORDER BY declined_at DESC LIMIT 1) AS last_decline_reason,
       (SELECT ds.name FROM order_declines od JOIN services ds ON ds.id = od.service_id WHERE od.order_id = o.id ORDER BY od.declined_at DESC LIMIT 1) AS last_decline_service_name,
       (SELECT declined_at FROM order_declines WHERE order_id = o.id ORDER BY declined_at DESC LIMIT 1) AS last_decline_at,

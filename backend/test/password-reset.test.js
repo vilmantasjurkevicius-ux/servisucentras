@@ -54,7 +54,7 @@ test('forgot-password: nežinomas el. paštas grąžina tą pačią bendrą žin
 
 test('forgot-password: žinomam servisui sukuria token įrašą DB', async () => {
   const email = `reset-test-${Date.now()}@example.com`;
-  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Reset Testas', email, password: 'senasSlaptas1', city: 'Vilnius' } });
+  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Reset Testas', email, password: 'senasSlaptas1', city: 'Vilnius', street: 'Testų g.', houseNumber: '1', postalCode: '00000' } });
   assert.equal(reg.status, 201);
   const serviceId = reg.data.service.id;
 
@@ -69,7 +69,7 @@ test('forgot-password: žinomam servisui sukuria token įrašą DB', async () =>
 
 test('reset-password: galiojantis tokenas pakeičia slaptažodį, senas nebeveikia, naujas veikia', async () => {
   const email = `reset-flow-${Date.now()}@example.com`;
-  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Reset Flow', email, password: 'senasSlaptas1', city: 'Kaunas' } });
+  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Reset Flow', email, password: 'senasSlaptas1', city: 'Kaunas', street: 'Testų g.', houseNumber: '1', postalCode: '00000' } });
   const serviceId = reg.data.service.id;
 
   const rawToken = generateResetToken();
@@ -139,7 +139,7 @@ test('change-password (client): neteisingas dabartinis slaptažodis atmetamas su
 
 test('change-password (service): neteisingas dabartinis slaptažodis atmetamas su 400, ne 401', async () => {
   const email = `chpw-service-wrong-${Date.now()}@example.com`;
-  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Wrong PW Servisas', email, password: 'pirmasSlaptas1', city: 'Šiauliai' } });
+  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Wrong PW Servisas', email, password: 'pirmasSlaptas1', city: 'Šiauliai', street: 'Testų g.', houseNumber: '1', postalCode: '00000' } });
   const { status } = await api('PATCH', '/api/services/me/password', {
     token: reg.data.token,
     body: { currentPassword: 'neteisingas', newPassword: 'naujasSlaptas2' },
@@ -164,7 +164,7 @@ test('change-password (client): teisingas srautas pakeičia slaptažodį', async
 
 test('change-password (service): teisingas srautas pakeičia slaptažodį', async () => {
   const email = `chpw-service-ok-${Date.now()}@example.com`;
-  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Change PW Servisas', email, password: 'pirmasSlaptas1', city: 'Klaipėda' } });
+  const reg = await api('POST', '/api/auth/service/register', { body: { name: 'Change PW Servisas', email, password: 'pirmasSlaptas1', city: 'Klaipėda', street: 'Testų g.', houseNumber: '1', postalCode: '00000' } });
   const { status } = await api('PATCH', '/api/services/me/password', {
     token: reg.data.token,
     body: { currentPassword: 'pirmasSlaptas1', newPassword: 'naujasSlaptas2' },

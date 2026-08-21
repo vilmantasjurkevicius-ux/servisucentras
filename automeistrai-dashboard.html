@@ -743,17 +743,33 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
               <label class="pf-label">Pavadinimas</label>
               <input class="pf-input" id="profile-name" placeholder="Serviso pavadinimas">
             </div>
-            <div class="pf-group">
-              <label class="pf-label">Miestas / rajonas</label>
-              <select class="pf-input" id="profile-city"></select>
-              <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--muted);cursor:pointer;">
-                <input type="checkbox" id="profile-rajonas-cb" style="width:15px;height:15px;flex-shrink:0;">
-                Esu rajone, ne pačiame mieste (pvz. kaimas šalia Ukmergės)
-              </label>
+            <div class="pf-row">
+              <div class="pf-group">
+                <label class="pf-label">Gatvė *</label>
+                <input class="pf-input" id="profile-street" placeholder="Gedimino pr.">
+              </div>
+              <div class="pf-group">
+                <label class="pf-label">Namo nr. *</label>
+                <input class="pf-input" id="profile-housenr" placeholder="1">
+              </div>
             </div>
             <div class="pf-group">
-              <label class="pf-label">Adresas</label>
-              <input class="pf-input" id="profile-address" placeholder="Gatvė, namo nr. — kaimiškoms vietovėms: gatvė, kaimas, rajonas (pvz. Algirdų g. 3, Dainava, Ukmergės raj.)">
+              <label class="pf-label">Gyvenvietė (nebūtina) — pildykite tik jei kaimas/miestelis</label>
+              <input class="pf-input" id="profile-settlement" placeholder="Dainava">
+            </div>
+            <div class="pf-row">
+              <div class="pf-group">
+                <label class="pf-label">Miestas — jei adresas mieste</label>
+                <select class="pf-input" id="profile-city"></select>
+              </div>
+              <div class="pf-group">
+                <label class="pf-label">Savivaldybė / rajonas — jei adresas kaime</label>
+                <select class="pf-input" id="profile-municipality"></select>
+              </div>
+            </div>
+            <div class="pf-group">
+              <label class="pf-label">Pašto kodas *</label>
+              <input class="pf-input" id="profile-postal" placeholder="01103">
             </div>
             <div class="pf-row">
               <div class="pf-group">
@@ -1581,7 +1597,7 @@ function s2sRowHtml(c){
       <div class="s2s-row-av">${s2sAvatarLetter(c.other_service_name)}</div>
       <div class="s2s-row-info">
         <div class="s2s-row-name">${escapeHtml(c.other_service_name)}</div>
-        <div class="s2s-row-city">${escapeHtml(c.other_service_city||'')}</div>
+        <div class="s2s-row-city">${escapeHtml(c.other_service_city || c.other_service_municipality || '')}</div>
         ${c.last_message ? `<div class="s2s-row-preview">${escapeHtml(c.last_message)}</div>` : ''}
       </div>
       ${unread ? '<div class="s2s-unread-dot"></div>' : ''}
@@ -1593,7 +1609,7 @@ function s2sSearchResultRowHtml(s){
       <div class="s2s-row-av">${s2sAvatarLetter(s.name)}</div>
       <div class="s2s-row-info">
         <div class="s2s-row-name">${escapeHtml(s.name)}</div>
-        <div class="s2s-row-city">${escapeHtml(s.city||'')}</div>
+        <div class="s2s-row-city">${escapeHtml(s.city || s.municipality || '')}</div>
       </div>
     </div>`;
 }
@@ -1632,11 +1648,11 @@ function s2sSearch(){
 
 function s2sOpenExisting(conversationId){
   const c = s2sConversations.find(x=>x.id===conversationId);
-  if(c) s2sEnterThread(c.other_service_id, c.other_service_name, c.other_service_city, c.id);
+  if(c) s2sEnterThread(c.other_service_id, c.other_service_name, c.other_service_city || c.other_service_municipality, c.id);
 }
 function s2sOpenFromSearch(otherServiceId){
   const s = s2sSearchResults.find(x=>x.id===otherServiceId);
-  if(s) s2sEnterThread(s.id, s.name, s.city, null);
+  if(s) s2sEnterThread(s.id, s.name, s.city || s.municipality, null);
 }
 
 async function s2sEnterThread(otherServiceId, otherName, otherCity, knownConversationId){
@@ -2216,22 +2232,22 @@ function onWorkHoursToggle(day){
 
 function loadProfileForm(){
   document.getElementById('profile-name').value = serviceProfile.name || '';
-  // Kaimiškų vietovių servisai renkasi ARTIMIAUSIĄ miestą/rajoną (pvz. "Ukmergė" už
-  // "Ukmergės raj., Dainavos k."), kad liktų randami paieškoje pagal miestą (visos
-  // paieškos šiame projekte ieško TIKSLIU sutapimu su LT_CITIES) — tikslų kaimo/gatvės
-  // pavadinimą įrašo Adreso lauke. Jei dabartinė reikšmė NEATITINKA sąrašo (sena, prieš
-  // šį pataisymą įvesta laisvo teksto reikšmė) — vis tiek įtraukiama, kad neišnyktų tyliai.
-  const citySel = document.getElementById('profile-city');
-  // "Rajonas" varnelė — jei esama reikšmė turi " (rajonas)" priesagą (žr. lt-cities.js
-  // composeCityWithRajonas()), atskiriama nuo bazinio miesto, kad <select> galėtų
-  // parodyti/pažymėti pastarąjį, o varnelė atspindėtų buvusį pasirinkimą.
-  const { baseCity: currentCity, isRajonas } = decomposeCityRajonas(serviceProfile.city || '');
-  const knownCity = LT_CITIES.includes(currentCity);
-  citySel.innerHTML = '<option value="">— pasirinkite miestą/rajoną —</option>'
-    + LT_CITIES.map(c=>`<option value="${c}"${currentCity===c?' selected':''}>${c}</option>`).join('')
-    + (currentCity && !knownCity ? `<option value="${escapeHtml(currentCity)}" selected>${escapeHtml(currentCity)} (nežinomas — pasirinkite tikrą miestą/rajoną)</option>` : '');
-  document.getElementById('profile-rajonas-cb').checked = isRajonas;
-  document.getElementById('profile-address').value = serviceProfile.address || '';
+  document.getElementById('profile-street').value = serviceProfile.street || '';
+  document.getElementById('profile-housenr').value = serviceProfile.house_number || '';
+  document.getElementById('profile-settlement').value = serviceProfile.settlement || '';
+  document.getElementById('profile-postal').value = serviceProfile.postal_code || '';
+  // "Miestas" ir "Savivaldybė/rajonas" — DVI atskiros, TIKROS kolonos (žr. santrauka.md
+  // "Struktūrizuotas adresas"), ne laisvas tekstas — kiekvienam <select> pridedama esama
+  // reikšmė kaip parinktis, jei ji NEATITINKA standartinio sąrašo (sena, prieš pataisymą
+  // įvesta reikšmė), kad neišnyktų tyliai, o servisas pastebėtų ir pasitaisytų.
+  function fillCitySelect(selId, currentValue){
+    const known = LT_CITIES.includes(currentValue);
+    document.getElementById(selId).innerHTML = '<option value="">— nepasirinkta —</option>'
+      + LT_CITIES.map(c=>`<option value="${c}"${currentValue===c?' selected':''}>${c}</option>`).join('')
+      + (currentValue && !known ? `<option value="${escapeHtml(currentValue)}" selected>${escapeHtml(currentValue)} (nežinomas)</option>` : '');
+  }
+  fillCitySelect('profile-city', serviceProfile.city || '');
+  fillCitySelect('profile-municipality', serviceProfile.municipality || '');
   document.getElementById('profile-phone').value = serviceProfile.phone || '';
   document.getElementById('profile-email').value = serviceProfile.email || '';
   renderWorkHoursRows();
@@ -2276,12 +2292,24 @@ async function saveProfile(){
   });
   const payload = {
     name: document.getElementById('profile-name').value.trim(),
-    city: composeCityWithRajonas(document.getElementById('profile-city').value, document.getElementById('profile-rajonas-cb').checked),
-    address: document.getElementById('profile-address').value.trim(),
+    street: document.getElementById('profile-street').value.trim(),
+    houseNumber: document.getElementById('profile-housenr').value.trim(),
+    settlement: document.getElementById('profile-settlement').value.trim(),
+    city: document.getElementById('profile-city').value,
+    municipality: document.getElementById('profile-municipality').value,
+    postalCode: document.getElementById('profile-postal').value.trim(),
     phone: document.getElementById('profile-phone').value.trim(),
     email: document.getElementById('profile-email').value.trim(),
     workHours,
   };
+  if(!payload.street || !payload.houseNumber || !payload.postalCode){
+    showFormMsg('profile-msg', '⚠ Užpildykite gatvę, namo nr. ir pašto kodą', false);
+    return;
+  }
+  if(!payload.city && !payload.municipality){
+    showFormMsg('profile-msg', '⚠ Nurodykite miestą arba savivaldybę/rajoną', false);
+    return;
+  }
   const btn = document.getElementById('profile-save-btn');
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
   try{

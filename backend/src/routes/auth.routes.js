@@ -27,12 +27,19 @@ function publicClient(row) {
 router.post('/service/register', authLimiter, (req, res) => {
   const {
     name, ownerFirstName, ownerLastName, email, phone, password,
-    city, address, serviceType, mechanicCount, description,
+    city, municipality, street, houseNumber, settlement, postalCode,
+    serviceType, mechanicCount, description,
     workStart, workEnd, categoryIds,
   } = req.body;
 
-  if (!name || !email || !password || !city) {
-    return res.status(400).json({ error: 'Trūksta privalomų laukų (pavadinimas, el. paštas, slaptažodis, miestas)' });
+  if (!name || !email || !password) {
+    return res.status(400).json({ error: 'Trūksta privalomų laukų (pavadinimas, el. paštas, slaptažodis)' });
+  }
+  if (!street || !houseNumber || !postalCode) {
+    return res.status(400).json({ error: 'Trūksta adreso laukų (gatvė, namo nr., pašto kodas)' });
+  }
+  if (!city && !municipality) {
+    return res.status(400).json({ error: 'Nurodykite miestą (jei adresas mieste) arba savivaldybę/rajoną (jei adresas kaime)' });
   }
 
   const existing = db.prepare('SELECT id FROM services WHERE email = ?').get(email);
@@ -40,12 +47,13 @@ router.post('/service/register', authLimiter, (req, res) => {
 
   const passwordHash = bcrypt.hashSync(password, 10);
   const insert = db.prepare(`
-    INSERT INTO services (name, owner_first_name, owner_last_name, email, password_hash, phone, city, address, service_type, mechanic_count, description, work_start, work_end, status, is_bot)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0)
+    INSERT INTO services (name, owner_first_name, owner_last_name, email, password_hash, phone, city, street, house_number, settlement, municipality, postal_code, service_type, mechanic_count, description, work_start, work_end, status, is_bot)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0)
   `);
   const info = insert.run(
     name, ownerFirstName || null, ownerLastName || null, email, passwordHash, phone || null,
-    city, address || null, serviceType || null, mechanicCount || null, description || null,
+    city || '', street, houseNumber, settlement || null, municipality || null, postalCode,
+    serviceType || null, mechanicCount || null, description || null,
     workStart || '08:00', workEnd || '18:00'
   );
 

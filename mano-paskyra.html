@@ -758,7 +758,9 @@ function onNewChatCityChange(){
     updateNewChatSubmitState();
     return;
   }
-  const services = ncAllServices.filter(s=>!s.is_bot && s.city===city);
+  // Rodomi TIEK to miesto (s.city), TIEK to paties pavadinimo savivaldybės/rajono
+  // (s.municipality) servisai — žr. santrauka.md "Struktūrizuotas adresas".
+  const services = ncAllServices.filter(s=>!s.is_bot && (s.city===city || s.municipality===city));
   serviceSel.innerHTML = (services.length ? '<option value="">— pasirinkite servisą —</option>' : '<option value="">— šiame mieste servisų nėra —</option>')
     + services.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
   serviceSel.disabled = services.length === 0;
@@ -944,6 +946,17 @@ function clientStatusInfo(o){
   return { label:'Naujas', cls:'os-new' };
 }
 
+// Serviso pilnas adreso tekstas iš order-history alias'ų (žr. clients.routes.js GET
+// /me/orders) — ta pati logika kaip servisucentras-pagrindinis.html serviceAddressLine(),
+// palaiko IR struktūrizuotus laukus (nauji įrašai), IR seną laisvo teksto address+city.
+function serviceOrderAddressLine(o){
+  if(o.service_street || o.service_house_number || o.service_settlement || o.service_municipality || o.service_postal_code){
+    const streetPart = [o.service_street, o.service_house_number].filter(Boolean).join(' ');
+    return [streetPart, o.service_settlement, o.service_city, o.service_municipality, o.service_postal_code].filter(Boolean).join(', ');
+  }
+  return [o.service_address, o.service_city].filter(Boolean).join(', ');
+}
+
 function renderOrderHistory(){
   const list = document.getElementById('order-list');
   if(orderHistoryCache.length === 0){
@@ -962,10 +975,7 @@ function renderOrderHistory(){
       : '';
     // Mirksi, kol klientas neatsidaro pokalbio — žr. paChatUnreadIds (PRANEŠIMŲ ŽENKLIUKAS + GARSAS).
     const hasNewMsg = paChatUnreadIds.has(o.id);
-    // Google Maps paieškos frazė — adresas IR miestas/rajonas KARTU (žr. tą pačią logiką
-    // servisucentras-pagrindinis.html renderServiceCards() — vien adresas be miesto gali
-    // sutapti su tokiu pat pavadinimu kitame mieste, tad geokodavimas būtų netikslus).
-    const mapQuery = [o.service_address, o.service_city].filter(Boolean).join(', ');
+    const mapQuery = serviceOrderAddressLine(o);
     return `
       <div class="order-card${hasNewMsg ? ' pa-new-msg' : ''}">
         <div class="order-card-head">
