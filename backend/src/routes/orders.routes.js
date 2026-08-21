@@ -124,6 +124,11 @@ router.post('/direct', authRequired, requireRole('client'), (req, res) => {
 // ── SERVISO SĄRAŠAS: naujos užklausos jo mieste/kategorijose + jam priskirtos ──
 router.get('/', authRequired, requireRole('service'), (req, res) => {
   const service = db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id);
+  // "Heartbeat" Servisų bendruomenės "online" ženkliukui (žr. serviceChat.routes.js) —
+  // šis endpoint'as jau kviečiamas kas 12s dashboard'o poll'inimo ciklu (pollOrders()),
+  // tad naudojamas kaip nemokamas "servisas turi atidarytą dashboard'ą" signalas, be
+  // atskiro papildomo API kvietimo.
+  db.prepare("UPDATE services SET last_active_at = datetime('now') WHERE id = ?").run(req.user.id);
   const orders = db.prepare(`
     SELECT DISTINCT o.*, c.first_name, c.last_name, c.phone, c.email, c.is_guest,
       (SELECT created_at FROM order_messages WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1) AS last_message_at,

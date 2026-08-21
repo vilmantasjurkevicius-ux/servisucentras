@@ -1959,6 +1959,22 @@ Ir: "servisų paieškoje pasirinkus miestą turi išmesti visus to miesto servis
 
 ---
 
+## Servisų bendruomenė: paslėptas neskaitytas pokalbis + "online" statusas (2026-08-21)
+
+Vartotojas (naudodamas realią production paskyrą "DNV ŠUMINSKAS") pranešė: kitas servisas parašė žinutę, topbar 🤝 ženkliukas rodė "1" neskaitytą, bet atidarius panelį — nieko nesimatė, "kas blogai?". Papildomai paprašė matyti, ar kitas servisas TIESIOGINIAI dabar turi atidarytą dashboard'ą (realaus laiko "online" indikatorius, ne darbo laiko DIRBA/UŽDARYTA).
+
+**Diagnozė (per realią production sesiją, `claude-in-chrome` prisijungus prie to paties naršyklės profilio)**: `s2sBadge`/`s2sUnreadIds` teisingai rodė neskaitytą pokalbį (`id:2`, žinutė nuo "Dainava auto"), BET `renderS2SList()` panelį atidarius VISADA rodydavo TIK paieškos-pagal-miestą rezultatus (miesto filtras automatiškai užsipildo servisui atidarius panelį pirmą kartą — žr. ankstesnį įrašą), o "Pokalbiai" sąrašas (su neskaitytos žyme + žinutės peržiūra) likdavo PASLĖPTAS už jo. Paieškos eilutėje ("Dainava auto" tarp kitų Ukmergės servisų) NĖRA jokio neskaitytos indikatoriaus — atrodė identiškai bet kuriam kitam, dar niekada nekalbėtam servisui.
+
+**Fix**: `renderS2SList()` (`automeistrai-dashboard.html`) — "Pokalbiai" sekcija dabar VISADA rodoma pirma, kai tik jų yra, NEPRIKLAUSOMAI nuo miesto/paieškos filtro būsenos. Paieškos/naršymo rezultatai rodomi PO jos, atskirai, IR nebeduplikuoja servisų, su kuriais pokalbis jau yra sąraše aukščiau.
+
+**"Online" statusas** — nauja `services.last_active_at` kolona, atnaujinama kaip "heartbeat" PRIE JAU esančio `GET /orders` iškvietimo (kurį dashboard'as ir taip kviečia kas 12s poll'inimo cikle) — jokio naujo API kvietimo nereikėjo. Servisas laikomas "online", jei `last_active_at` atnaujintas per pastarąsias 30s (kelis kartus daugiau už 12s ciklą, kad vienas praleistas poll'as neparodytų klaidingo "offline"). Rodoma: mažas žalias/pilkas taškelis prie avataro (sąrašo eilutėse) IR "🟢 Online"/"⚪ Neaktyvus" tekstas gijos antraštėje, atsinaujinantis kiekvieną poll'inimo ciklą, kol žiūrima į tą gijos.
+
+**Testai**: naujas atvejis `service-chat.test.js` — servisas be JOKIO heartbeat'o rodomas offline; po `GET /orders` iškvietimo TAMPA online (IR paieškoje, IR `/conversations` sąraše); dirbtinai pasendinus `last_active_at` (>30s) — vėl tampa offline.
+
+**Patikrinta gyvai**: sukurti 2 testiniai servisai tame pačiame mieste — imituotas TIKSLIAI vartotojo scenarijus (miesto filtras automatiškai užpildytas, o pokalbis su neskaityta žinute egzistuoja) — "Pokalbiai" sekcija su neskaitytos taškeliu IR žinutės peržiūra dabar rodoma IŠKART, paspaudus atsidaro teisinga gija su žinute. Online: B servisas iškvietė `/orders` — A servisas jį matė kaip "🟢 online" (žalias taškelis + gijos antraštėje); pasendinus `last_active_at` per DB ir paleidus poll'inimo ciklą rankiniu būdu — ženkliukas gyvai persijungė į "⚪ Neaktyvus". Testiniai įrašai išvalyti po patikrinimo. `npm test` → 37/37 (buvo 36).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

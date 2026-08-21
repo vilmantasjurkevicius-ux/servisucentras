@@ -1,14 +1,19 @@
 const { test, before, after } = require('node:test');
 const assert = require('node:assert/strict');
+const { DatabaseSync } = require('node:sqlite');
 const { spawnServer } = require('./helpers');
 
 let server;
+let db;
 
 before(async () => {
   server = await spawnServer();
+  db = new DatabaseSync(server.dbPath);
+  db.exec('PRAGMA busy_timeout = 3000');
 });
 
 after(async () => {
+  db.close();
   await server.stop();
 });
 
@@ -130,6 +135,34 @@ test('paieška: city filtruoja tikslaus miesto servisus, derinasi su q', async (
 
   const noFilters = await api('GET', '/api/service-chat/search', { token: vilniusA.token });
   assert.deepEqual(noFilters.data, [], 'be jokio filtro (nei q, nei city) grąžinama tuščia — ne visas servisų sąrašas');
+});
+
+test('"online" — servisas laikomas online TIK jei GET /orders (heartbeat) kviestas per pastarąsias 30s', async () => {
+  const a = await registerService('Online Servisas A', 'Marijampolė');
+  const b = await registerService('Online Servisas B', 'Marijampolė');
+
+  // Registracijos metu last_active_at dar NULL — abu turi būti offline
+  const beforeHeartbeat = await api('GET', '/api/service-chat/search?city=Marijampolė', { token: a.token });
+  const bRowBefore = beforeHeartbeat.data.find((s) => s.id === b.id);
+  assert.equal(bRowBefore.online, 0, 'be jokio heartbeat signalo servisas turi būti offline');
+
+  // B "atidaro dashboard'ą" — GET /orders atnaujina last_active_at (žr. orders.routes.js)
+  await api('GET', '/api/orders', { token: b.token });
+  const afterHeartbeat = await api('GET', '/api/service-chat/search?city=Marijampolė', { token: a.token });
+  const bRowAfter = afterHeartbeat.data.find((s) => s.id === b.id);
+  assert.equal(bRowAfter.online, 1, 'iškart po GET /orders servisas turi būti online');
+
+  // Ta pati online būsena turi atsispindėti IR /conversations, kai su juo jau kalbamasi
+  const start = await api('POST', '/api/service-chat/start', { token: a.token, body: { otherServiceId: b.id } });
+  const conversations = await api('GET', '/api/service-chat/conversations', { token: a.token });
+  const convRow = conversations.data.find((c) => c.id === start.data.id);
+  assert.equal(convRow.other_service_online, 1);
+
+  // Pasenusi last_active_at (daugiau nei 30s atgal) — servisas vėl turi tapti offline
+  db.prepare("UPDATE services SET last_active_at = datetime('now', '-60 seconds') WHERE id = ?").run(b.id);
+  const afterStale = await api('GET', '/api/service-chat/search?city=Marijampolė', { token: a.token });
+  const bRowStale = afterStale.data.find((s) => s.id === b.id);
+  assert.equal(bRowStale.online, 0, 'pasenęs (>30s) heartbeat turi rodyti offline');
 });
 
 test('admin mato pokalbio EGZISTAVIMĄ, bet NE turinį', async () => {

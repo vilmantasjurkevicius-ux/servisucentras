@@ -11,6 +11,14 @@ function pairIds(a, b) {
   return a < b ? [a, b] : [b, a];
 }
 
+// "Online" — servisas laikomas prisijungusiu (dashboard'as atidarytas), jei jo
+// last_active_at (heartbeat, žr. orders.routes.js GET /) atnaujintas per pastarąsias
+// ONLINE_THRESHOLD_SECONDS — kelis kartus didesnis už 12s poll'inimo ciklą, kad vienas
+// praleistas ciklas (trumpas tinklo trikdis, fono tab'o throttle'inimas) neparodytų
+// "offline" iš karto.
+const ONLINE_THRESHOLD_SECONDS = 30;
+const ONLINE_SQL = `CASE WHEN last_active_at IS NOT NULL AND last_active_at >= datetime('now', '-${ONLINE_THRESHOLD_SECONDS} seconds') THEN 1 ELSE 0 END`;
+
 // ── PAIEŠKA — kitų aktyvių, ne-bot servisų sąrašas naujam pokalbiui pradėti ──
 // `city` (tikslus miestas, iš dropdown'o dashboard'e) IR `q` (laisvas tekstas — pavadinimas)
 // gali būti naudojami KARTU (AND) — leidžia naršyti "visus miesto servisus" (vien city) arba
@@ -29,7 +37,7 @@ router.get('/search', (req, res) => {
   if (q) { conditions.push('(name LIKE ? OR city LIKE ? OR municipality LIKE ?)'); params.push(`%${q}%`, `%${q}%`, `%${q}%`); }
 
   const rows = db.prepare(`
-    SELECT id, name, city, municipality, service_type FROM services
+    SELECT id, name, city, municipality, service_type, ${ONLINE_SQL} AS online FROM services
     WHERE ${conditions.join(' AND ')}
     ORDER BY name LIMIT 50
   `).all(...params);
@@ -43,6 +51,7 @@ router.get('/conversations', (req, res) => {
     SELECT c.id, c.created_at,
       CASE WHEN c.service_a_id = ? THEN c.service_b_id ELSE c.service_a_id END AS other_service_id,
       s.name AS other_service_name, s.city AS other_service_city, s.municipality AS other_service_municipality,
+      (${ONLINE_SQL.replace(/last_active_at/g, 's.last_active_at')}) AS other_service_online,
       (SELECT message FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_message,
       (SELECT created_at FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_message_at,
       (SELECT sender_service_id FROM service_chat_messages WHERE conversation_id = c.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_sender_service_id

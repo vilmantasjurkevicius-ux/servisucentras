@@ -537,7 +537,14 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .s2s-list-label{padding:10px 14px 4px;font-family:'IBM Plex Mono';font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:0.05em;}
 .s2s-row{padding:10px 14px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .15s;display:flex;align-items:center;gap:10px;}
 .s2s-row:hover{background:rgba(255,255,255,0.03);}
-.s2s-row-av{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;}
+.s2s-row-av{width:34px;height:34px;border-radius:50%;background:var(--bg3);border:2px solid var(--blue);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--blue);flex-shrink:0;position:relative;}
+/* "Online" taškelis — servisas TIESIOGINIAI dabar turi atidarytą dashboard'ą (žr.
+   backend last_active_at heartbeat, ONLINE_THRESHOLD_SECONDS=30s serviceChat.routes.js) —
+   NE tas pats, kas "DIRBA/UŽDARYTA" (darbo laikas/atostogos) topbar'e. */
+.s2s-online-dot{position:absolute;bottom:-1px;right:-1px;width:10px;height:10px;border-radius:50%;background:#555;border:2px solid var(--bg2);}
+.s2s-online-dot.on{background:#6fbf8a;}
+.s2s-head-online{font-size:10px;font-family:'IBM Plex Mono';margin-top:1px;color:var(--muted);}
+.s2s-head-online.on{color:#6fbf8a;}
 .s2s-row-info{flex:1;min-width:0;}
 .s2s-row-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .s2s-row-city{font-size:11px;color:var(--muted);}
@@ -887,6 +894,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <div class="s2s-head-info">
       <div class="s2s-head-title" id="s2s-head-title">Servisų bendruomenė</div>
       <div class="s2s-head-sub" id="s2s-head-sub">Privatus pokalbis su kitais servisais</div>
+      <div class="s2s-head-online" id="s2s-head-online" style="display:none;"></div>
     </div>
     <button class="s2s-head-close" onclick="closeS2SPanel()">✕</button>
   </div>
@@ -1594,7 +1602,7 @@ function s2sRowHtml(c){
   const unread = s2sUnreadIds.has(c.id);
   return `
     <div class="s2s-row" onclick="s2sOpenExisting(${c.id})">
-      <div class="s2s-row-av">${s2sAvatarLetter(c.other_service_name)}</div>
+      <div class="s2s-row-av">${s2sAvatarLetter(c.other_service_name)}<div class="s2s-online-dot${c.other_service_online?' on':''}" title="${c.other_service_online?'Online':'Neaktyvus'}"></div></div>
       <div class="s2s-row-info">
         <div class="s2s-row-name">${escapeHtml(c.other_service_name)}</div>
         <div class="s2s-row-city">${escapeHtml(c.other_service_city || c.other_service_municipality || '')}</div>
@@ -1606,7 +1614,7 @@ function s2sRowHtml(c){
 function s2sSearchResultRowHtml(s){
   return `
     <div class="s2s-row" onclick="s2sOpenFromSearch(${s.id})">
-      <div class="s2s-row-av">${s2sAvatarLetter(s.name)}</div>
+      <div class="s2s-row-av">${s2sAvatarLetter(s.name)}<div class="s2s-online-dot${s.online?' on':''}" title="${s.online?'Online':'Neaktyvus'}"></div></div>
       <div class="s2s-row-info">
         <div class="s2s-row-name">${escapeHtml(s.name)}</div>
         <div class="s2s-row-city">${escapeHtml(s.city || s.municipality || '')}</div>
@@ -1618,16 +1626,25 @@ function renderS2SList(){
   const list = document.getElementById('s2s-list');
   const q = (document.getElementById('s2s-search-input').value || '').trim();
   const city = document.getElementById('s2s-city-filter').value;
+
+  // "Pokalbiai" (su neskaitytos žymėmis/peržiūra) VISADA rodomi, kai tik jų yra —
+  // NEPRIKLAUSOMAI nuo miesto/paieškos filtro. RASTA GYVAI: miesto filtras automatiškai
+  // užsipildo servisui atidarius panelį (žr. initS2SCityFilter()), o anksčiau tai
+  // PASLĖPDAVO "Pokalbiai" sąrašą už paieškos rezultatų — servisas nematydavo TIKRO
+  // neskaityto pokalbio, nors topbar ženkliukas jį rodė.
+  let html = '';
+  if(s2sConversations.length){
+    html += `<div class="s2s-list-label">Pokalbiai</div>` + s2sConversations.map(s2sRowHtml).join('');
+  }
   if(q || city){
     const label = q ? 'Paieškos rezultatai' : `Servisai — ${city}`;
-    list.innerHTML = s2sSearchResults.length
-      ? `<div class="s2s-list-label">${label}</div>` + s2sSearchResults.map(s2sSearchResultRowHtml).join('')
-      : '<div class="s2s-empty">Servisų nerasta.</div>';
-    return;
+    // Neberodyti paieškoje servisų, su kuriais pokalbis JAU yra sąraše aukščiau (venk dubliavimo).
+    const existingIds = new Set(s2sConversations.map(c=>c.other_service_id));
+    const filteredResults = s2sSearchResults.filter(s=>!existingIds.has(s.id));
+    if(filteredResults.length) html += `<div class="s2s-list-label">${label}</div>` + filteredResults.map(s2sSearchResultRowHtml).join('');
+    else if(!s2sSearchResults.length) html += `<div class="s2s-list-label">${label}</div><div class="s2s-empty">Servisų nerasta.</div>`;
   }
-  list.innerHTML = s2sConversations.length
-    ? `<div class="s2s-list-label">Pokalbiai</div>` + s2sConversations.map(s2sRowHtml).join('')
-    : '<div class="s2s-empty">Pokalbių dar nėra — pasirinkite miestą arba ieškokite pavadinimo viršuje.</div>';
+  list.innerHTML = html || '<div class="s2s-empty">Pokalbių dar nėra — pasirinkite miestą arba ieškokite pavadinimo viršuje.</div>';
 }
 
 function s2sSearch(){
@@ -1648,18 +1665,22 @@ function s2sSearch(){
 
 function s2sOpenExisting(conversationId){
   const c = s2sConversations.find(x=>x.id===conversationId);
-  if(c) s2sEnterThread(c.other_service_id, c.other_service_name, c.other_service_city || c.other_service_municipality, c.id);
+  if(c) s2sEnterThread(c.other_service_id, c.other_service_name, c.other_service_city || c.other_service_municipality, c.id, !!c.other_service_online);
 }
 function s2sOpenFromSearch(otherServiceId){
   const s = s2sSearchResults.find(x=>x.id===otherServiceId);
-  if(s) s2sEnterThread(s.id, s.name, s.city || s.municipality, null);
+  if(s) s2sEnterThread(s.id, s.name, s.city || s.municipality, null, !!s.online);
 }
 
-async function s2sEnterThread(otherServiceId, otherName, otherCity, knownConversationId){
+async function s2sEnterThread(otherServiceId, otherName, otherCity, knownConversationId, otherOnline){
   document.getElementById('s2s-search-input').value = '';
   s2sSearchResults = [];
   document.getElementById('s2s-head-title').textContent = otherName;
   document.getElementById('s2s-head-sub').textContent = otherCity || 'Servisų bendruomenė';
+  const onlineEl = document.getElementById('s2s-head-online');
+  onlineEl.style.display = '';
+  onlineEl.textContent = otherOnline ? '🟢 Online' : '⚪ Neaktyvus';
+  onlineEl.classList.toggle('on', !!otherOnline);
   document.getElementById('s2s-back-btn').style.display = '';
   document.getElementById('s2s-list-view').style.display = 'none';
   document.getElementById('s2s-thread-view').style.display = 'flex';
@@ -1694,6 +1715,7 @@ function s2sShowList(){
   document.getElementById('s2s-back-btn').style.display = 'none';
   document.getElementById('s2s-head-title').textContent = 'Servisų bendruomenė';
   document.getElementById('s2s-head-sub').textContent = 'Privatus pokalbis su kitais servisais';
+  document.getElementById('s2s-head-online').style.display = 'none';
   document.getElementById('s2s-thread-view').style.display = 'none';
   document.getElementById('s2s-list-view').style.display = 'flex';
   // s2sSearch() (ne tiesiog renderS2SList()) — s2sEnterThread() išvalo s2sSearchResults
@@ -2116,6 +2138,14 @@ async function pollS2SConversations(){
         // konteinerio viduje), o tai klaidingai sustabdytų gijos atnaujinimą.
         const typingInInput = document.activeElement && document.activeElement.id === 's2s-input';
         if(!typingInInput) s2sLoadThread(s2sActiveConversationId);
+        // "Online" ženkliukas gijos antraštėje atnaujinamas kiekvieną poll'inimo ciklą —
+        // kitaip rodytų pasenusią būseną, kol servisas žiūri būtent į šią gijos.
+        const activeConv = s2sConversations.find(x=>x.id===s2sActiveConversationId);
+        if(activeConv){
+          const onlineEl = document.getElementById('s2s-head-online');
+          onlineEl.textContent = activeConv.other_service_online ? '🟢 Online' : '⚪ Neaktyvus';
+          onlineEl.classList.toggle('on', !!activeConv.other_service_online);
+        }
       }
     }
   } catch(err){
