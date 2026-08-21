@@ -308,6 +308,10 @@ select.field{cursor:pointer;}
             <div class="field-group">
               <label class="field-label">Miestas / rajonas</label>
               <select class="field" id="reg-s-city"></select>
+              <label style="display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12.5px;color:#8fa3ac;cursor:pointer;">
+                <input type="checkbox" id="reg-s-rajonas-cb" style="width:15px;height:15px;flex-shrink:0;">
+                Esu rajone, ne pačiame mieste (pvz. kaimas šalia Ukmergės)
+              </label>
             </div>
             <div class="field-group">
               <label class="field-label">Tikslus adresas</label>
@@ -578,7 +582,7 @@ function populateCitySelect(){
     + LT_CITIES.map(c=>`<option>${c}</option>`).join('');
 }
 function readRegCity(){
-  return document.getElementById('reg-s-city').value;
+  return composeCityWithRajonas(document.getElementById('reg-s-city').value, document.getElementById('reg-s-rajonas-cb').checked);
 }
 
 // CATEGORIJOS — realios, iš GET /api/categories

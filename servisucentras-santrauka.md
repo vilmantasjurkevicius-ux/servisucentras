@@ -1908,6 +1908,17 @@ Vartotojas pastebėjo (tiesiogiai susiję su aukščiau esančiu kaimo/rajono pa
 
 ---
 
+## "Rajonas" varnelė prie miesto pasirinkimo (2026-08-20)
+
+Vartotojas paprašė: prie miesto pasirinkimo pridėti varnelę "Rajonas" (pvz. servisas gali pažymėti, kad yra "Ukmergės raj.", ne pačiame Ukmergės mieste) — tiesioginis tęsinys ankstesniems kaimo/rajono servisų pataisymams.
+
+**Fix**: naujos pagalbinės funkcijos bendrame `lt-cities.js` (dabar naudojamas visuose trijuose failuose, kur reikia miesto pasirinkimo): `composeCityWithRajonas(baseCity, isRajonas)` prideda `" (rajonas)"` priesagą prie miesto pavadinimo, `decomposeCityRajonas(fullCity)` atlieka atvirkštinį veiksmą (atskiria bazinį miestą nuo varnelės būsenos). Priesagos formatas — TEKSTINIS `" (rajonas)"`, NE gramatinis linksniavimas ("Vilniaus raj.") — tikslus lietuviškas linksniavimas kiekvienam iš 55 miestų pavadinimų reikalautų atskiro žodyno; tikslas čia paprastas, VISADA teisingas, paieškoje tiksliai randamas atskiras string, ne gramatinis tobulumas.
+- `automeistrai-login.html` (registracija) ir `automeistrai-dashboard.html` (Nustatymai) — nauja varnelė "Esu rajone, ne pačiame mieste" po miesto `<select>`. Registracijoje `readRegCity()` naudoja `composeCityWithRajonas()`. Nustatymuose `loadProfileForm()` naudoja `decomposeCityRajonas()`, kad TEISINGAI atstatytų varnelės būseną IR bazinio miesto pasirinkimą iš esamos (galimai su priesaga) reikšmės perkrovus puslapį; `saveProfile()` vėl sudeda su `composeCityWithRajonas()` prieš siunčiant.
+
+**Patikrinta gyvai**: sukurtas testinis servisas su sena laisvo teksto reikšme `city:'DAINAVOS.K'` — Nustatymuose varnelė teisingai NEpažymėta (sena reikšmė neturi priesagos). Pasirinkus "Ukmergė" + pažymėjus varnelę + išsaugojus — `serviceProfile.city` tapo `"Ukmergė (rajonas)"`. PERKROVUS puslapį iš naujo — varnelė vėl teisingai PAŽYMĖTA, o miesto `<select>` rodo bazinį "Ukmergė" (ne visą frazę su priesaga). Viešas `GET /services?city=Ukmergė (rajonas)` servisą RADO. Testiniai įrašai išvalyti po patikrinimo. `npm test` → 31/31 (backend nekeistas).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
