@@ -503,10 +503,10 @@ function carFormHtml(prefix, car){
       </div>
       <div>
         <label class="car-label">Modelis *</label>
-        <select class="car-input" id="${prefix}-model" onchange="onCarModelSelectChange('${prefix}')">${carModelOptionsHtml(c.make, c.model)}</select>
+        <select class="car-input" id="${prefix}-model" onchange="onCarModelSelectChange('${prefix}')">${carModelOptionsHtml(c.make, c.model, c.year)}</select>
         <input class="car-input" id="${prefix}-model-other" style="display:${c.model && !modelKnown ? 'block':'none'};margin-top:6px;" placeholder="Įrašykite modelį" value="${c.model && !modelKnown ? c.model : ''}">
       </div>
-      <div><label class="car-label">Pagaminimo metai</label><select class="car-input" id="${prefix}-year">${carYearOptionsHtml(c.make||'', c.model||'', c.year||'')}</select></div>
+      <div><label class="car-label">Pagaminimo metai</label><select class="car-input" id="${prefix}-year">${(()=>{ const g=findMatchingGeneration(c.make||'', c.model||'', c.year); return carYearOptionsHtml(c.make||'', c.model||'', c.year||'', g?g.startYear:null, g?g.endYear:null); })()}</select></div>
       <div><label class="car-label">Kėbulo tipas</label><select class="car-input" id="${prefix}-bodytype">${carBodyTypeOptionsHtml(c.body_type||'')}</select></div>
       <div><label class="car-label">Variklis</label><input class="car-input" id="${prefix}-engine" value="${c.engine||''}" placeholder="pvz. 2.0 TDI, 110kW"></div>
       <div><label class="car-label">Kuras</label>${fuelSelectHtml(prefix+'-fuel', c.fuel_type||'')}</div>

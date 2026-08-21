@@ -1975,6 +1975,24 @@ Vartotojas (naudodamas realią production paskyrą "DNV ŠUMINSKAS") pranešė: 
 
 ---
 
+## Automobilio kartos (generacijos) su metų intervalais modelio pasirinkime (2026-08-21)
+
+Vartotojas parodė nuorodos svetainę (ecumap.com chiptuning'o failų sąrašą), kur kiekvienas modelio sąrašo punktas jungia modelį/kartos kodą IR metų intervalą VIENOJE eilutėje (pvz. "3 serie E90/E91 - 2005 - 2010"), ir paprašė to paties principo "chat be registracijos" (svečio pokalbio) automobilio pasirinkime — vietoj atskiro "Metai" žingsnio po Modelio, kartos ir metai rodomi kartu. Patikslinus (AskUserQuestion) — pasirinktas DIDESNIS variantas: TIKROS kartos (generacijos) su konkrečiais metų intervalais kiekvienam modeliui, ne vien vizualus sutalpinimas.
+
+**Apimtis**: dėl duomenų kiekio (kiekvienam modeliui reikia TIKSLIŲ realių kartos metų ribų), šiame etape padarytos 5 dažniausios Lietuvos rinkoje markės — **Volkswagen, Audi, BMW, Toyota, Škoda** (~50 modelių, ~150 kartos įrašų). Likusioms ~25 markėms (Ford, Opel, Mercedes-Benz, Renault, Peugeot, Škoda likę modeliai be duomenų, ir t.t.) elgesys LIEKA TOKS PAT kaip anksčiau — laisvai bet kurie metai iš standartinio diapazono, NIEKAS nesulaužyta, tiesiog be kartos patogumo. Galima pratęsti kitoms markėms atskiru užklausimu.
+
+**Fix** (`car-data.js`, bendras failas su `servisucentras-pagrindinis.html` IR `mano-paskyra.html`):
+- Nauja `CAR_MODEL_GENERATIONS[markė][modelis]` = kartos sąrašas `{code, startYear, endYear}` (`endYear:null` = "iki dabar").
+- `carModelOptionsHtml(make, selected, selectedYear)` — modeliams SU kartos duomenimis, kiekviena karta tampa SAVA `<option>` su sujungtu tekstu "Modelis · Kodas (metai–metai)" (`encodeModelGenValue()` koduoja reikšmę kaip `modelis||kodas||nuo||iki`); modeliams BE duomenų — nepakeistas senas elgesys (paprastas pavadinimas). Naujas `selectedYear` parametras leidžia teisingai pažymėti ATITINKAMĄ kartą redaguojant jau įrašytą automobilį.
+- `carYearOptionsHtml(make, model, selected, overrideMinYear, overrideMaxYear)` — nauji parametrai leidžia susiaurinti metų sąrašą iki KONKREČIOS kartos intervalo (vietoj viso `CAR_MODEL_MIN_YEAR`/`DEFAULT_MIN_YEAR` diapazono).
+- `onCarModelSelectChange()` — iškoduoja pasirinktą kartos reikšmę (`parseModelOptionValue()`) ir susiaurina Metų sąrašą pagal jos intervalą.
+- `readCarSelection()` — grąžina ŠVARŲ `{make, model, year, bodyType}` (kartos kodas NESAUGOMAS atskirai kaip DB laukas — jis tik susiaurina metų pasirinkimą UI lygyje; `cars` lentelė NEKEISTA, jokių backend/schema pakeitimų nereikėjo).
+- `mano-paskyra.html` (redaguojamo automobilio forma) — nauja `findMatchingGeneration(make, model, year)` funkcija automatiškai suranda TINKAMĄ kartą pagal jau įrašytus metus, kad redaguojant esamą automobilį iškart (be papildomo paspaudimo) būtų pažymėta teisinga karta IR susiaurintas metų sąrašas.
+
+**Patikrinta gyvai**: VW Golf pasirinkus "Golf · Mk3 (1991–1997)" — Metų sąrašas iškart susiaurėjo į 1991–1997; `readCarSelection()` grąžino švarų `{make:'Volkswagen', model:'Golf', year:1995}`. Markei BE kartos duomenų (Chevrolet) — modelio sąrašas liko nepakitęs (paprasti pavadinimai). Redaguojant jau įrašytą automobilį (BMW "3 serija", 2007) — sistema automatiškai pažymėjo TEISINGĄ kartą "E90/E91/E92/E93 (2005–2013)" ir susiaurino metų sąrašą, be jokio papildomo vartotojo veiksmo. `car-data.js` sintaksė patikrinta (`node --check`). `npm test` → 37/37 (backend nekeistas — šis pakeitimas grynai frontend).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
