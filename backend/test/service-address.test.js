@@ -98,3 +98,30 @@ test('servisas gali pasikeisti struktūrizuotą adresą per PATCH /services/me',
   const search = await api('GET', '/api/services?city=Ukmerg%C4%97');
   assert.ok(search.data.some((s) => s.name === 'Patch Adreso Testas'), 'po pakeitimo servisas turi rastis pagal naują savivaldybę');
 });
+
+test('kaimo (municipality) servisas TAIP PAT gauna broadcast užklausą, ne tik miesto (city) servisas', async () => {
+  const cityEmail = `miesto-gauna-${Date.now()}@test.lt`;
+  const ruralEmail = `rajonas-gauna-${Date.now()}@test.lt`;
+
+  const cityReg = await api('POST', '/api/auth/service/register', {
+    body: { name: 'Gaunantis Miesto Servisas', email: cityEmail, password: 'slaptas123', street: 'Testų g.', houseNumber: '1', postalCode: '20001', city: 'Ukmergė' },
+  });
+  const ruralReg = await api('POST', '/api/auth/service/register', {
+    body: { name: 'Gaunantis Rajono Servisas', email: ruralEmail, password: 'slaptas123', street: 'Kaimo g.', houseNumber: '2', settlement: 'Dainava', postalCode: '20002', municipality: 'Ukmergė' },
+  });
+
+  const clientReg = await api('POST', '/api/auth/client/register', {
+    body: { firstName: 'Broadcast', lastName: 'Klientas', email: `broadcast-klientas-${Date.now()}@test.lt`, password: 'slaptas123' },
+  });
+  const order = await api('POST', '/api/orders', {
+    token: clientReg.data.token,
+    body: { city: 'Ukmergė', description: 'Broadcast testas — turi pasiekti IR miesto, IR rajono servisą' },
+  });
+  assert.equal(order.status, 201);
+
+  const cityOrders = await api('GET', '/api/orders', { token: cityReg.data.token });
+  assert.ok(cityOrders.data.some((o) => o.id === order.data.id), 'miesto (city="Ukmergė") servisas turi matyti broadcast užklausą');
+
+  const ruralOrders = await api('GET', '/api/orders', { token: ruralReg.data.token });
+  assert.ok(ruralOrders.data.some((o) => o.id === order.data.id), 'rajono (municipality="Ukmergė") servisas TAIP PAT turi matyti tą pačią broadcast užklausą');
+});

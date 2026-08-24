@@ -2007,6 +2007,24 @@ Vartotojas paprašė: šiame lange (rodomas grįžtančiam žinomam svečiui/reg
 
 ---
 
+## Rajono (municipality) servisai negaudavo broadcast užklausų — tik miesto (2026-08-24)
+
+Vartotojas paklausė: jei serviso profilyje pažymėta, kad servisas yra "Ukmergės raj." (t.y. registruotas per `municipality` lauką, ne `city` — žr. "Struktūrizuotas adresas"), ar toks servisas taip pat gauna svečio/kliento žinutes, siunčiamas miestui "Ukmergė", ne tik servisai su `city="Ukmergė"`.
+
+**Rasta**: NE, negaudavo. Struktūrizuoto adreso paieška (`GET /services`, S2S chat paieška) jau seniai naudojo `(city = ? OR municipality = ?)`, bet PATI SVARBIAUSIA vieta — realaus laiko užklausų srautas — to neturėjo:
+- `GET /api/orders` (serviso pagrindinis užklausų sąrašas, `orders.routes.js`) broadcast eilutes rinko TIK `o.city = service.city` — rajono servisui `service.city=''`, tad niekada nesutapdavo.
+- `findMatchingServices()` (naujos užklausos el. laiško pranešimas) — ta pati liga, `s.city = ?`.
+
+Praktiškai: kaimo/rajono servisas matydavo TIK jam tiesiogiai priskirtas (`service_id` nustatytas) užklausas, bet niekada bendro srauto ("Greita užklausa servisams", kai klientas tiesiog renkasi miestą, ne konkretų servisą) — nei dashboard'e, nei el. paštu.
+
+**Fix** (`backend/src/routes/orders.routes.js`):
+- `findMatchingServices(city, categoryId)` — `s.city = ?` → `(s.city = ? OR s.municipality = ?)` (abiejose SQL šakose, su/be kategorijos filtro).
+- `GET /` (serviso užklausų sąrašas) — broadcast sąlyga `o.city = ?` → `(o.city = ? OR o.city = ?)`, antrasis parametras `service.municipality`.
+
+**Patikrinta gyvai**: sukūriau du testinius servisus Ukmergėje — vieną su `city='Ukmergė'`, kitą su `city='', municipality='Ukmergė'` (kaimo adresu). Per tikrą "Greita užklausa servisams" langą (be registracijos) išsiunčiau žinutę miestui "Ukmergė" — abu servisai ją pamatė realiame dashboard'e ("Gautos užklausos", su #ID ir "Pokalbis" nuoroda), patvirtinta per `GET /orders` API atsakymą IR vizualiai per dashboard'o ekrano nuotrauką. **Svarbu**: pirmą kartą po pataisymo servisas dev serverio NEPERKROVĖ automatiškai (`node`, ne `nodemon`) — teko rankiniu būdu `preview_stop`+`preview_start`, kitaip senas kodas liktų veikiantis be jokios klaidos pranešimo. Pridėtas naujas backend testas `service-address.test.js`: "kaimo (municipality) servisas TAIP PAT gauna broadcast užklausą, ne tik miesto (city) servisas". `npm test` → **38/38**.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

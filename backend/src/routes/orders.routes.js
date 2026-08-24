@@ -13,17 +13,21 @@ function getOrder(id) {
 
 // Realūs (ne bot), aktyvūs servisai su el. paštu, tinkantys šiai užklausai —
 // naudojama tik el. pašto pranešimams, ne pačiam užklausų sąrašui.
+// (city = ? OR municipality = ?) — kaimo/rajono servisai registruojasi su tuščiu city ir
+// užpildyta municipality (žr. "Struktūrizuotas adresas"), tad be OR jie niekada negautų
+// nei broadcast užklausų, nei šio pranešimo, nors užklausos city reikšmė (miesto pavadinimas)
+// sutampa su jų nurodyta savivaldybe.
 function findMatchingServices(city, categoryId) {
   if (categoryId) {
     return db.prepare(`
       SELECT DISTINCT s.* FROM services s
       JOIN service_categories sc ON sc.service_id = s.id AND sc.category_id = ? AND sc.active = 1
-      WHERE s.is_bot = 0 AND s.status = 'active' AND s.city = ? AND s.email IS NOT NULL
-    `).all(categoryId, city);
+      WHERE s.is_bot = 0 AND s.status = 'active' AND (s.city = ? OR s.municipality = ?) AND s.email IS NOT NULL
+    `).all(categoryId, city, city);
   }
   return db.prepare(`
-    SELECT * FROM services WHERE is_bot = 0 AND status = 'active' AND city = ? AND email IS NOT NULL
-  `).all(city);
+    SELECT * FROM services WHERE is_bot = 0 AND status = 'active' AND (city = ? OR municipality = ?) AND email IS NOT NULL
+  `).all(city, city);
 }
 
 // Kuro tipas saugomas kaip trumpas enum (žr. mano-paskyra.html FUEL_LABELS) — čia ta pati
@@ -137,9 +141,9 @@ router.get('/', authRequired, requireRole('service'), (req, res) => {
     JOIN clients c ON c.id = o.client_id
     LEFT JOIN service_categories sc ON sc.category_id = o.category_id AND sc.service_id = ?
     WHERE o.service_id = ?
-       OR (o.service_id IS NULL AND o.status IN ('new', 'pending', 'declined') AND o.city = ? AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
+       OR (o.service_id IS NULL AND o.status IN ('new', 'pending', 'declined') AND (o.city = ? OR o.city = ?) AND (o.category_id IS NULL OR sc.service_id IS NOT NULL))
     ORDER BY o.created_at DESC
-  `).all(req.user.id, req.user.id, service.city);
+  `).all(req.user.id, req.user.id, service.city, service.municipality);
 
   // Telefonas/el.paštas — KONTAKTAI, atskleidžiami priėmus klientą (client_accepted_at,
   // žr. POST /:id/accept-client) — ARBA IŠKART, jei komisinio/kontaktų mokesčio surinkimas
