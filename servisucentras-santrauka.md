@@ -2025,6 +2025,21 @@ Praktiškai: kaimo/rajono servisas matydavo TIK jam tiesiogiai priskirtas (`serv
 
 ---
 
+## "Darbo laikas" atskirtas nuo "Profilis" — savas puslapis su savo mygtuku (2026-08-24)
+
+Vartotojas parodė ekrano nuotrauką: šoniniame meniu "Darbo laikas" punktas paspaudus vesdavo į TĄ PATĮ "Profilis" puslapį (abu mygtukai turėjo `onclick="switchDashPage('profile', this)"`), tad darbo grafikas buvo tik viena sekcija ilgos formos apačioje, su BENDRU "Išsaugoti profilį" mygtuku kartu su vardu/adresu/kontaktais. Paprašyta: paspaudus "Darbo laikas" turi rodytis TIK darbo grafikas IR savas išsaugojimo mygtukas; Profilis liktų BE darbo laiko.
+
+**Fix** (`automeistrai-dashboard.html`):
+- Naujas atskiras `dash-page` — `#page-work-hours` — su TIK darbo grafiko eilutėmis (`#work-hours-rows`) ir savo mygtuku "💾 Išsaugoti darbo laiką" (`saveWorkHours()`).
+- "Darbo laikas" sidenav mygtuko `onclick` pakeistas į `switchDashPage('work-hours', this)`.
+- `PAGE_TITLES`/`PAGE_LOADERS` papildyti `'work-hours'` įrašu (antraštė "Darbo laikas", loaderis — jau esama `renderWorkHoursRows()`).
+- Darbo laiko sekcija IŠIMTA iš `#page-profile` (`loadProfileForm()` daugiau nebekviečia `renderWorkHoursRows()`).
+- Nauja `saveWorkHours()` funkcija — siunčia TIK `{ workHours }` per `PATCH /services/me` (backend jau seniai priima šį lauką NEPRIKLAUSOMAI nuo kitų — žr. `services.routes.js:67-70` — jokių backend pakeitimų nereikėjo). `saveProfile()` daugiau nebesiunčia `workHours` — dabar taisosi tik vardą/adresą/kontaktus.
+
+**Patikrinta gyvai**: paspaudus "Darbo laikas" — rodomas TIK grafikas + mygtukas (be vardo/adreso laukų). Pažymėjus "Šeš" varnelę ir paspaudus "💾 Išsaugoti darbo laiką" — parodytas "✓ Darbo laikas atnaujintas", DB įraše `work_hours` JSON teisingai atsinaujino (Šeš `open:true`). Perėjus į "Profilis" — darbo laiko sekcijos daugiau NĖRA, forma baigiasi Telefonas/El.paštas + "Išsaugoti profilį". Backend nekeistas — `npm test` nepaleistas, nes šis pakeitimas grynai frontend (naudoja jau egzistuojantį PATCH lauką).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

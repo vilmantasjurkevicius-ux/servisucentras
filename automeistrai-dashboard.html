@@ -619,7 +619,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 
     <div class="sidenav-section">Servisas</div>
     <button class="sidenav-item" onclick="switchDashPage('services', this)"><span class="icon">🏷️</span> Paslaugos</button>
-    <button class="sidenav-item" onclick="switchDashPage('profile', this)"><span class="icon">🕐</span> Darbo laikas</button>
+    <button class="sidenav-item" onclick="switchDashPage('work-hours', this)"><span class="icon">🕐</span> Darbo laikas</button>
     <button class="sidenav-item" onclick="switchDashPage('profile', this)"><span class="icon">👤</span> Profilis</button>
     <button class="sidenav-item"><span class="icon">⭐</span> Atsiliepimai</button>
 
@@ -788,12 +788,24 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
                 <input class="pf-input" id="profile-email" type="email" placeholder="servisas@gmail.com">
               </div>
             </div>
-            <div class="pf-group">
-              <label class="pf-label">Darbo laikas</label>
-              <div id="work-hours-rows" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
-            </div>
             <div id="profile-msg" style="display:none;font-size:12.5px;margin-bottom:12px;margin-top:14px;"></div>
             <button class="btn btn-primary" id="profile-save-btn" onclick="saveProfile()">💾 Išsaugoti profilį</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DARBO LAIKAS ═══ -->
+    <div class="dash-page" id="page-work-hours">
+      <div class="content-grid" style="grid-template-columns:1fr;">
+        <div class="orders-panel" style="border-right:none;max-width:520px;">
+          <div class="panel-header">
+            <div class="panel-title">Darbo laikas</div>
+          </div>
+          <div style="padding:20px 24px;">
+            <div id="work-hours-rows" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+            <div id="work-hours-msg" style="display:none;font-size:12.5px;margin-bottom:12px;margin-top:14px;"></div>
+            <button class="btn btn-primary" id="work-hours-save-btn" onclick="saveWorkHours()" style="margin-top:14px;">💾 Išsaugoti darbo laiką</button>
           </div>
         </div>
       </div>
@@ -2189,8 +2201,8 @@ function stopPolling(){
 // tai neturėtų būti pastebima.
 
 // ═══ PUSLAPIŲ NAVIGACIJA (Užklausos / Profilis / Statistika / Paslaugos / Kalendorius) ═══
-const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai' };
-const PAGE_LOADERS = { profile: loadProfileForm, stats: renderStatsPage, services: loadOfferings, calendar: renderCalendarPage, settings: loadSettingsPage };
+const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', 'work-hours':'Darbo laikas', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai' };
+const PAGE_LOADERS = { profile: loadProfileForm, 'work-hours': renderWorkHoursRows, stats: renderStatsPage, services: loadOfferings, calendar: renderCalendarPage, settings: loadSettingsPage };
 
 function switchDashPage(page, el){
   document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('show'));
@@ -2280,7 +2292,6 @@ function loadProfileForm(){
   fillCitySelect('profile-municipality', serviceProfile.municipality || '');
   document.getElementById('profile-phone').value = serviceProfile.phone || '';
   document.getElementById('profile-email').value = serviceProfile.email || '';
-  renderWorkHoursRows();
 }
 
 function showFormMsg(elId, text, ok){
@@ -2314,12 +2325,6 @@ async function changeServicePassword(){
 }
 
 async function saveProfile(){
-  const workHours = WEEKDAYS_SHORT.map((_,i)=>{
-    const cb = document.querySelector(`.wh-open[data-day="${i}"]`);
-    const startInput = document.querySelector(`.wh-start[data-day="${i}"]`);
-    const endInput = document.querySelector(`.wh-end[data-day="${i}"]`);
-    return { open: cb.checked, start: cb.checked ? startInput.value : null, end: cb.checked ? endInput.value : null };
-  });
   const payload = {
     name: document.getElementById('profile-name').value.trim(),
     street: document.getElementById('profile-street').value.trim(),
@@ -2330,7 +2335,6 @@ async function saveProfile(){
     postalCode: document.getElementById('profile-postal').value.trim(),
     phone: document.getElementById('profile-phone').value.trim(),
     email: document.getElementById('profile-email').value.trim(),
-    workHours,
   };
   if(!payload.street || !payload.houseNumber || !payload.postalCode){
     showFormMsg('profile-msg', '⚠ Užpildykite gatvę, namo nr. ir pašto kodą', false);
@@ -2349,6 +2353,25 @@ async function saveProfile(){
     showFormMsg('profile-msg', '✓ Profilis atnaujintas', true);
   } catch(err){
     showFormMsg('profile-msg', '⚠ '+err.message, false);
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+async function saveWorkHours(){
+  const workHours = WEEKDAYS_SHORT.map((_,i)=>{
+    const cb = document.querySelector(`.wh-open[data-day="${i}"]`);
+    const startInput = document.querySelector(`.wh-start[data-day="${i}"]`);
+    const endInput = document.querySelector(`.wh-end[data-day="${i}"]`);
+    return { open: cb.checked, start: cb.checked ? startInput.value : null, end: cb.checked ? endInput.value : null };
+  });
+  const btn = document.getElementById('work-hours-save-btn');
+  const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
+  try{
+    serviceProfile = await apiRequest('PATCH', '/services/me', { workHours });
+    showFormMsg('work-hours-msg', '✓ Darbo laikas atnaujintas', true);
+  } catch(err){
+    showFormMsg('work-hours-msg', '⚠ '+err.message, false);
   } finally {
     btn.disabled = false; btn.textContent = orig;
   }
