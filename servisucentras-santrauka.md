@@ -1995,6 +1995,18 @@ Vartotojas parodė nuorodos svetainę (ecumap.com chiptuning'o failų sąrašą)
 
 ---
 
+## Svečio chat lange "Apie kurį automobilį klausiate šįkart?" — pridėti Miestas/Paslauga (2026-08-21)
+
+Vartotojas paprašė: šiame lange (rodomas grįžtančiam žinomam svečiui/registruotam klientui PRIEŠ rašant naują žinutę) pridėti galimybę pasirinkti miestą ("visi miestai" sąrašas) ir paslaugą/kategoriją (pvz. "diagnostika"), ne vien automobilį.
+
+**Rasta**: `activeCity`/`activeCat` (miestas/kategorija, kuriai adresuojama žinutė — žr. `sendMsg()`) buvo nustatomi TIK anksčiau, per pagrindinio puslapio miesto/kategorijos lentą, dar PRIEŠ atidarant šį langą — pats langas jų NEI rodė, NEI leido pakeisti, tad vartotojas galėjo nepastebėti/pamiršti, koks miestas/kategorija šiuo metu galioja.
+
+**Fix** (`servisucentras-pagrindinis.html`): du nauji `<select>` laukai ("Miestas" iš `LT_CITIES`, "Paslauga" iš jau įkeltų `categories`) pridėti į `#gm-car-group` — rodomi TIEK grįžtančiam žinomam svečiui/klientui ('car' režimas), TIEK pirmą kartą rašančiam lankytojui ('new' režimas), abu iš karto pažymėti esama `activeCity`/`activeCat` reikšme. Keitimas iškart atnaujina `activeCity`/`activeCat` (naujos `onGmCityChange()`/`onGmCatChange()` funkcijos), kuriuos vėliau naudoja `sendMsg()` siųsdama žinutę — jokių kitų pakeitimų nereikėjo.
+
+**Patikrinta gyvai**: atidarius langą — abu laukai teisingai pažymėti esamomis reikšmėmis ("Ukmergė"/"Diagnostika"). Pakeitus į "Kaunas"/"Stabdžiai" — `activeCity`/`activeCat` iškart atsinaujino. Uždarius ir vėl atidarius langą KAIP grįžtančiam svečiui ('car' režimas, su tikruoju antraštės tekstu "Apie kurį automobilį klausiate šįkart?") — pasirinkimas IŠLIKO ("Kaunas"/"Stabdžiai"), ne grįžo prie numatytųjų. `npm test` → 37/37 (backend nekeistas — grynai frontend).
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

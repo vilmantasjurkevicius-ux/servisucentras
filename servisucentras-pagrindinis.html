@@ -797,6 +797,10 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
       <input class="gm-field" id="gm-phone" type="tel" placeholder="+370 600 00000" onfocus="this.setSelectionRange(this.value.length,this.value.length)">
     </div>
     <div id="gm-car-group">
+      <label class="gm-label">Miestas</label>
+      <select class="gm-field" id="gm-city-select" onchange="onGmCityChange()"></select>
+      <label class="gm-label">Paslauga</label>
+      <select class="gm-field" id="gm-cat-select" onchange="onGmCatChange()"></select>
       <label class="gm-label" id="gm-car-label">Automobilio modelis ir metai</label>
       <input class="gm-field" id="gm-car" type="text" placeholder="pvz. VW Caddy, 2018">
       <div id="gm-car-picker-wrap" style="display:none;">
@@ -1180,8 +1184,25 @@ function initGuestCarCascade(){
   document.getElementById('gm-car-new-model-other').style.display = 'none';
 }
 
+// Miestas/Paslauga svečio "Apie kurį automobilį klausiate šįkart?" lange — leidžia
+// patvirtinti/pakeisti abu PRIEŠ rašant žinutę, tiesiai šiame lange (žr. showGuestOverlay()
+// aukščiau). Iš pradžių užpildoma esama activeCity/activeCat reikšme (nustatyta anksčiau
+// per pagrindinio puslapio miesto/kategorijos lentą), bet vartotojas gali ją pakeisti čia.
+function populateGmCityAndCat(){
+  const citySel = document.getElementById('gm-city-select');
+  citySel.innerHTML = LT_CITIES.map(c=>`<option value="${c}"${c===activeCity?' selected':''}>${c}</option>`).join('');
+  const catSel = document.getElementById('gm-cat-select');
+  catSel.innerHTML = categories.map(c=>`<option value="${c.id}"${c.id===activeCat?' selected':''}>${categoryName(c.label)}</option>`).join('');
+}
+function onGmCityChange(){ activeCity = document.getElementById('gm-city-select').value; }
+function onGmCatChange(){ activeCat = document.getElementById('gm-cat-select').value; }
+
 function showGuestOverlay(mode){
   guestOverlayMode = mode;
+  // Miestas/Paslauga — 'car' ir 'new' režimuose (kur rodomas carGroup) leidžia patvirtinti/
+  // pakeisti PRIEŠ rašant, ne aklai pasikliauti anksčiau (dar prieš atidarant šį langą)
+  // pagrindiniame puslapyje pasirinkta activeCity/activeCat reikšme.
+  if(mode === 'car' || mode === 'new') populateGmCityAndCat();
   const nameField = document.getElementById('gm-name');
   const phoneField = document.getElementById('gm-phone');
   const carField = document.getElementById('gm-car');
