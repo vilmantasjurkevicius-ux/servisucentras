@@ -895,7 +895,19 @@ if(new URLSearchParams(location.search).get('fromDiagnostika')){
 
 function categoryName(label){ return (label || '').replace(/^\S+\s*/, '').trim(); }
 
+// Pietų pertrauka — BENDRA visoms darbo dienoms (žr. santrauka.md), tikslumas iki minutės
+// (skirtingai nuo serviso /availability rezervacijos slot'ų, kurie apvalina iki valandos).
+function isLunchNow(svc){
+  if(!svc.lunch_start || !svc.lunch_end) return false;
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+  const [lsh,lsm] = svc.lunch_start.split(':').map(Number);
+  const [leh,lem] = svc.lunch_end.split(':').map(Number);
+  return mins >= lsh*60+lsm && mins < leh*60+lem;
+}
+
 function isOpenNow(svc){
+  if(isLunchNow(svc)) return false;
   const now = new Date();
   const mins = now.getHours()*60 + now.getMinutes();
 
@@ -914,13 +926,14 @@ function isOpenNow(svc){
   return mins >= sh*60+sm && mins <= eh*60+em;
 }
 
-// Servisas gali būti "laikinai nedirbu" (rankinis perjungimas, be datos) arba
-// "atostogaujantis" (iki konkrečios datos) — abu VIRŠIJA įprastą darbo laiko
-// tikrinimą (isOpenNow), kad klientai matytų TIKRĄ priežastį, ne tik "UŽDARYTA".
+// Servisas gali būti "laikinai nedirbu" (rankinis perjungimas, be datos), "atostogaujantis"
+// (iki konkrečios datos) arba "per pietus" (kasdienė pertrauka) — visi TRYS VIRŠIJA įprastą
+// darbo laiko tikrinimą (isOpenNow), kad klientai matytų TIKRĄ priežastį, ne tik "UŽDARYTA".
 function serviceAvailability(svc){
   if(svc.temp_closed) return { open:false, label:'Nedirba', cls:'closed' };
   const todayStr = new Date().toISOString().slice(0,10);
   if(svc.vacation_until && svc.vacation_until >= todayStr) return { open:false, label:'Atostogauja', cls:'closed' };
+  if(isLunchNow(svc)) return { open:false, label:'Pietų pertrauka', cls:'closed' };
   const open = isOpenNow(svc);
   return { open, label: open?'DIRBA':'UŽDARYTA', cls: open?'open':'closed' };
 }

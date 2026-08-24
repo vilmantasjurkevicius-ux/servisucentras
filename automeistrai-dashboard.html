@@ -804,6 +804,20 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
           </div>
           <div style="padding:20px 24px;">
             <div id="work-hours-rows" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;"></div>
+
+            <div class="pf-group" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--line2);">
+              <label class="pf-label" style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="lunch-enabled" onchange="onLunchToggle()" style="width:16px;height:16px;accent-color:var(--yellow);">
+                Pietų pertrauka (bendra visoms darbo dienoms)
+              </label>
+              <div style="display:flex;align-items:center;gap:10px;margin-top:10px;">
+                <span style="font-size:11px;color:var(--dim);">🍽️</span>
+                <select id="lunch-start" disabled style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:12px;outline:none;"></select>
+                <span style="color:var(--muted);font-size:11px;">–</span>
+                <select id="lunch-end" disabled style="background:var(--bg2);border:1px solid var(--line2);border-radius:3px;padding:6px 8px;color:var(--text);font-family:'IBM Plex Mono';font-size:12px;outline:none;"></select>
+              </div>
+            </div>
+
             <div id="work-hours-msg" style="display:none;font-size:12.5px;margin-bottom:12px;margin-top:14px;"></div>
             <button class="btn btn-primary" id="work-hours-save-btn" onclick="saveWorkHours()" style="margin-top:14px;">💾 Išsaugoti darbo laiką</button>
           </div>
@@ -2090,6 +2104,7 @@ async function pollOrders(){
     renderTabs();
     renderWeekBars();
     renderTimeline();
+    updateStatusDisplay();
     // Kol servisas kažką redaguoja (kainos/laiko/pažymėjimo laukelis atidarytas),
     // sąrašo neperpiešiame, kad neprarastume jo įvedamų duomenų — renderOrders()
     // visada perkuria VISĄ order-list HTML iš naujo (taigi ir atviro redagavimo laukus).
@@ -2264,6 +2279,23 @@ function renderWorkHoursRows(){
       ${timeSelectHtml('wh-end', i, h.end, !h.open)}
     </div>
   `).join('');
+
+  const lunchOn = !!(serviceProfile.lunch_start && serviceProfile.lunch_end);
+  document.getElementById('lunch-enabled').checked = lunchOn;
+  const lunchStartSel = document.getElementById('lunch-start');
+  const lunchEndSel = document.getElementById('lunch-end');
+  const lunchStartVal = serviceProfile.lunch_start || '12:00';
+  const lunchEndVal = serviceProfile.lunch_end || '13:00';
+  lunchStartSel.innerHTML = TIME_OPTIONS.map(t=>`<option value="${t}" ${t===lunchStartVal?'selected':''}>${t}</option>`).join('');
+  lunchEndSel.innerHTML = TIME_OPTIONS.map(t=>`<option value="${t}" ${t===lunchEndVal?'selected':''}>${t}</option>`).join('');
+  lunchStartSel.disabled = !lunchOn;
+  lunchEndSel.disabled = !lunchOn;
+}
+
+function onLunchToggle(){
+  const on = document.getElementById('lunch-enabled').checked;
+  document.getElementById('lunch-start').disabled = !on;
+  document.getElementById('lunch-end').disabled = !on;
 }
 
 function onWorkHoursToggle(day){
@@ -2365,10 +2397,13 @@ async function saveWorkHours(){
     const endInput = document.querySelector(`.wh-end[data-day="${i}"]`);
     return { open: cb.checked, start: cb.checked ? startInput.value : null, end: cb.checked ? endInput.value : null };
   });
+  const lunchOn = document.getElementById('lunch-enabled').checked;
+  const lunchStart = lunchOn ? document.getElementById('lunch-start').value : null;
+  const lunchEnd = lunchOn ? document.getElementById('lunch-end').value : null;
   const btn = document.getElementById('work-hours-save-btn');
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
   try{
-    serviceProfile = await apiRequest('PATCH', '/services/me', { workHours });
+    serviceProfile = await apiRequest('PATCH', '/services/me', { workHours, lunchStart, lunchEnd });
     showFormMsg('work-hours-msg', '✓ Darbo laikas atnaujintas', true);
   } catch(err){
     showFormMsg('work-hours-msg', '⚠ '+err.message, false);
@@ -2717,9 +2752,12 @@ function renderTimeline(){
       && o.scheduled_time && o.scheduled_time.slice(0,10) === todayStr)
     .forEach(o => { byHour[Number(o.scheduled_time.split('T')[1].slice(0,2))] = o; });
 
+  const lunchStartH = serviceProfile.lunch_start ? parseInt(serviceProfile.lunch_start.split(':')[0], 10) : null;
+  const lunchEndH = serviceProfile.lunch_end ? parseInt(serviceProfile.lunch_end.split(':')[0], 10) : null;
+
   document.getElementById('timeline').innerHTML = TIMELINE_HOURS.map(h => {
     const label = h + ':00';
-    if(h === 12){
+    if(lunchStartH != null && lunchEndH != null && h >= lunchStartH && h < lunchEndH){
       return `<div class="tl-item"><div class="tl-time">${label}</div><div class="tl-bar" style="height:36px;background:var(--dim)"></div><div class="tl-content free"><div class="tl-detail" style="font-size:10.5px">🍽️ Pietų pertrauka</div></div></div>`;
     }
     const o = byHour[h];
@@ -2738,6 +2776,16 @@ function renderTimeline(){
 function isOnVacation(){
   return !!serviceProfile.vacation_until && serviceProfile.vacation_until >= new Date().toISOString().slice(0,10);
 }
+// Ta pati minutinio tikslumo pietų pertraukos logika kaip servisucentras-pagrindinis.html
+// isLunchNow() — laikoma bendra visoms darbo dienoms (žr. santrauka.md).
+function isLunchNowSelf(){
+  if(!serviceProfile.lunch_start || !serviceProfile.lunch_end) return false;
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+  const [lsh,lsm] = serviceProfile.lunch_start.split(':').map(Number);
+  const [leh,lem] = serviceProfile.lunch_end.split(':').map(Number);
+  return mins >= lsh*60+lsm && mins < leh*60+lem;
+}
 function updateStatusDisplay(){
   const btn = document.getElementById('status-toggle');
   if(isOnVacation()){
@@ -2746,6 +2794,9 @@ function updateStatusDisplay(){
   } else if(serviceProfile.temp_closed){
     btn.classList.remove('open'); btn.classList.add('closed');
     btn.innerHTML = '● UŽDARYTA';
+  } else if(isLunchNowSelf()){
+    btn.classList.remove('open'); btn.classList.add('closed');
+    btn.innerHTML = '🍽️ PIETŪS';
   } else {
     btn.classList.remove('closed'); btn.classList.add('open');
     btn.innerHTML = '● DIRBA';

@@ -54,7 +54,7 @@ router.get('/me', authRequired, requireRole('service'), (req, res) => {
 });
 
 router.patch('/me', authRequired, requireRole('service'), (req, res) => {
-  const allowed = ['name', 'email', 'phone', 'city', 'street', 'house_number', 'settlement', 'municipality', 'postal_code', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end', 'temp_closed', 'vacation_until'];
+  const allowed = ['name', 'email', 'phone', 'city', 'street', 'house_number', 'settlement', 'municipality', 'postal_code', 'service_type', 'mechanic_count', 'description', 'work_start', 'work_end', 'temp_closed', 'vacation_until', 'lunch_start', 'lunch_end'];
   const fields = [];
   const params = [];
   for (const key of allowed) {
@@ -152,6 +152,10 @@ router.get('/:id/availability', (req, res) => {
   if (service.work_hours) {
     try { workHours = JSON.parse(service.work_hours); } catch (e) { workHours = null; }
   }
+  // Pietų pertrauka — BENDRA visoms dienoms (žr. santrauka.md), valandinis tikslumas
+  // sutampa su žemiau esančiu slot'ų generavimu (kuris irgi ignoruoja minutes, tik valandą).
+  const lunchStartH = service.lunch_start ? parseInt(service.lunch_start.split(':')[0], 10) : null;
+  const lunchEndH = service.lunch_end ? parseInt(service.lunch_end.split(':')[0], 10) : null;
 
   // Užimta laikoma tik PATVIRTINTA (in_progress/done) užklausa su šiuo laiku —
   // dar nepatvirtinta 'direct' rezervacija slotą užrakina tik confirm'inimo metu.
@@ -178,6 +182,7 @@ router.get('/:id/availability', (req, res) => {
       const startH = parseInt((dayCfg.start || '08:00').split(':')[0], 10);
       const endH = parseInt((dayCfg.end || '18:00').split(':')[0], 10);
       for (let h = startH; h < endH; h++) {
+        if (lunchStartH != null && lunchEndH != null && h >= lunchStartH && h < lunchEndH) continue;
         const timeStr = `${dateStr}T${String(h).padStart(2, '0')}:00`;
         if (new Date(`${timeStr}:00`).getTime() < now.getTime()) continue; // praeities valandos praleidžiamos
         slots.push({ time: timeStr, busy: busySet.has(timeStr) });

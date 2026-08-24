@@ -42,6 +42,8 @@ CREATE TABLE IF NOT EXISTS services (
   work_start TEXT NOT NULL DEFAULT '08:00', -- senas laukas, naudojamas kaip atsarginis kol servisas neįsivedė work_hours
   work_end TEXT NOT NULL DEFAULT '18:00',
   work_hours TEXT, -- JSON masyvas [{open,start,end}] x7, Pir..Sek tvarka; NULL = naudoti work_start/work_end visoms dienoms
+  lunch_start TEXT, -- Pietų pertraukos pradžia (HH:MM), BENDRA visoms darbo dienoms; NULL = pietų pertraukos nėra
+  lunch_end TEXT, -- Pietų pertraukos pabaiga (HH:MM); abu (lunch_start IR lunch_end) turi būti užpildyti, kad pertrauka galiotų
   temp_closed INTEGER NOT NULL DEFAULT 0, -- "Laikinai nedirbu" rankinis perjungimas (be konkrečios grįžimo datos)
   vacation_until TEXT, -- atostogų pabaigos data (YYYY-MM-DD); jei >= šiandien, servisas rodomas kaip atostogaujantis viešoje paieškoje
   last_active_at TEXT, -- "heartbeat" — atnaujinama kas kartą, kai servisas kviečia GET /orders (12s poll'inimo ciklas); naudojama TIK Servisų bendruomenės "online" ženkliukui (žr. serviceChat.routes.js), ne darbo laiko/DIRBA-UŽDARYTA logikai

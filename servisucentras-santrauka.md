@@ -2040,6 +2040,24 @@ Vartotojas parodė ekrano nuotrauką: šoniniame meniu "Darbo laikas" punktas pa
 
 ---
 
+## DIRBA/UŽDARYTA patikrintas pagal darbo grafiką + pridėta pietų pertrauka (2026-08-24)
+
+Vartotojas paprašė patikrinti, ar servisų "DIRBA"/"UŽDARYTA" būsena viešoje paieškoje realiai atitinka jų darbo grafiką, ir pridėti ATOSTOGAS bei PIETŲ PERTRAUKĄ prie šio skaičiavimo.
+
+**Patikrinta**: `serviceAvailability()`/`isOpenNow()` (`servisucentras-pagrindinis.html`) JAU teisingai tikrino darbo valandas pagal savaitės dieną IR atostogas (`vacation_until`) prieš šį pokalbį — tai veikė. TRŪKO tik pietų pertraukos — jos NEBUVO jokio realaus duomenų lauko, tik hardcoded "12:00 🍽️ Pietų pertrauka" dekoratyvi eilutė dashboard'o "Šiandien" laiko juostoje (nesusijusi su realiu darbo laiku ar rezervacijų blokavimu).
+
+**Sprendimas — pietų pertrauka VISOMS darbo dienoms bendra** (patvirtinta su vartotoju, ne atskirai kiekvienai dienai):
+- **Schema/migracija** (`schema.sql`, `db.js`): nauji `services.lunch_start`/`lunch_end` (TEXT, HH:MM, abu NULL = pertraukos nėra).
+- **Backend** (`services.routes.js`): `PATCH /services/me` priima `lunchStart`/`lunchEnd`; `GET /:id/availability` (tiesioginės rezervacijos laisvi/užimti laikai) dabar PRALEIDŽIA valandą, patenkančią į pietų intervalą — anksčiau klientas galėjo rezervuoti laiką per pietus, dabar nebegali.
+- **Viešas puslapis** (`servisucentras-pagrindinis.html`): nauja `isLunchNow(svc)` — jei dabartinis laikas pietų intervale, `isOpenNow()` grąžina `false`, o `serviceAvailability()` rodo TIKSLŲ atskirą ženklą "Pietų pertrauka" (ne bendrą "UŽDARYTA"), analogiškai jau esantiems "Nedirba"/"Atostogauja".
+- **Dashboard "Darbo laikas" puslapis** (žr. sekciją aukščiau apie jo atskyrimą nuo "Profilis"): naujas "Pietų pertrauka (bendra visoms darbo dienoms)" blokas — varnelė + du laiko `<select>` (pradžia/pabaiga), saugoma per tą patį `saveWorkHours()`.
+- **Dashboard topbar**: paties serviso "● DIRBA" mygtukas (anksčiau reagavo TIK į rankinį `temp_closed`/atostogas, visai netikrindavo laiko) dabar per pietų intervalą rodo "🍽️ PIETŪS"; atnaujinama IR kas 12s poll'inimo cikle (`pollOrders()` dabar kviečia `updateStatusDisplay()`), kad statusas pasikeistų gyvai be perkrovimo.
+- Dashboard'o "Šiandien" laiko juostos hardcoded "12:00 pietūs" eilutė pakeista realiu `serviceProfile.lunch_start/lunch_end` tikrinimu.
+
+**Patikrinta gyvai**: sukurtas testinis servisas Vilniuje su `lunch_start='22:00', lunch_end='23:00'` (dengia esamą laiką). Viešame puslapyje kortelė rodė būtent "Pietų pertrauka" (ne "UŽDARYTA"). Dashboard'o topbar rodė "🍽️ PIETŪS". "Darbo laikas" puslapyje varnelė buvo pažymėta su teisingu 22:00–23:00. Backend testai: naujas `backend/test/work-hours.test.js` (3 testai — PATCH išsaugojimas, 12:00 slotas NEPASIŪLOMAS kai pietūs 12–13, slotas grįžta išjungus). `npm test` → **41/41**.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
