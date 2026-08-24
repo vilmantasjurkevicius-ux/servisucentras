@@ -2058,6 +2058,18 @@ Vartotojas paprašė patikrinti, ar servisų "DIRBA"/"UŽDARYTA" būsena viešoj
 
 ---
 
+## Papildymas: dashboard'o pačio topbar DIRBA/UŽDARYTA visai netikrino grafiko (2026-08-24)
+
+Iškart po aukščiau aprašyto pietų pertraukos pakeitimo, vartotojas GYVAI patestavo: pratęsė pirmadienio darbo laiką iki 23:30 (esant 22:3x val., pirmadienį), bet SAVO dashboard'o topbar mygtukas vis tiek rodė "UŽDARYTA".
+
+**Rasta reali priežastis**: `updateStatusDisplay()` (paties serviso topbar "● DIRBA/UŽDARYTA" mygtukas) NIEKADA netikrino `work_hours`/dabartinio laiko — jis tikrino TIK `vacation_until`, `temp_closed` (rankinis "Laikinai nedirbu" perjungimas) ir (ką tik pridėtą) pietų pertrauką. T.y. jis VISADA rodydavo "● DIRBA", nebent servisas PATS rankiniu būdu pasižymėdavo uždarytą — visiškai nepriklausomai nuo faktinio Darbo laiko puslapyje sukonfigūruoto grafiko. Viešas puslapis (`servisucentras-pagrindinis.html`, klientams matomos kortelės) TAI jau tikrino teisingai — problema buvo TIK serviso paties dashboard'e.
+
+**Fix** (`automeistrai-dashboard.html`): nauja `isOpenBySchedule()` — TA PATI logika kaip viešo puslapio `isOpenNow()` (savaitės diena + `work_hours[dayIdx]` arba senas `work_start`/`work_end`), pritaikyta `serviceProfile` duomenims. `updateStatusDisplay()` dabar prieš rodydama "● DIRBA" papildomai tikrina `isOpenBySchedule()` — jei šiuo metu NE darbo valandos (ir NE atostogos/rankinis uždarymas/pietūs), rodo "● UŽDARYTA" pagal grafiką. Iškart po "💾 Išsaugoti darbo laiką" paspaudimo (`saveWorkHours()`) papildomai kviečiama `updateStatusDisplay()`, kad pakeitimas atsispindėtų NEDELSIANT, nelaukiant 12s poll'inimo ciklo.
+
+**Patikrinta gyvai**: testinis servisas su pirmadienio grafiku 08:00–23:30 esant 22:35 val. pirmadienį → "● DIRBA". Testinis servisas su numatytuoju 08:00–18:00 grafiku TUO PAČIU metu → "● UŽDARYTA". Backend nekeistas — grynai frontend logika.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

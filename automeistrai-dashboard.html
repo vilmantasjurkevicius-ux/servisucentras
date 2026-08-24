@@ -2404,6 +2404,7 @@ async function saveWorkHours(){
   const orig = btn.textContent; btn.disabled = true; btn.textContent = 'Saugoma...';
   try{
     serviceProfile = await apiRequest('PATCH', '/services/me', { workHours, lunchStart, lunchEnd });
+    updateStatusDisplay();
     showFormMsg('work-hours-msg', '✓ Darbo laikas atnaujintas', true);
   } catch(err){
     showFormMsg('work-hours-msg', '⚠ '+err.message, false);
@@ -2786,6 +2787,25 @@ function isLunchNowSelf(){
   const [leh,lem] = serviceProfile.lunch_end.split(':').map(Number);
   return mins >= lsh*60+lsm && mins < leh*60+lem;
 }
+// Ta pati logika kaip servisucentras-pagrindinis.html isOpenNow() — ar ŠIANDIEN, ŠIĄ
+// MINUTĘ patenkame į sukonfigūruotą darbo laiką (pagal savaitės dieną, jei work_hours
+// nustatytas; kitaip senas bendras work_start/work_end).
+function isOpenBySchedule(){
+  const now = new Date();
+  const mins = now.getHours()*60 + now.getMinutes();
+  if(Array.isArray(serviceProfile.work_hours) && serviceProfile.work_hours.length === 7){
+    const dayIdx = (now.getDay()+6)%7; // Pir=0 .. Sek=6
+    const today = serviceProfile.work_hours[dayIdx];
+    if(!today || !today.open || !today.start || !today.end) return false;
+    const [sh,sm] = today.start.split(':').map(Number);
+    const [eh,em] = today.end.split(':').map(Number);
+    return mins >= sh*60+sm && mins <= eh*60+em;
+  }
+  if(!serviceProfile.work_start || !serviceProfile.work_end) return true;
+  const [sh,sm] = serviceProfile.work_start.split(':').map(Number);
+  const [eh,em] = serviceProfile.work_end.split(':').map(Number);
+  return mins >= sh*60+sm && mins <= eh*60+em;
+}
 function updateStatusDisplay(){
   const btn = document.getElementById('status-toggle');
   if(isOnVacation()){
@@ -2797,6 +2817,9 @@ function updateStatusDisplay(){
   } else if(isLunchNowSelf()){
     btn.classList.remove('open'); btn.classList.add('closed');
     btn.innerHTML = '🍽️ PIETŪS';
+  } else if(!isOpenBySchedule()){
+    btn.classList.remove('open'); btn.classList.add('closed');
+    btn.innerHTML = '● UŽDARYTA';
   } else {
     btn.classList.remove('closed'); btn.classList.add('open');
     btn.innerHTML = '● DIRBA';
