@@ -381,6 +381,15 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   font-size:20px;opacity:0;pointer-events:none;
 }
 .clock-car.driving{ animation: clockCarLeave 3s ease-in forwards; }
+
+/* Mechaniko scenelė kampe — automobilis su pakeltu kapotu + žmogiukas prie variklio
+   (paveikslėlis, ne SVG). Šaltinio nuotrauka juodame fone — "screen" maišymo režimas
+   paverčia gryną juodą spalvą VISIŠKAI skaidria, tad fonas sutampa su puslapiu
+   nepriklausomai nuo tikslaus fono atspalvio už jo. */
+.mechanic-scene{
+  position:absolute; bottom:-14px; right:-58px; width:64px; height:auto;
+  pointer-events:none; mix-blend-mode:screen;
+}
 @keyframes clockCarLeave{
   0%{ opacity:0; transform:translate(-50%,0) scale(0.85); }
   8%{ opacity:1; }
@@ -725,6 +734,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
                 <circle cx="100" cy="100" r="5" fill="var(--yellow)"/>
               </svg>
               <div class="clock-car" id="clock-car">🚗</div>
+              <img src="car.png" alt="" class="mechanic-scene">
             </div>
             <div class="clock-status-label" id="clock-status-label">—</div>
           </div>

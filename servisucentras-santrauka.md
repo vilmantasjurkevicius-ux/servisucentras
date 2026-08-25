@@ -2123,6 +2123,28 @@ Tiesioginis atsiliepimų funkcijos užbaigimo tęsinys — vartotojas paprašė:
 
 ---
 
+## Darbo laikrodžio kampe — mechaniko paveikslėlis (2026-08-25)
+
+Vartotojas paprašė prie "Darbo laikrodžio" pridėti kampe automobiliuką su pakeltu kapotu ir žmogiuką — pirma pabandžiau ranka pieštą SVG scenelę, bet vartotojas įmetė savo `car.png` failą (neoninio raudono stiliaus iliustracija juodame fone) ir paprašė naudoti BŪTENT ją, su sąlyga, kad jos fonas sutaptų su puslapio fonu.
+
+**Fix** (`automeistrai-dashboard.html`): SVG scenelė pakeista `<img src="car.png">`, pozicionuota `.clock-wrap` apatiniame dešiniame kampe (`position:absolute`), su `mix-blend-mode:screen` — šis maišymo režimas paverčia GRYNĄ juodą spalvą visiškai skaidria, nepriklausomai nuo tikslaus fono atspalvio už jos (todėl veikia neatsižvelgiant į tai, koks konkrečiai `--bg`/`--bg2`/`--bg3` yra toje vietoje). Vaizdo dydis ir `right` poslinkis suderinti gyvai pagal vartotojo atsiliepimą ("piski dešiniau").
+
+**Patikrinta gyvai**: laikinai padidinus elementą ekrane patvirtinta, kad juodas paveikslėlio fonas visiškai susilieja su tamsiu skydelio fonu — jokio matomo stačiakampio krašto. `car.png` liko projekto šaknyje kaip nuolatinis turtas (kaip ir kiti `cat-*.png`/`logo-*.png` failai).
+
+**NEUŽBAIGTA (atidėta vartotojo prašymu)**: vartotojas paprašė `car.png` paveikslėlyje esantį žmogiuką (mechaniką) padaryti mėlynos spalvos, paliekant automobilį raudoną. Kadangi tai TIK raster PNG (ne SVG su atskirais elementais), reikėtų pikselių lygio apdorojimo (canvas, regionas apytiksliai x:55–500, y:235–790 iš 1024×1024 originalo, R/B kanalų sukeitimas toje srityje). Darbas pradėtas (kalibruotas regionas per debug puslapį), bet vartotojas paprašė "atidėti" — NEUŽBAIGTA, `car.png` liko originalus (visiškai raudonas).
+
+---
+
+## Logotipo vandenženklis padidintas (2026-08-25)
+
+Vartotojas ant didelio monitoriaus nematė fone pasikartojančio `logo-watermark.png` rašto (hero, kategorijų, "Kaip veikia", diagnostikos sekcijose) — patikrinus kodą, jokios su ekrano pločiu susijusios logikos, kuri jį slėptų, nebuvo; priežastis — sąmoningai labai žemas `opacity:0.045` (4.5%), kuris ant kai kurių monitorių (ypač didelių/ryškesnių) tampa praktiškai nematomas.
+
+**Fix** (`servisucentras-pagrindinis.html`): `opacity:0.045` → `opacity:0.09` visose 4 vietose (`.hero::after`, `.cat-section::before`, `.how::before`, `.diag-section::before`).
+
+**Patikrinta gyvai**: 1600px pločio naršyklės lange kategorijų sekcijos fone raštas dabar aiškiai matomas (anksčiau vos pastebimas). `getComputedStyle` patvirtino `opacity: 0.09`.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
