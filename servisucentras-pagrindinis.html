@@ -223,7 +223,8 @@ h1 em{font-style:normal;color:var(--y);}
 /* ══════════════════════════════════
    KATEGORIJŲ KORTELĖS SU NUOTRAUKOMIS (Stitch dizainas)
 ══════════════════════════════════ */
-.cat-section{max-width:1140px;margin:0 auto;padding:8px 28px 48px;position:relative;overflow:hidden;}
+.cat-section{padding:8px 28px 48px;position:relative;overflow:hidden;}
+.cat-section-inner{max-width:1140px;margin:0 auto;}
 .cat-section::before{
   content:"";position:absolute;inset:0;z-index:0;
   background:url('logo-watermark.png') repeat;background-size:70px 70px;
@@ -292,7 +293,13 @@ h1 em{font-style:normal;color:var(--y);}
 /* ══════════════════════════════════
    SERVISŲ SĄRAŠAS
 ══════════════════════════════════ */
-.results-section{padding:28px 28px 60px;max-width:1100px;margin:0 auto;}
+.results-section{padding:28px 28px 60px;position:relative;overflow:hidden;}
+.results-section::before{
+  content:"";position:absolute;inset:0;z-index:0;
+  background:url('logo-watermark.png') repeat;background-size:70px 70px;
+  opacity:0.18;pointer-events:none;
+}
+.results-inner{max-width:1100px;margin:0 auto;position:relative;z-index:1;}
 .results-head{
   display:flex;align-items:baseline;justify-content:space-between;
   margin-bottom:16px;border-bottom:1px solid var(--line);padding-bottom:12px;flex-wrap:wrap;gap:10px;
@@ -626,23 +633,27 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
 
 <!-- KATEGORIJOS (Stitch: "Visos Paslaugos ir Katalogas") -->
 <div class="cat-section" id="servisai">
-  <div class="cat-section-title"><span>Visos paslaugos ir katalogas</span></div>
-  <div class="cat-grid" id="board"></div>
+  <div class="cat-section-inner">
+    <div class="cat-section-title"><span>Visos paslaugos ir katalogas</span></div>
+    <div class="cat-grid" id="board"></div>
+  </div>
 </div>
 
 <!-- SERVISŲ SĄRAŠAS -->
 <div class="results-section">
-  <div class="results-head">
-    <div class="results-title">
-      Rasta <span class="n" id="res-count">3</span> servisai · <span id="city-label" style="color:var(--muted);font-size:16px;">Kaunas</span>
+  <div class="results-inner">
+    <div class="results-head">
+      <div class="results-title">
+        Rasta <span class="n" id="res-count">3</span> servisai · <span id="city-label" style="color:var(--muted);font-size:16px;">Kaunas</span>
+      </div>
+      <div class="sort-tabs">
+        <div class="sort-tab on">Pagal atstumą</div>
+        <div class="sort-tab">Pagal įvertinimą</div>
+        <div class="sort-tab">Dirba dabar</div>
+      </div>
     </div>
-    <div class="sort-tabs">
-      <div class="sort-tab on">Pagal atstumą</div>
-      <div class="sort-tab">Pagal įvertinimą</div>
-      <div class="sort-tab">Dirba dabar</div>
-    </div>
+    <div class="cards" id="cards"></div>
   </div>
-  <div class="cards" id="cards"></div>
 </div>
 
 <!-- KAIP VEIKIA -->

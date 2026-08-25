@@ -2143,6 +2143,12 @@ Vartotojas ant didelio monitoriaus nematė fone pasikartojančio `logo-watermark
 
 **Patikrinta gyvai**: 1600px pločio naršyklės lange kategorijų sekcijos fone raštas dabar aiškiai matomas (anksčiau vos pastebimas). `getComputedStyle` patvirtino `opacity: 0.09`.
 
+**TIKRA priežastis rasta VĖLIAU (po kelių nesėkmingų bandymų)**: vartotojas ant TIKRAI plataus monitoriaus vis tiek nematė rašto — pažymėjo ekrano nuotraukoje TIKSLIAI kur: KAIRĖJE ir DEŠINĖJE PUSĖSE už centrinio turinio stulpelio ("nera logo" žymos abipus). Iš pradžių bandžiau tik didinti `opacity` (0.045→0.09→0.18) — tai NEBUVO tikra priežastis, tik simptomo maskavimas. Tikra priežastis: `.hero`, `.how`, `.diag-section` VISADA taikė foną VISO PLOČIO elementui (turinys centruojamas per ATSKIRĄ `-inner` `div` su `max-width`), o `.cat-section` ("Visos paslaugos ir katalogas") KLAIDINGAI turėjo `max-width:1140px;margin:0 auto` TIESIOGIAI ant TO PATIES elemento, kuriame yra ir `::before` fono raštas — todėl raštas apkarpomas KARTU su turiniu, ir plačiame monitoriuje kairė/dešinė pusė lieka visiškai be jokio rašto (vien tuščias `body` fonas).
+
+**Fix** (`servisucentras-pagrindinis.html`): `.cat-section` pati tapo VISO PLOČIO (be `max-width`), naujas `.cat-section-inner` (su `max-width:1140px;margin:0 auto`) apgaubia antraštę ir tinklelį — tiksliai tas pats raštas, kaip jau naudojamas `.hero-inner`/`.how-inner`/`.diag-inner`.
+
+**Pamoka**: kai vartotojas sako "nepadėjo", nespėk didinti tos pačios reikšmės iš naujo — paprašyk TIKSLIOS vietos (ekrano nuotraukos su žyma), nes problema gali būti VISAI kito pobūdžio (išdėstymo, ne ryškumo). Opacity liko 0.18 (nebe grąžinta į 0.045/0.09), nes tai irgi buvo pagrįstas pageidavimas — matomiau visada geriau esant tokiai subtiliai detalei.
+
 ---
 
 ## Kaip tęsti naujame pokalbyje
