@@ -379,9 +379,15 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
   font-family:'IBM Plex Sans';color:var(--text);
 }
 .qa-btn:hover{border-color:rgba(230,57,70,0.3);}
-.qa-icon{font-size:22px;margin-bottom:6px;}
+.qa-icon{font-size:22px;margin-bottom:6px;transition:color .2s;}
 .qa-label{font-size:11.5px;font-weight:500;}
 .qa-sub{font-size:10px;color:var(--muted);margin-top:2px;}
+
+/* Gyva statuso ikona "Uždaryti/Laikinai nedirbu" mygtuke — žalia = dirba,
+   raudona ir mirksi = bet kuri "nedirba" priežastis (grafikas/pietūs/atostogos/rankinis). */
+.qa-icon.qa-status-open{ filter: drop-shadow(0 0 3px rgba(111,191,138,0.5)); }
+.qa-icon.qa-status-closed{ animation: qaStatusBlink 1.2s ease-in-out infinite; }
+@keyframes qaStatusBlink{ 0%,100%{opacity:1;} 50%{opacity:0.3;} }
 
 /* Savaitės mini stats */
 .week-bars{display:flex;gap:4px;align-items:flex-end;height:60px;margin-top:4px;}
@@ -703,9 +709,9 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
             <div class="rp-title">Greiti veiksmai</div>
             <div class="quick-actions">
               <div class="qa-btn" onclick="toggleStatus()">
-                <div class="qa-icon">🔒</div>
-                <div class="qa-label">Uždaryti</div>
-                <div class="qa-sub">Laikinai nedirbu</div>
+                <div class="qa-icon" id="qa-status-icon">🔒</div>
+                <div class="qa-label" id="qa-status-label">Uždaryti</div>
+                <div class="qa-sub" id="qa-status-sub">Laikinai nedirbu</div>
               </div>
               <div class="qa-btn" onclick="sendReminderSms()">
                 <div class="qa-icon">📤</div>
@@ -2806,24 +2812,32 @@ function isOpenBySchedule(){
   const [eh,em] = serviceProfile.work_end.split(':').map(Number);
   return mins >= sh*60+sm && mins <= eh*60+em;
 }
+// Vienas bendras dabartinio darbo režimo apskaičiavimas — naudojamas IR topbar pill'ui,
+// IR "Greiti veiksmai" ikonai, kad abu visada rodytų TĄ PATĮ statusą ta pačia tvarka.
+function currentWorkRegime(){
+  if(isOnVacation()) return { open:false, icon:'🌴', pill:'🌴 ATOSTOGOS', label:'Atostogos' };
+  if(serviceProfile.temp_closed) return { open:false, icon:'🔒', pill:'● UŽDARYTA', label:'Laikinai nedirbu (jūs)' };
+  if(isLunchNowSelf()) return { open:false, icon:'🍽️', pill:'🍽️ PIETŪS', label:'Pietų pertrauka' };
+  if(!isOpenBySchedule()) return { open:false, icon:'🕐', pill:'● UŽDARYTA', label:'Ne darbo valandos' };
+  return { open:true, icon:'🟢', pill:'● DIRBA', label:'Dirba' };
+}
 function updateStatusDisplay(){
   const btn = document.getElementById('status-toggle');
-  if(isOnVacation()){
-    btn.classList.remove('open'); btn.classList.add('closed');
-    btn.innerHTML = '🌴 ATOSTOGOS';
-  } else if(serviceProfile.temp_closed){
-    btn.classList.remove('open'); btn.classList.add('closed');
-    btn.innerHTML = '● UŽDARYTA';
-  } else if(isLunchNowSelf()){
-    btn.classList.remove('open'); btn.classList.add('closed');
-    btn.innerHTML = '🍽️ PIETŪS';
-  } else if(!isOpenBySchedule()){
-    btn.classList.remove('open'); btn.classList.add('closed');
-    btn.innerHTML = '● UŽDARYTA';
-  } else {
-    btn.classList.remove('closed'); btn.classList.add('open');
-    btn.innerHTML = '● DIRBA';
+  const regime = currentWorkRegime();
+  btn.classList.toggle('open', regime.open);
+  btn.classList.toggle('closed', !regime.open);
+  btn.innerHTML = regime.pill;
+
+  // "Greiti veiksmai" — ikona žalia ir rami, kai dirbama; bet kokia "nedirba" priežastis
+  // (grafikas/pietūs/atostogos/rankinis) — ikona mirksi, kad būtų iškart pastebima.
+  const qaIcon = document.getElementById('qa-status-icon');
+  const qaSub = document.getElementById('qa-status-sub');
+  if(qaIcon){
+    qaIcon.textContent = regime.icon;
+    qaIcon.classList.toggle('qa-status-open', regime.open);
+    qaIcon.classList.toggle('qa-status-closed', !regime.open);
   }
+  if(qaSub) qaSub.textContent = regime.label;
   const vacLabel = document.getElementById('vacation-qa-label');
   const vacSub = document.getElementById('vacation-qa-sub');
   if(vacLabel && vacSub){

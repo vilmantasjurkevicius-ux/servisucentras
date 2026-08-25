@@ -2070,6 +2070,16 @@ Iškart po aukščiau aprašyto pietų pertraukos pakeitimo, vartotojas GYVAI pa
 
 ---
 
+## "Greiti veiksmai" → "Uždaryti" ikona dabar gyva, rodo tikrą režimą ir mirksi (2026-08-25)
+
+Po ankstesnio "DIRBA/UŽDARYTA pagal grafiką" audito vartotojas paprašė: dashboard'o "Greiti veiksmai" skydelio "🔒 Uždaryti / Laikinai nedirbu" mygtuko ikona turi būti GYVA — rodyti, koks REŽIMAS šiuo metu galioja (pagal grafiką/pietūs/atostogos/rankinis uždarymas), žalia ir rami kai dirbama, o bet kuriuo "nedirba" atveju — mirksėti (įskaitant atostogas).
+
+**Fix** (`automeistrai-dashboard.html`): naujas bendras `currentWorkRegime()` — apskaičiuoja VIENĄ statusą TA PAČIA tvarka/prioritetu, kaip anksčiau (atostogos → rankinis → pietūs → grafikas → dirba), grąžina `{open, icon, pill, label}`. `updateStatusDisplay()` dabar naudoja šią funkciją IR topbar pill'ui, IR naujiems `#qa-status-icon`/`#qa-status-sub` elementams "Uždaryti" qa-btn viduje (anksčiau ten buvo statinis 🔒 + statinis tekstas "Laikinai nedirbu", visiškai nesikeitęs). Ikona: 🟢 dirba, 🕐 uždaryta pagal grafiką, 🍽️ pietūs, 🌴 atostogos, 🔒 rankinis uždarymas. Nauja CSS `@keyframes qaStatusBlink` (opacity pulsavimas) taikoma per `.qa-status-closed` klasę VISOMS "nedirba" priežastims vienodai; `.qa-status-open` (žalia, be mirksėjimo) — tik kai realiai dirbama.
+
+**Patikrinta gyvai**: testinis servisas paeiliui perjungtas per visus 5 režimus (`PATCH /services/me` su skirtingais laukais + `updateStatusDisplay()` iškviesta rankiniu būdu simuliuojant poll'inimą) — kiekvienu atveju ikona/tekstas/mirksėjimo klasė atitiko: DIRBA→🟢 (be animacijos), pagal grafiką uždaryta→🕐 (su `qaStatusBlink` animacija, patvirtinta per `getComputedStyle`), rankinis→🔒, atostogos→🌴, pietūs→🍽️ — pastarieji keturi visi su mirksėjimo klase. Backend nekeistas — grynai frontend.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
