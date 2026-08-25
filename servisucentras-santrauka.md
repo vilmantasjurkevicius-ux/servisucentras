@@ -2080,6 +2080,19 @@ Po ankstesnio "DIRBA/UŽDARYTA pagal grafiką" audito vartotojas paprašė: dash
 
 ---
 
+## Naujas "Darbo laikrodis" skydelis su 🚗 animacija darbo laikui pasibaigus (2026-08-25)
+
+Vartotojas paprašė gražaus, gyvo laikrodžio dashboard'e — kai darbo laikas pasibaigia, mažas automobiliukas turi pasirodyti, blyksėti ir "išvažiuoti", o laikrodis toliau tiksėti. Patikslinus (AskUserQuestion): **naujas ATSKIRAS elementas** (esamas "● DIRBA" topbar statusas nekeičiamas) IR **analoginis** laikrodis su rodyklėmis (ne skaitmeninis).
+
+**Įgyvendinta** (`automeistrai-dashboard.html`, tik "Užklausos" puslapio dešinysis skydelis, virš "Šiandien"):
+- Naujas `.rp-section` "Darbo laikrodis" — inline SVG analoginis ciferblatas (60 brūkšnelių — 12 valandinių + 48 minutinių, sugeneruojami vieną kartą per `renderClockTicks()`), trys rodyklės (valandų/minučių/sekundžių), po juo tekstinis statuso label'as.
+- `tickClock()` — kviečiama `setInterval` kas 1s: perskaičiuoja rodyklių `rotate()` kampus pagal `new Date()`, ir per JAU ESAMĄ `currentWorkRegime()` (žr. ankstesnę sekciją) nustato tekstinę etiketę POD laikrodžiu (Dirba/Ne darbo valandos/Pietų pertrauka/Atostogos/Laikinai nedirbu).
+- **🚗 animacija**: sekamas KINTAMASIS `clockLastOpenState` — kai jis PRIEŠ tai buvo `true` (dirbo) ir DABAR tapo `false` (bet kuria iš priežasčių), automatiškai paleidžiama `playCarLeavingAnimation()` — automobiliuko emoji CSS animacija (`@keyframes clockCarLeave`, 3s): pirmiausia blykčioja (opacity pulsuoja, imituojant avarinius žibintus), tada nuvažiuoja į šoną ir išnyksta. Laikrodžio tiksėjimas NESUSTOJA — tai NEPRIKLAUSOMAS `setInterval`, animacija jo neblokuoja. `clockLastOpenState` pradžioje `null` (ne `false`), kad animacija NEPALEISTŲ vien dėl to, jog puslapis įkeltas jau esant uždarytam servisui.
+
+**Patikrinta gyvai**: rodyklių kampai patikrinti matematiškai (pvz. 21:06:05 → valandų 273°, minučių ~36.4°, sekundžių ~24° — visi atitiko formulę). 60 brūkšnelių sugeneruoti teisingai. Priverstinai simuliuotas DIRBA→UŽDARYTA perėjimas (`clockLastOpenState=true` + `tickClock()`) — automobiliuko elementui pridėta `driving` klasė, o `opacity` reikšmės per 2.1s intervalą (0 → 0.93 → 1 → 0.63 → 0.97 → ...) patvirtino tikrą blyksėjimo+išvažiavimo animacijos eigą (ne tik statinį klasės pridėjimą). Backend nekeistas — grynai frontend.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 
