@@ -625,7 +625,20 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   </div>
 
   <!-- Tuščios puslapiai -->
-  <div class="page" id="p-reviews"><div class="page-head"><div class="page-title">⭐ Atsiliepimai</div></div><div class="content"><div style="color:var(--muted);text-align:center;padding:40px;">Visi klientų atsiliepimai apie servisus.</div></div></div>
+  <div class="page" id="p-reviews">
+    <div class="page-head">
+      <div><div class="page-title">⭐ Atsiliepimai</div><div class="page-sub">Visi klientų atsiliepimai apie servisus</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Visi atsiliepimai</div></div>
+        <table>
+          <tr><th>Data</th><th>Servisas</th><th>Klientas</th><th>Įvertinimas</th><th>Komentaras</th><th>Veiksmai</th></tr>
+          <tbody id="reviews-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
   <div class="page" id="p-commissions">
     <div class="page-head">
       <div><div class="page-title">📈 Mokesčiai / Sąskaitos</div><div class="page-sub" id="invoices-period-label"></div></div>
@@ -1282,6 +1295,36 @@ function renderDeclines(){
   }).join('') || emptyRow(7);
 }
 
+// ── ATSILIEPIMAI (klientų palikti įvertinimai visiems servisams, God Mode — tik peržiūra) ──
+let reviewsCache = [];
+async function loadReviews(){
+  reviewsCache = await apiGet('/admin/reviews');
+  renderReviews();
+}
+function renderReviews(){
+  document.getElementById('reviews-table-body').innerHTML = reviewsCache.map(r=>{
+    const clientName = escapeHtml(`${r.client_first_name||''} ${r.client_last_name||''}`.trim() || 'Klientas');
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5-r.rating);
+    return `
+    <tr>
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${(r.created_at||'').slice(0,16).replace('T',' ')}</td>
+      <td><b>${escapeHtml(r.service_name)}</b></td>
+      <td>${clientName}</td>
+      <td style="color:var(--y);letter-spacing:1px;">${stars}</td>
+      <td style="max-width:280px;font-size:12px;color:var(--muted);">${r.comment ? escapeHtml(r.comment) : '—'}</td>
+      <td><button class="btn" onclick="deleteReview(${r.id})">🗑 Ištrinti</button></td>
+    </tr>`;
+  }).join('') || emptyRow(6);
+}
+async function deleteReview(id){
+  const review = reviewsCache.find(r=>r.id===id);
+  if(!review) return;
+  const preview = review.comment ? `„${review.comment}"` : `(be komentaro, ★${review.rating})`;
+  if(!confirm(`Ištrinti atsiliepimą servisui "${review.service_name}"?\n\n${preview}\n\nŠio veiksmo atšaukti negalima.`)) return;
+  await apiDelete(`/admin/reviews/${id}`);
+  await loadReviews();
+}
+
 // ── CHAT ŽINUTĖS (God Mode — visi susirašinėjimai, be jokio redagavimo) ──
 let conversationsCache = [];
 let expandedConvId = null;
@@ -1513,7 +1556,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations(), loadReviews()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;

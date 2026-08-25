@@ -74,7 +74,9 @@ router.get('/me/orders', authRequired, requireRole('client'), (req, res) => {
       (SELECT ds.name FROM order_declines od JOIN services ds ON ds.id = od.service_id WHERE od.order_id = o.id ORDER BY od.declined_at DESC LIMIT 1) AS last_decline_service_name,
       (SELECT declined_at FROM order_declines WHERE order_id = o.id ORDER BY declined_at DESC LIMIT 1) AS last_decline_at,
       (SELECT created_at FROM order_messages WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1) AS last_message_at,
-      (SELECT sender_type FROM order_messages WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1) AS last_message_sender
+      (SELECT sender_type FROM order_messages WHERE order_id = o.id ORDER BY created_at DESC LIMIT 1) AS last_message_sender,
+      (SELECT rating FROM reviews WHERE order_id = o.id) AS review_rating,
+      (SELECT comment FROM reviews WHERE order_id = o.id) AS review_comment
     FROM orders o
     LEFT JOIN services s ON s.id = o.service_id
     WHERE o.client_id = ? ORDER BY o.created_at DESC

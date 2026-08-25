@@ -647,7 +647,7 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <button class="sidenav-item" onclick="switchDashPage('services', this)"><span class="icon">🏷️</span> Paslaugos</button>
     <button class="sidenav-item" onclick="switchDashPage('work-hours', this)"><span class="icon">🕐</span> Darbo laikas</button>
     <button class="sidenav-item" onclick="switchDashPage('profile', this)"><span class="icon">👤</span> Profilis</button>
-    <button class="sidenav-item"><span class="icon">⭐</span> Atsiliepimai</button>
+    <button class="sidenav-item" onclick="switchDashPage('reviews', this)"><span class="icon">⭐</span> Atsiliepimai</button>
 
     <div class="sidenav-bottom">
       <button class="sidenav-item danger" onclick="switchDashPage('settings', this)"><span class="icon">⚙️</span> Nustatymai</button>
@@ -892,6 +892,18 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <!-- ═══ KALENDORIUS ═══ -->
     <div class="dash-page" id="page-calendar">
       <div style="padding:40px;color:var(--muted);text-align:center;">Kalendorius bus paruoštas vėliau.</div>
+    </div>
+
+    <!-- ═══ ATSILIEPIMAI ═══ -->
+    <div class="dash-page" id="page-reviews">
+      <div class="content-grid" style="grid-template-columns:1fr;">
+        <div class="orders-panel" style="border-right:none;max-width:640px;">
+          <div class="panel-header">
+            <div class="panel-title">Klientų atsiliepimai <span id="reviews-avg"></span></div>
+          </div>
+          <div id="reviews-list" style="padding:8px 0;"></div>
+        </div>
+      </div>
     </div>
 
     <!-- ═══ NUSTATYMAI ═══ -->
@@ -2049,6 +2061,44 @@ function loadSettingsPage(){
   document.getElementById('sound-notif-toggle').checked = soundNotifEnabled;
 }
 
+// ═══ ATSILIEPIMAI — GET /services/:id/reviews yra VIEŠAS endpoint'as (naudojamas ir
+// klientams), čia tiesiog kviečiamas su savo ID ═══
+async function loadReviewsPage(){
+  const list = document.getElementById('reviews-list');
+  list.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted);">Kraunama...</div>';
+  let reviews;
+  try{
+    reviews = await apiGet(`/services/${serviceProfile.id}/reviews`);
+  } catch(err){
+    list.innerHTML = `<div style="padding:24px;text-align:center;color:var(--muted);">Nepavyko įkelti atsiliepimų.</div>`;
+    return;
+  }
+  const avgEl = document.getElementById('reviews-avg');
+  if(reviews.length){
+    const avg = reviews.reduce((sum,r)=>sum+r.rating,0) / reviews.length;
+    avgEl.textContent = `★ ${avg.toFixed(1)} (${reviews.length})`;
+  } else {
+    avgEl.textContent = '';
+  }
+  if(!reviews.length){
+    list.innerHTML = `<div style="padding:32px;text-align:center;color:var(--muted);">Dar nėra nė vieno atsiliepimo.<br>Jie atsiras čia, kai klientai įvertins baigtus darbus.</div>`;
+    return;
+  }
+  list.innerHTML = reviews.map(r => {
+    const stars = '★'.repeat(r.rating) + '☆'.repeat(5 - r.rating);
+    const clientName = r.clientFirstName ? escapeHtml(r.clientFirstName) : 'Klientas';
+    const dateStr = (r.created_at || '').slice(0, 10);
+    return `<div style="padding:14px 24px;border-bottom:1px solid var(--line);">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="color:var(--yellow);letter-spacing:2px;font-size:14px;">${stars}</span>
+        <span style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${dateStr}</span>
+      </div>
+      <div style="font-size:12.5px;color:var(--muted);margin-top:4px;">${clientName}</div>
+      ${r.comment ? `<div style="font-size:13px;color:var(--text);margin-top:6px;line-height:1.5;">${escapeHtml(r.comment)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
 // Du valdikliai, viena būsena: Nustatymai puslapio varnelė IR sparčiojo topbar mygtuko
 // ikona visada rodo TĄ PATĮ soundNotifEnabled — abu keitimo keliai baigiasi čia.
 function syncSoundToggleUI(){
@@ -2259,8 +2309,8 @@ function stopPolling(){
 // tai neturėtų būti pastebima.
 
 // ═══ PUSLAPIŲ NAVIGACIJA (Užklausos / Profilis / Statistika / Paslaugos / Kalendorius) ═══
-const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', 'work-hours':'Darbo laikas', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai' };
-const PAGE_LOADERS = { profile: loadProfileForm, 'work-hours': renderWorkHoursRows, stats: renderStatsPage, services: loadOfferings, calendar: renderCalendarPage, settings: loadSettingsPage };
+const PAGE_TITLES = { orders:'Užklausos', profile:'Profilis', 'work-hours':'Darbo laikas', stats:'Statistika', services:'Paslaugos', calendar:'Kalendorius', settings:'Nustatymai', reviews:'Atsiliepimai' };
+const PAGE_LOADERS = { profile: loadProfileForm, 'work-hours': renderWorkHoursRows, stats: renderStatsPage, services: loadOfferings, calendar: renderCalendarPage, settings: loadSettingsPage, reviews: loadReviewsPage };
 
 function switchDashPage(page, el){
   document.querySelectorAll('.dash-page').forEach(p=>p.classList.remove('show'));

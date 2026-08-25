@@ -242,6 +242,32 @@ router.get('/service-conversations', (req, res) => {
   res.json(rows);
 });
 
+// ── ATSILIEPIMAI (visi, visų servisų — admin peržiūrai) ──
+router.get('/reviews', (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.id, r.rating, r.comment, r.created_at, r.order_id,
+      s.id AS service_id, s.name AS service_name,
+      c.first_name AS client_first_name, c.last_name AS client_last_name
+    FROM reviews r
+    JOIN services s ON s.id = r.service_id
+    LEFT JOIN clients c ON c.id = r.client_id
+    ORDER BY r.created_at DESC
+  `).all();
+  res.json(rows);
+});
+
+// Admin gali ištrinti netinkamą (įžeidžiantį/nesusijusį) atsiliepimą — serviso rating
+// perskaičiuojamas iš likusių, arba grąžinamas į NULL, jei tai buvo paskutinis.
+router.delete('/reviews/:id', (req, res) => {
+  const review = db.prepare('SELECT * FROM reviews WHERE id = ?').get(req.params.id);
+  if (!review) return res.status(404).json({ error: 'Atsiliepimas nerastas' });
+  db.prepare('DELETE FROM reviews WHERE id = ?').run(review.id);
+  const avgRow = db.prepare('SELECT AVG(rating) AS avg FROM reviews WHERE service_id = ?').get(review.service_id);
+  const newRating = avgRow.avg != null ? +avgRow.avg.toFixed(1) : null;
+  db.prepare('UPDATE services SET rating = ? WHERE id = ?').run(newRating, review.service_id);
+  res.json({ message: 'Atsiliepimas ištrintas' });
+});
+
 // ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
 // "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
 // buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).

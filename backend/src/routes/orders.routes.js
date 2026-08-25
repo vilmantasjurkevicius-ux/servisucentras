@@ -3,6 +3,7 @@ const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { calculateCommission, calculateContactFee } = require('../utils/commission');
 const { redactContacts } = require('../utils/contactFilter');
+const { containsProfanity } = require('../utils/profanityFilter');
 const { sendNewOrderEmail, sendQuoteEmail, sendServiceDeclinedEmail, sendOrderReopenedEmail } = require('../email');
 
 const router = express.Router();
@@ -400,6 +401,9 @@ router.post('/:id/review', authRequired, requireRole('client'), (req, res) => {
   if (order.status !== 'done') return res.status(400).json({ error: 'Atsiliepimą galima palikti tik užbaigtai užklausai' });
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return res.status(400).json({ error: 'Įvertinimas turi būti sveikas skaičius nuo 1 iki 5' });
+  }
+  if (containsProfanity(comment)) {
+    return res.status(400).json({ error: 'Komentare rasta netinkamų žodžių — pataisykite ir bandykite dar kartą' });
   }
   const existing = db.prepare('SELECT id FROM reviews WHERE order_id = ?').get(order.id);
   if (existing) return res.status(409).json({ error: 'Šiai užklausai atsiliepimas jau paliktas' });

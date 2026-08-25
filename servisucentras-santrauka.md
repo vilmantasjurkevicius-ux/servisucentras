@@ -2093,6 +2093,36 @@ Vartotojas paprašė gražaus, gyvo laikrodžio dashboard'e — kai darbo laikas
 
 ---
 
+## Atsiliepimų funkcija UŽBAIGTA (backend buvo, sąsajos — ne) (2026-08-25)
+
+Vartotojas paklausė "ar veikia atsiliepimai" — patikrinus paaiškėjo: backend (`POST /orders/:id/review`, `GET /services/:id/reviews`) buvo pilnai parašytas ir testuotas dar 2026-07-13, bet **niekur sąsajoje nebuvo pasiekiamas**: `mano-paskyra.html` neturėjo jokios formos įvertinti, dashboard'o "⭐ Atsiliepimai" mygtukas neturėjo `onclick` (visiškai negyvas), o admin panelės atitinkamas puslapis buvo tik statinis tekstas. Paprašius "užbaigti" — pridėtos VISOS trūkstamos dalys.
+
+**Backend papildymai**:
+- `clients.routes.js` `GET /me/orders` — pridėti `review_rating`/`review_comment` subquery aliasai, kad klientas savo istorijoje matytų JAU paliktą įvertinimą.
+- Naujas `admin.routes.js` `GET /admin/reviews` — visi atsiliepimai su serviso/kliento vardais (God Mode peržiūra, be redagavimo).
+
+**Kliento pusė** (`mano-paskyra.html`): kiekvienam `status:'done'` užsakymui — arba "★ Įvertinti servisą" mygtukas (atveria žvaigždučių+komentaro formą), arba (jei jau įvertinta) statinis "★★★★☆ Jūsų įvertinimas: ...". **Rasta ir ištaisyta klaida testuojant**: pirmas bandymas prarado komentaro tekstą (žvaigždutė išliko, komentaras — ne) — priežastis: esamas 12s `pollOrderHistory()` ciklas perpiešdavo VISĄ sąrašą, sunaikindamas `<textarea>` DOM elementą su neišsiųstu tekstu (žvaigždutė išliko, nes buvo saugoma ATSKIRAME JS kintamajame `reviewDraftRatings`, o tekstas — tik pačiame DOM). Fix: naujas `reviewDraftComments` objektas + `oninput` rašo kiekvieną klavišo paspaudimą į jį (identiškas modelis kaip jau esantis `reviewDraftRatings`), IR poll'inimo "neliesti, kol rašoma" apsauga (`document.activeElement.closest(...)`) išplėsta nuo vien `.order-chat` iki IR `.review-form`.
+
+**Serviso dashboard**: "⭐ Atsiliepimai" sidenav mygtukas dabar turi `onclick="switchDashPage('reviews', this)"`, naujas `page-reviews` + `loadReviewsPage()` — rodo vidutinį įvertinimą antraštėje ir kiekvieno atsiliepimo žvaigždutes/kliento vardą/komentarą/datą (naudoja jau esamą VIEŠĄ `GET /services/:id/reviews` su savo ID).
+
+**Admin panelė** (`servisucentras-admin.html`): placeholder pakeistas realia lentele (`loadReviews()`/`renderReviews()`, pridėta į init'o `Promise.all`), stulpeliai Data/Servisas/Klientas/Įvertinimas/Komentaras, visas tekstas per `escapeHtml()`.
+
+**Patikrinta gyvai, pilnas ciklas**: sukurtas testinis servisas+klientas+baigtas užsakymas → per REALŲ `mano-paskyra.html` UI (klavišų paspaudimai, ne `.value=`) pažymėtos 4 žvaigždutės, įvestas komentaras, PALAUKTA >12s patvirtinti, kad tekstas IŠLIEKA per poll'inimą, išsiųsta → iškart pasirodė "★★★★☆ Jūsų įvertinimas" kliento pusėje → tas pats atsiliepimas su komentaru pasirodė serviso dashboard'o "Atsiliepimai" puslapyje (vidurkis "★ 4.0 (1)") → IR admin panelės lentelėje su serviso/kliento vardais. **Svarbu**: pirmas bandymas nepavyko dėl UŽMIRŠTO backend serverio perkrovimo po `clients.routes.js` pakeitimo (senas `node` procesas be auto-reload — ta pati pamoka kaip anksčiau šioje sesijoje). Backend testas (`api.test.js`, esama "pilnas srautas" byla) papildytas naujomis assercijomis (`review_rating`/`review_comment` GET /me/orders, `GET /admin/reviews`). `npm test` → **41/41**.
+
+---
+
+## Atsiliepimai: keiksmažodžių filtras + admin trynimas (2026-08-25)
+
+Tiesioginis atsiliepimų funkcijos užbaigimo tęsinys — vartotojas paprašė: (1) keiksmažodžiai komentaruose turi būti neleidžiami, (2) admin turi galėti ištrinti netinkamus atsiliepimus.
+
+**Keiksmažodžių filtras** — naujas `backend/src/utils/profanityFilter.js` (`containsProfanity(text)`), lietuviškų keiksmažodžių sąrašas (blet, kurva, šūdas, pisti, chuj, ir kt.), taikomas `POST /orders/:id/review` prieš išsaugant — jei komentare rasta, grąžinama 400 "Komentare rasta netinkamų žodžių...", atsiliepimas NESUKURIAMAS. **Techninė detalė**: `\b` (žodžio riba) JS regex'e NEVEIKIA teisingai prieš lietuviškas raides su diakritikais (š, ū...), nes tos raidės nepriklauso `\w` klasei — vietoj to panaudotas Unicode-suvokiantis `(?<![\p{L}\p{N}])` neigiamas lookbehind su `u` regex vėliavėle.
+
+**Admin trynimas** — naujas `DELETE /admin/reviews/:id` (`admin.routes.js`): ištrina įrašą IR perskaičiuoja serviso `rating` iš likusių atsiliepimų (arba `NULL`, jei tai buvo paskutinis). `servisucentras-admin.html` — kiekvienoje atsiliepimo eilutėje naujas "🗑 Ištrinti" mygtukas su `confirm()` dialogu (rodo serviso pavadinimą + komentaro/žvaigždučių peržiūrą prieš trinant, sekant tą patį raštą kaip esamas užklausų bulk-delete).
+
+**Patikrinta gyvai**: per realų `mano-paskyra.html` UI pabandyta palikti atsiliepimą su „Šitas servisas yra šūdas!" — atmesta su tiksliu klaidos pranešimu, DB įraše NIEKO neatsirado; tas pats klientas, tas pats užsakymas su švariu tekstu — praėjo (201, iškart matomas kaip "Jūsų įvertinimas"). Admin panelėje paspaudus "🗑 Ištrinti" — eilutė dingo iš lentelės. Nauji backend testai `backend/test/reviews.test.js` (3 testai: keiksmažodžių atmetimas + švaraus komentaro praleidimas, admin trynimas + reitingo perskaičiavimas + pakartotinis trynimas → 404, DELETE be tokeno → 401). `npm test` → **44/44**.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

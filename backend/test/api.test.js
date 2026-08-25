@@ -149,6 +149,21 @@ test(
     assert.equal(reviewsList.status, 200);
     assert.equal(reviewsList.data.length, 1);
     assert.equal(reviewsList.data[0].comment, 'Puikus darbas!');
+
+    // --- Klientas savo užsakymų istorijoje mato SAVO paliktą įvertinimą ---
+    const myOrders = await api('GET', '/api/clients/me/orders', { token: clientToken });
+    const reviewedOrder = myOrders.data.find((o) => o.id === orderId);
+    assert.equal(reviewedOrder.review_rating, 5, 'užsakymų istorijoje turi matytis paliktas įvertinimas');
+    assert.equal(reviewedOrder.review_comment, 'Puikus darbas!');
+
+    // --- Admin mato atsiliepimą sąraše (God Mode peržiūra) ---
+    const adminReviews = await api('GET', '/api/admin/reviews', { token: adminToken });
+    assert.equal(adminReviews.status, 200);
+    const adminRow = adminReviews.data.find((r) => r.order_id === orderId);
+    assert.ok(adminRow, 'admin turi matyti šį atsiliepimą sąraše');
+    assert.equal(adminRow.rating, 5);
+    assert.equal(adminRow.comment, 'Puikus darbas!');
+    assert.equal(adminRow.service_name, svcReg.data.service.name);
   }
 );
 

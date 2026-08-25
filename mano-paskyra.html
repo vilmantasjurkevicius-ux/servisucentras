@@ -162,6 +162,21 @@ nav{
 .os-cancelled{background:rgba(139,26,26,0.15);color:#e07070;}
 .order-decline-note{margin-top:10px;background:rgba(139,26,26,0.1);border:1px solid rgba(139,26,26,0.25);border-radius:var(--radius);padding:10px 12px;font-size:12px;color:#e0a0a0;line-height:1.5;}
 
+/* ══ ATSILIEPIMAS — klientas įvertina UŽBAIGTĄ (status='done') užklausą ══ */
+.review-block{margin-top:12px;}
+.review-done{font-size:12.5px;color:var(--muted);}
+.review-stars-static{color:var(--y);letter-spacing:2px;margin-right:6px;}
+.review-toggle{background:transparent;border:1px solid rgba(245,196,0,0.4);color:var(--y);font-family:'IBM Plex Sans';font-size:11.5px;font-weight:600;padding:6px 13px;border-radius:var(--radius);cursor:pointer;}
+.review-toggle:hover{background:var(--ydim);}
+.review-form{margin-top:4px;background:var(--bg3);border:1px solid var(--line2);border-radius:8px;padding:14px;}
+.review-stars{display:flex;gap:4px;font-size:24px;margin-bottom:10px;cursor:pointer;}
+.review-star{color:var(--line2);transition:color .1s;}
+.review-star.on{color:var(--y);}
+.review-form textarea{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:var(--radius);padding:8px 10px;color:var(--text);font-family:'IBM Plex Sans';font-size:12.5px;resize:vertical;min-height:60px;margin-bottom:10px;box-sizing:border-box;}
+.review-submit{background:var(--y);color:#1a1a1a;border:none;font-family:'IBM Plex Sans';font-size:12.5px;font-weight:700;padding:7px 16px;border-radius:var(--radius);cursor:pointer;}
+.review-submit:disabled{opacity:0.6;cursor:default;}
+.review-err{color:#e07070;font-size:11.5px;margin-top:8px;}
+
 /* ══ UŽSAKYMO POKALBIS (Serviso knyga, Žingsnis 4/7) — TAS PATS backend mechanizmas
    (GET/POST /orders/:id/messages), kurį jau naudoja serviso dashboard, tik nauja
    kliento pusės UI. ══ */
@@ -994,9 +1009,78 @@ function renderOrderHistory(){
         ${declineHtml}
         <button class="order-chat-toggle" onclick="toggleOrderChat(${o.id})">${expandedOrderId===o.id ? '▲ Slėpti pokalbį' : '💬 Pokalbis'}</button>
         ${expandedOrderId===o.id ? `<div class="order-chat" id="ochat-${o.id}"><div class="order-chat-empty">Kraunama...</div></div>` : ''}
+        ${o.status === 'done' ? reviewBlockHtml(o) : ''}
       </div>`;
   }).join('');
   if(expandedOrderId !== null) loadOrderChat(expandedOrderId, true);
+}
+
+/* ══ ATSILIEPIMAS — klientas įvertina UŽBAIGTĄ užklausą (POST /orders/:id/review) ══
+   reviewDraftRatings laikomas ATSKIRAI nuo orderHistoryCache (ne tik lokaliai render'inime),
+   kad pasirinkta žvaigždutė IŠLIKTŲ, jei kažkas kitas (poll'inimas ar pan.) sukeltų perpiešimą,
+   kol vartotojas dar neišsiuntė atsiliepimo. */
+let reviewFormOpenId = null; // kurio užsakymo atsiliepimo forma šiuo metu išskleista
+const reviewDraftRatings = {}; // orderId -> pasirinktas žvaigždučių skaičius (dar neišsiųsta)
+// Komentaro juodraštis laikomas ČIA (ne tik <textarea> DOM), kad 12s pollOrderHistory()
+// (žr. startOrderHistoryPolling()) atlikto renderOrderHistory() NEIŠTRINTŲ jau įrašyto
+// teksto — ta pati "neprarasti to, kas rašoma" logika, kaip užsakymo pokalbio laukui.
+const reviewDraftComments = {};
+
+function reviewBlockHtml(o){
+  if(o.review_rating){
+    const stars = '★'.repeat(o.review_rating) + '☆'.repeat(5 - o.review_rating);
+    return `<div class="review-block review-done">
+      <span class="review-stars-static">${stars}</span>Jūsų įvertinimas${o.review_comment ? ': „' + escapeHtml(o.review_comment) + '"' : ''}
+    </div>`;
+  }
+  if(reviewFormOpenId !== o.id){
+    return `<div class="review-block"><button class="review-toggle" onclick="toggleReviewForm(${o.id})">★ Įvertinti servisą</button></div>`;
+  }
+  const draft = reviewDraftRatings[o.id] || 0;
+  return `<div class="review-block">
+    <div class="review-form">
+      <div class="review-stars" id="review-stars-${o.id}">
+        ${[1,2,3,4,5].map(n=>`<span class="review-star${n<=draft?' on':''}" data-n="${n}" onclick="setReviewStar(${o.id},${n})">★</span>`).join('')}
+      </div>
+      <textarea id="review-comment-${o.id}" placeholder="Komentaras (nebūtina)" oninput="reviewDraftComments[${o.id}]=this.value">${escapeHtml(reviewDraftComments[o.id]||'')}</textarea>
+      <button class="review-submit" id="review-submit-${o.id}" onclick="submitReview(${o.id})">Siųsti įvertinimą</button>
+      <div class="review-err" id="review-err-${o.id}" style="display:none;"></div>
+    </div>
+  </div>`;
+}
+
+function toggleReviewForm(orderId){
+  reviewFormOpenId = (reviewFormOpenId === orderId) ? null : orderId;
+  renderOrderHistory();
+}
+
+function setReviewStar(orderId, n){
+  reviewDraftRatings[orderId] = n;
+  document.querySelectorAll(`#review-stars-${orderId} .review-star`).forEach(el => {
+    el.classList.toggle('on', Number(el.dataset.n) <= n);
+  });
+}
+
+async function submitReview(orderId){
+  const rating = reviewDraftRatings[orderId];
+  const errEl = document.getElementById(`review-err-${orderId}`);
+  errEl.style.display = 'none';
+  if(!rating){ errEl.textContent = 'Pasirinkite žvaigždučių skaičių'; errEl.style.display = 'block'; return; }
+  const comment = document.getElementById(`review-comment-${orderId}`).value.trim();
+  const btn = document.getElementById(`review-submit-${orderId}`);
+  btn.disabled = true; btn.textContent = 'Siunčiama...';
+  try{
+    await apiPost(`/orders/${orderId}/review`, { rating, comment: comment || null });
+    delete reviewDraftRatings[orderId];
+    delete reviewDraftComments[orderId];
+    reviewFormOpenId = null;
+    orderHistoryCache = await apiGet('/clients/me/orders');
+    renderOrderHistory();
+  } catch(err){
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+    btn.disabled = false; btn.textContent = 'Siųsti įvertinimą';
+  }
 }
 
 /* ══ UŽSAKYMO POKALBIS (Serviso knyga, Žingsnis 4/7) — TAS PATS GET/POST
@@ -1202,7 +1286,7 @@ async function pollOrderHistory(){
     updatePaBadge();
     if(hasFresh) playPaSound();
 
-    const typingInChat = document.activeElement && document.activeElement.closest('.order-chat');
+    const typingInChat = document.activeElement && (document.activeElement.closest('.order-chat') || document.activeElement.closest('.review-form'));
     if(!typingInChat) renderOrderHistory();
   } catch(err){
     // tylus nepavykimas — kitas ciklas po ~12 sek. pabandys iš naujo
