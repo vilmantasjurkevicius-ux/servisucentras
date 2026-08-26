@@ -435,6 +435,21 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .pf-row{display:flex;gap:10px;}
 .pf-group{flex:1;margin-bottom:14px;}
 
+/* ══ PROFILIO NUOTRAUKA + LIGHTBOX (padidinimas paspaudus) ══ */
+.profile-photo-thumb{width:72px;height:72px;border-radius:12px;object-fit:cover;border:1px solid var(--line2);cursor:pointer;flex-shrink:0;background:var(--bg3);}
+.profile-photo-placeholder{display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--dim);}
+.lightbox{
+  position:fixed;inset:0;background:rgba(0,0,0,0.88);display:flex;align-items:center;justify-content:center;
+  z-index:9999;opacity:0;pointer-events:none;transition:opacity .25s ease;padding:24px;box-sizing:border-box;
+}
+.lightbox.show{opacity:1;pointer-events:auto;}
+.lightbox img{max-width:90vw;max-height:90vh;border-radius:8px;box-shadow:0 10px 60px rgba(0,0,0,0.6);cursor:pointer;}
+.lightbox-close{
+  position:absolute;top:18px;right:24px;background:rgba(255,255,255,0.08);border:none;color:#fff;
+  font-size:22px;width:40px;height:40px;border-radius:50%;cursor:pointer;line-height:1;
+}
+.lightbox-close:hover{background:rgba(255,255,255,0.18);}
+
 /* STATISTIKA */
 .stat-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin:20px 24px;}
 .stat-card{background:var(--bg);padding:18px 20px;}
@@ -799,6 +814,16 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
             <div class="panel-title">Serviso profilis</div>
           </div>
           <div style="padding:20px 24px;">
+            <div class="pf-group" style="display:flex;align-items:center;gap:16px;">
+              <img id="profile-photo-preview" alt="Serviso nuotrauka" class="profile-photo-thumb" style="display:none;" onclick="openLightbox(this.src)">
+              <div id="profile-photo-placeholder" class="profile-photo-thumb profile-photo-placeholder">🔧</div>
+              <div>
+                <input type="file" id="profile-photo-input" accept="image/jpeg,image/png" style="display:none;" onchange="onProfilePhotoSelected(event)">
+                <button type="button" class="btn" onclick="document.getElementById('profile-photo-input').click()">📷 Pasirinkti nuotrauką</button>
+                <div style="font-size:11px;color:var(--muted);margin-top:6px;">JPG arba PNG, iki 5MB — spustelėkite nuotrauką, kad padidintumėte</div>
+                <div id="profile-photo-msg" style="display:none;font-size:11.5px;margin-top:6px;"></div>
+              </div>
+            </div>
             <div class="pf-group">
               <label class="pf-label">Pavadinimas</label>
               <input class="pf-input" id="profile-name" placeholder="Serviso pavadinimas">
@@ -1023,6 +1048,12 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
     <button type="button" onclick="ltCalToday()">Šiandien</button>
     <button type="button" onclick="ltCalClear()">Išvalyti</button>
   </div>
+</div>
+
+<!-- LIGHTBOX — profilio nuotraukos padidinimas paspaudus (žr. openLightbox()) -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button type="button" class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="Serviso nuotrauka">
 </div>
 
 <script src="lt-cities.js"></script>
@@ -2407,7 +2438,70 @@ function onWorkHoursToggle(day){
   document.querySelector(`.wh-end[data-day="${day}"]`).disabled = !cb.checked;
 }
 
+function updateProfilePhotoPreview(){
+  const img = document.getElementById('profile-photo-preview');
+  const placeholder = document.getElementById('profile-photo-placeholder');
+  if(serviceProfile.photo_path){
+    img.src = `/uploads/services/${serviceProfile.photo_path}`;
+    img.style.display = 'block';
+    placeholder.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    placeholder.style.display = 'flex';
+  }
+}
+
+async function onProfilePhotoSelected(event){
+  const input = event.target;
+  const file = input.files[0];
+  if(!file) return;
+  if(!['image/jpeg','image/png'].includes(file.type)){
+    showFormMsg('profile-photo-msg', '⚠ Priimami tik JPG arba PNG failai', false);
+    input.value = '';
+    return;
+  }
+  if(file.size > 5*1024*1024){
+    showFormMsg('profile-photo-msg', '⚠ Failas per didelis (maks. 5MB)', false);
+    input.value = '';
+    return;
+  }
+  showFormMsg('profile-photo-msg', 'Įkeliama...', true);
+  const form = new FormData();
+  form.append('photo', file);
+  try{
+    const res = await fetch(`${API_BASE}/services/me/photo`, {
+      method: 'POST',
+      headers: { Authorization: 'Bearer '+serviceToken },
+      body: form,
+    });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Klaida');
+    serviceProfile = data;
+    updateProfilePhotoPreview();
+    showFormMsg('profile-photo-msg', '✓ Nuotrauka atnaujinta', true);
+  } catch(err){
+    showFormMsg('profile-photo-msg', '⚠ '+err.message, false);
+  } finally {
+    input.value = '';
+  }
+}
+
+// ══ LIGHTBOX — bet kurios profilio nuotraukos padidinimas paspaudus (sklandus fade,
+// uždaroma X mygtuku, paspaudus BET KUR (foną/nuotrauką), arba Esc — touch-friendly. ══
+function lightboxEscHandler(e){ if(e.key === 'Escape') closeLightbox(); }
+function openLightbox(src){
+  if(!src) return;
+  document.getElementById('lightbox-img').src = src;
+  document.getElementById('lightbox').classList.add('show');
+  document.addEventListener('keydown', lightboxEscHandler);
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('show');
+  document.removeEventListener('keydown', lightboxEscHandler);
+}
+
 function loadProfileForm(){
+  updateProfilePhotoPreview();
   document.getElementById('profile-name').value = serviceProfile.name || '';
   document.getElementById('profile-street').value = serviceProfile.street || '';
   document.getElementById('profile-housenr').value = serviceProfile.house_number || '';

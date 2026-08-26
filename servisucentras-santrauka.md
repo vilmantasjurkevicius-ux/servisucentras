@@ -2151,6 +2151,28 @@ Vartotojas ant didelio monitoriaus nematė fone pasikartojančio `logo-watermark
 
 ---
 
+## Serviso profilio nuotrauka + lightbox padidinimas (2026-08-26)
+
+Pilna nauja funkcija pagal vartotojo pateiktą detalią užduotį: servisas gali įkelti VIENĄ profilio nuotrauką/logotipą, ji rodoma sąraše ir profilyje, paspaudus — padidėja per lightbox.
+
+**Backend**:
+- Nauji npm paketai `multer` (multipart/form-data) ir `sharp` (nuotraukos apdorojimas) — abu sėkmingai įsidiegė šioje Windows mašinoje BE Python/build tools (prebuilt binariai), taigi ankstesnis apribojimas ("no Python/build tools", žr. backend_created atmintį) šiems dviem paketams netaikomas.
+- Naujas `services.photo_path` DB stulpelis (TEXT, NULL = nėra nuotraukos).
+- Naujas `backend/src/utils/uploads.js`: `UPLOADS_DIR` = TAME PAČIAME aplanke kaip DB failas (`path.dirname(DB_PATH)/uploads/services`) — automatiškai Railway Volume, jokio atskiro Cloudinary nereikia (kaip prašyta). `saveServicePhoto()` — `sharp` auto-orientuoja (EXIF), sumažina iki maks. 800×800 (`fit:'inside'`, neišdidina mažesnių), PNG SU permatomumu paliekamas `.png` (skaidrumas nepraranamas — logotipams), kitaip suspaudžiamas kaip `.jpg` (quality 82). `deleteServicePhoto()` — ištrina seną failą.
+- `POST /api/services/me/photo` (multer memoryStorage, 5MB limitas, tik `image/jpeg`/`image/png` fileFilter) — apdoroja, IŠTRINA seną nuotrauką (nekaupia), atnaujina DB, grąžina pilną profilį.
+- `server.js`: `app.use('/uploads/services', express.static(UPLOADS_DIR))` — vieša prieiga prie nuotraukų.
+- `.gitignore`: `backend/data/uploads/` pridėta (vartotojų duomenys, ne repo turinys).
+- 7 nauji backend testai `backend/test/uploads.test.js` (dydžio sumažinimas iki ≤800×800, PNG skaidrumo išsaugojimas, senos nuotraukos ištrynimas keičiant, blogas tipas → 400, per didelis failas → 400, matoma viešame sąraše, be tokeno → 401) — sintetinės testinės nuotraukos generuojamos PAČIU `sharp` (ne fiksuoti failai). `npm test` → **51/51**.
+
+**Frontend** (abu failai turi SAVO NEPRIKLAUSOMĄ lightbox implementaciją, nes projektas neturi bendro JS include mechanizmo):
+- `automeistrai-dashboard.html` (Profilis puslapis): nuotraukos peržiūra (arba 🔧 placeholder) + "📷 Pasirinkti nuotrauką" mygtukas (paslėptas `<input type="file">`), kliento pusės validacija (tipas/dydis) prieš siunčiant, `FormData` POST į `/services/me/photo`.
+- `servisucentras-pagrindinis.html`: maža apvali (32px) nuotraukos ikonėlė ŠALIA serviso pavadinimo kortelėje (arba 🔧 placeholder, jei `photo_path` nėra).
+- Abiejuose: `.lightbox` — fade-in/out (CSS `opacity`+`transition`), uždaroma paspaudus X, BET KUR fone (visas tamsintas plotas laiko `onclick="closeLightbox()"`), arba Esc klavišu (`keydown` listener'is pridedamas/pašalinamas atidarant/uždarant, kad neliktų "pakibęs" po uždarymo).
+
+**Patikrinta gyvai, pilnas ciklas**: sukurtas testinis servisas, per TIKRĄ `<input type="file">` (DataTransfer simuliacija, be native OS dialogo) įkelta 1400×1000 testinė JPG nuotrauka → serveryje realiai tapo 800×571 (2.9KB) → iškart pasirodė profilio peržiūroje (vietoj 🔧 placeholder) → viešame sąraše šalia "Photo Check SVC" pavadinimo pasirodė ta pati nuotrauka apvaliu thumbnail — paspaudus BET KURIĄ iš dviejų vietų, lightbox atsidarė sklandžiai; uždarymas patikrintas VISAIS trimis būdais (X, Esc, paspaudus foną) — visi veikė.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

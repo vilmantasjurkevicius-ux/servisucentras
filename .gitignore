@@ -12,6 +12,10 @@ backend/data/*.db-wal
 backend/data/*.db-shm
 !backend/data/.gitkeep
 
+# Įkeltos serviso profilio nuotraukos — vartotojų duomenys, gyvena TIK Railway Volume,
+# ne repozitorijoje (žr. backend/src/utils/uploads.js)
+backend/data/uploads/
+
 # OS/redaktoriaus šlamštas
 .DS_Store
 Thumbs.db

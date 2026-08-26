@@ -52,6 +52,7 @@ function migrate() {
   if (!serviceCols.includes('last_active_at')) db.exec('ALTER TABLE services ADD COLUMN last_active_at TEXT');
   if (!serviceCols.includes('lunch_start')) db.exec('ALTER TABLE services ADD COLUMN lunch_start TEXT');
   if (!serviceCols.includes('lunch_end')) db.exec('ALTER TABLE services ADD COLUMN lunch_end TEXT');
+  if (!serviceCols.includes('photo_path')) db.exec('ALTER TABLE services ADD COLUMN photo_path TEXT');
   // Struktūrizuotas adresas (gatvė/namo nr./gyvenvietė/savivaldybė/pašto kodas) — pakeičia
   // senąjį laisvo teksto `address` naujiems įrašams (žr. santrauka.md "Struktūrizuotas adresas").
   const hasStructuredAddress = serviceCols.includes('street');

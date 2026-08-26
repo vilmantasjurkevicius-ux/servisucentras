@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS services (
   temp_closed INTEGER NOT NULL DEFAULT 0, -- "Laikinai nedirbu" rankinis perjungimas (be konkrečios grįžimo datos)
   vacation_until TEXT, -- atostogų pabaigos data (YYYY-MM-DD); jei >= šiandien, servisas rodomas kaip atostogaujantis viešoje paieškoje
   last_active_at TEXT, -- "heartbeat" — atnaujinama kas kartą, kai servisas kviečia GET /orders (12s poll'inimo ciklas); naudojama TIK Servisų bendruomenės "online" ženkliukui (žr. serviceChat.routes.js), ne darbo laiko/DIRBA-UŽDARYTA logikai
+  photo_path TEXT, -- įkeltos profilio nuotraukos failo vardas (žr. utils/uploads.js) — saugoma Railway Volume, ne DB; NULL = rodomas numatytasis placeholder'is
   rating REAL,
   status TEXT NOT NULL DEFAULT 'pending', -- pending | active | inactive | banned
   is_bot INTEGER NOT NULL DEFAULT 0,

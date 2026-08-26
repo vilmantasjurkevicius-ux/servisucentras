@@ -1,10 +1,26 @@
 const express = require('express');
+const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { authRequired, requireRole } = require('../middleware/auth');
 const { trialEndDate } = require('../utils/commission');
+const { MAX_UPLOAD_BYTES, saveServicePhoto, deleteServicePhoto } = require('../utils/uploads');
 
 const router = express.Router();
+
+// Nuotrauka laikoma atmintyje TIK apdorojimo metu (sharp perskaito buferį, sumažina/
+// suspaudžia ir įrašo į diską pačiam) — niekada nerašoma į diską neapdorota.
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_UPLOAD_BYTES },
+  fileFilter(req, file, cb) {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+      cb(null, true);
+    } else {
+      cb(new Error('Priimami tik JPG arba PNG failai'));
+    }
+  },
+});
 
 function withCategories(service) {
   if (!service) return service;
@@ -94,6 +110,27 @@ router.patch('/me/password', authRequired, requireRole('service'), (req, res) =>
   }
   db.prepare('UPDATE services SET password_hash = ? WHERE id = ?').run(bcrypt.hashSync(newPassword, 10), req.user.id);
   res.json({ message: 'Slaptažodis pakeistas' });
+});
+
+// ── PROFILIO NUOTRAUKA — sumažinama/suspaudžiama serverio pusėje (žr. utils/uploads.js),
+// nauja PAKEIČIA seną (jokio kaupimo), saugoma tame pačiame Volume kaip ir DB ──
+router.post('/me/photo', authRequired, requireRole('service'), (req, res) => {
+  photoUpload.single('photo')(req, res, async (err) => {
+    if (err) {
+      const msg = err.code === 'LIMIT_FILE_SIZE' ? 'Failas per didelis (maks. 5MB)' : err.message;
+      return res.status(400).json({ error: msg });
+    }
+    if (!req.file) return res.status(400).json({ error: 'Nepasirinktas failas' });
+    try {
+      const filename = await saveServicePhoto(req.user.id, req.file.buffer);
+      const old = db.prepare('SELECT photo_path FROM services WHERE id = ?').get(req.user.id);
+      db.prepare('UPDATE services SET photo_path = ? WHERE id = ?').run(filename, req.user.id);
+      deleteServicePhoto(old.photo_path);
+      res.json(withCategories(db.prepare('SELECT * FROM services WHERE id = ?').get(req.user.id)));
+    } catch (e) {
+      res.status(400).json({ error: 'Nepavyko apdoroti nuotraukos — patikrinkite, ar tai tikras JPG/PNG failas' });
+    }
+  });
 });
 
 // ── PASLAUGOS: visos 12 kategorijų + šio serviso kaina/aktyvumas kiekvienai ──
