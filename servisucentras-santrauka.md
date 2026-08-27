@@ -2217,6 +2217,18 @@ Praplėsta jau veikianti "Kontaktai/Pagalba" žinučių sistema keliais apsaugos
 
 ---
 
+## Admin: rankinis kliento/serviso sukūrimas (2026-08-27)
+
+Admin panelėje du "+ Pridėti servisą" mygtukai (Dashboard ir Servisai puslapiuose) egzistavo maketе, bet NEVEIKĖ (jokio `onclick`). Įgyvendinta rankinio sukūrimo funkcija abiem tipams + naujas "+ Pridėti klientą" mygtukas Klientai puslapyje (jo anksčiau visai nebuvo).
+
+**Backend** (`backend/src/routes/admin.routes.js`): nauji `POST /api/admin/clients` ir `POST /api/admin/services`, validacija IR insert stulpeliai TIKSLIAI tokie patys kaip viešoje registracijoje (`auth.routes.js`) — servisui privalomi pavadinimas/el.paštas + pilnas adresas (gatvė/namo nr./pašto kodas) + miestas ARBA savivaldybė; klientui tik el.paštas. Slaptažodis NEklausiamas iš admin — sugeneruojamas atsitiktinis (jau esanti `generateTempPassword()` funkcija, ta pati kaip reset-password), grąžinamas atsakyme VIENĄ kartą. Naujas servisas iškart `status:'active'`, gauna tą pačią registracijos el. laišką kaip savarankiškai užsiregistravęs. 7 nauji testai (`backend/test/admin-accounts.test.js`) — sukūrimas, prisijungimas sugeneruotu slaptažodžiu, trūkstamų laukų/dublikato atmetimas, kaimo (municipality) servisas, be admin tokeno → 401. Visam paketui **71/71**.
+
+**Frontend** (`servisucentras-admin.html`): kadangi admin panelėje anksčiau NEBUVO jokio modalo/popup konvencijos (tik sticky "temp-password-box" ir plaukiojantis miestų sąrašas), sukurta nauja bendra `.modal-overlay`/`.modal-box` CSS (tamsi tema, uždaroma X arba paspaudus foną). Sėkmingai sukūrus — modalas užsidaro, sąrašas atsinaujina (`loadClients()`/`loadServices()`), laikinas slaptažodis parodomas per JAU ESANTĮ `showTempPasswordBox()` (tas pats vienkartinio rodymo elementas kaip reset-password veiksmui).
+
+**Patikrinta gyvai**: abu "+ Pridėti servisą" mygtukai (Dashboard IR Servisai puslapiuose) atidaro tą patį modalą; sukurtas tikras testinis klientas per REALŲ mygtuko paspaudimą admin UI (modalas užsidarė, sąrašas/sidebar skaičius atsinaujino, temp slaptažodis parodytas); sukurtas tikras testinis servisas su pilnu adresu (Kaunas) — tas pats rezultatas. Automatiniai testai papildomai patvirtino, kad sugeneruotu slaptažodžiu iš tikrųjų galima prisijungti. Testiniai duomenys išvalyti — **PASTABA**: valymo metu naudotas per platus `LIKE` filtras klaidingai ištrynė IR vieną SENESNĮ testinį klientą ("Notif Klientas", `test-notif-client@example.com`), kuris buvo dev DB jau anksčiau (tikriausiai ankstesnės sesijos pranešimų/notifikacijų testavimo liekana) — jei tai buvo reikalinga fixture, reikės sukurti iš naujo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

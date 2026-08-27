@@ -8,7 +8,7 @@ const { authLimiter } = require('../middleware/rateLimit');
 const { refreshInvoices, currentPeriod, periodLabelLt } = require('../utils/invoices');
 const { disableOverlappingBots } = require('../utils/bots');
 const { searchServicesInCity, buildInvitationLetter, findEmailOnWebsite } = require('../utils/invitations');
-const { sendInvitationEmail } = require('../email');
+const { sendInvitationEmail, sendServiceRegistrationEmail } = require('../email');
 
 const router = express.Router();
 
@@ -87,6 +87,26 @@ router.get('/clients', (req, res) => {
   res.json(clients.map(({ password_hash, ...rest }) => rest));
 });
 
+// Rankinis kliento sukūrimas admin panelėje (be viešos registracijos formos) —
+// pvz. kai klientas paskambina telefonu. Slaptažodis generuojamas TAIP PAT, kaip
+// reset-password (žr. generateTempPassword aukščiau) ir parodomas VIENĄ kartą.
+router.post('/clients', (req, res) => {
+  const { firstName, lastName, email, phone } = req.body;
+  if (!email) return res.status(400).json({ error: 'Trūksta el. pašto' });
+
+  const existing = db.prepare('SELECT id FROM clients WHERE email = ?').get(email);
+  if (existing) return res.status(409).json({ error: 'Klientas su tokiu el. paštu jau egzistuoja' });
+
+  const tempPassword = generateTempPassword();
+  const info = db.prepare(`
+    INSERT INTO clients (first_name, last_name, email, password_hash, phone, is_guest, status)
+    VALUES (?, ?, ?, ?, ?, 0, 'active')
+  `).run(firstName || null, lastName || null, email, bcrypt.hashSync(tempPassword, 10), phone || null);
+
+  const { password_hash, ...client } = db.prepare('SELECT * FROM clients WHERE id = ?').get(info.lastInsertRowid);
+  res.status(201).json({ client, tempPassword });
+});
+
 router.patch('/clients/:id/ban', (req, res) => {
   db.prepare("UPDATE clients SET status = 'banned' WHERE id = ?").run(req.params.id);
   res.json({ ok: true });
@@ -140,6 +160,48 @@ router.get('/services', (req, res) => {
     };
   });
   res.json(withStats);
+});
+
+// Rankinis serviso sukūrimas admin panelėje (be viešos registracijos formos) —
+// pvz. kai servisas susisiekia telefonu/el.paštu. Validacija ir INSERT stulpeliai
+// TIKSLIAI tokie patys kaip POST /api/auth/service/register (žr. auth.routes.js),
+// tik slaptažodis generuojamas (žr. generateTempPassword) ir parodomas VIENĄ kartą.
+router.post('/services', (req, res) => {
+  const {
+    name, ownerFirstName, ownerLastName, email, phone,
+    city, municipality, street, houseNumber, settlement, postalCode,
+    serviceType, mechanicCount, description, workStart, workEnd,
+  } = req.body;
+
+  if (!name || !email) return res.status(400).json({ error: 'Trūksta pavadinimo arba el. pašto' });
+  if (!street || !houseNumber || !postalCode) {
+    return res.status(400).json({ error: 'Trūksta adreso laukų (gatvė, namo nr., pašto kodas)' });
+  }
+  if (!city && !municipality) {
+    return res.status(400).json({ error: 'Nurodykite miestą (jei adresas mieste) arba savivaldybę/rajoną (jei adresas kaime)' });
+  }
+
+  const existing = db.prepare('SELECT id FROM services WHERE email = ?').get(email);
+  if (existing) return res.status(409).json({ error: 'Servisas su tokiu el. paštu jau egzistuoja' });
+
+  const tempPassword = generateTempPassword();
+  const insert = db.prepare(`
+    INSERT INTO services (name, owner_first_name, owner_last_name, email, password_hash, phone, city, street, house_number, settlement, municipality, postal_code, service_type, mechanic_count, description, work_start, work_end, status, is_bot)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', 0)
+  `);
+  const info = insert.run(
+    name, ownerFirstName || null, ownerLastName || null, email, bcrypt.hashSync(tempPassword, 10), phone || null,
+    city || '', street, houseNumber, settlement || null, municipality || null, postalCode,
+    serviceType || null, mechanicCount || null, description || null,
+    workStart || '08:00', workEnd || '18:00'
+  );
+  disableOverlappingBots(info.lastInsertRowid);
+
+  const service = db.prepare('SELECT * FROM services WHERE id = ?').get(info.lastInsertRowid);
+  const { password_hash, ...publicService } = service;
+  res.status(201).json({ service: publicService, tempPassword });
+
+  sendServiceRegistrationEmail(service);
 });
 
 // Registracija dabar iškart nustato 'active' (žr. auth.routes.js), tad šis

@@ -172,6 +172,24 @@ body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',sans-ser
 .search-input{background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:6px 10px;color:var(--text);font-family:'IBM Plex Mono';font-size:11px;outline:none;width:180px;}
 .search-input::placeholder{color:var(--dim);}
 .search-input:focus{border-color:rgba(230,57,70,0.3);}
+
+/* ══ MODALAS (rankinis kliento/serviso sukūrimas) ══ */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:500;align-items:center;justify-content:center;padding:20px;box-sizing:border-box;}
+.modal-overlay.show{display:flex;}
+.modal-box{background:var(--bg2);border:1px solid var(--line2);border-radius:5px;width:100%;max-width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;}
+.modal-head-title{font-family:'Oswald';font-size:15px;font-weight:600;}
+.modal-head-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.modal-head-close:hover{color:var(--text);}
+.modal-body{padding:18px 20px;display:flex;flex-direction:column;gap:12px;}
+.modal-row{display:flex;gap:10px;}
+.modal-field{flex:1;display:flex;flex-direction:column;gap:5px;}
+.modal-field label{font-size:11px;color:var(--muted);}
+.modal-field input{background:var(--bg3);border:1px solid var(--line2);border-radius:3px;padding:9px 11px;color:var(--text);font-family:'IBM Plex Sans';font-size:13px;outline:none;width:100%;box-sizing:border-box;}
+.modal-field input:focus{border-color:rgba(230,57,70,0.3);}
+.modal-error{font-size:12px;color:var(--y);display:none;}
+.modal-actions{padding:14px 20px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:10px;}
+
 table{width:100%;border-collapse:collapse;}
 th{font-family:'IBM Plex Mono';font-size:9.5px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);background:var(--bg3);cursor:pointer;}
 th:hover{color:var(--y);}
@@ -312,7 +330,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="page show" id="p-dashboard">
     <div class="page-head">
       <div><div class="page-title">📊 Dashboard</div><div class="page-sub"><span class="live-dot"></span>Realiu laiku · Paskutinis atnaujinimas: <span id="last-upd"></span></div></div>
-      <div class="head-actions"><button class="btn">⬇ Eksportuoti</button><button class="btn btn-y">+ Pridėti servisą</button></div>
+      <div class="head-actions"><button class="btn">⬇ Eksportuoti</button><button class="btn btn-y" onclick="openAddServiceModal()">+ Pridėti servisą</button></div>
     </div>
     <div class="stats-row">
       <div class="stat"><div class="stat-lbl">Iš viso klientų</div><div class="stat-val" id="stat-clients" style="color:var(--y)">—</div><div class="stat-ch" id="stat-clients-ch"></div><div class="mini-chart" id="mc1"></div></div>
@@ -352,7 +370,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="page" id="p-clients">
     <div class="page-head">
       <div><div class="page-title">🚗 Klientai</div><div class="page-sub" id="clients-count-sub">— registruoti vartotojai</div></div>
-      <div class="head-actions"><button class="btn">⬇ Eksportuoti CSV</button></div>
+      <div class="head-actions"><button class="btn">⬇ Eksportuoti CSV</button><button class="btn btn-y" onclick="openAddClientModal()">+ Pridėti klientą</button></div>
     </div>
     <div style="padding:16px 20px;">
       <div class="table-wrap">
@@ -378,7 +396,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <div class="page" id="p-services">
     <div class="page-head">
       <div><div class="page-title">🔧 Servisai</div><div class="page-sub" id="services-count-sub">— registruoti servisai</div></div>
-      <div class="head-actions"><button class="btn btn-y">+ Pridėti servisą</button></div>
+      <div class="head-actions"><button class="btn btn-y" onclick="openAddServiceModal()">+ Pridėti servisą</button></div>
     </div>
     <div style="padding:16px 20px;">
       <div class="table-wrap">
@@ -693,6 +711,52 @@ tr:hover td{background:rgba(255,255,255,0.015);}
 </div><!-- /main -->
 </div><!-- /shell -->
 
+<!-- MODALAS: rankinis KLIENTO sukūrimas (žr. submitAddClient()) -->
+<div class="modal-overlay" id="modal-add-client" onclick="if(event.target===this)closeAddClientModal()">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-head-title">🚗 Pridėti klientą</div><button type="button" class="modal-head-close" onclick="closeAddClientModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-row">
+        <div class="modal-field"><label>Vardas</label><input id="ac-first-name" placeholder="Jonas"></div>
+        <div class="modal-field"><label>Pavardė</label><input id="ac-last-name" placeholder="Jonaitis"></div>
+      </div>
+      <div class="modal-field"><label>El. paštas *</label><input id="ac-email" type="email" placeholder="jonas@pavyzdys.lt"></div>
+      <div class="modal-field"><label>Telefonas</label><input id="ac-phone" placeholder="+370..."></div>
+      <div class="modal-error" id="ac-error"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="closeAddClientModal()">Atšaukti</button>
+      <button type="button" class="btn btn-y" id="ac-submit-btn" onclick="submitAddClient()">Sukurti</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODALAS: rankinis SERVISO sukūrimas (žr. submitAddService()) -->
+<div class="modal-overlay" id="modal-add-service" onclick="if(event.target===this)closeAddServiceModal()">
+  <div class="modal-box">
+    <div class="modal-head"><div class="modal-head-title">🔧 Pridėti servisą</div><button type="button" class="modal-head-close" onclick="closeAddServiceModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="modal-field"><label>Pavadinimas *</label><input id="as-name" placeholder="Auto Servisas UAB"></div>
+      <div class="modal-field"><label>El. paštas *</label><input id="as-email" type="email" placeholder="info@pavyzdys.lt"></div>
+      <div class="modal-field"><label>Telefonas</label><input id="as-phone" placeholder="+370..."></div>
+      <div class="modal-row">
+        <div class="modal-field"><label>Miestas (arba savivaldybė žemiau)</label><input id="as-city" placeholder="Vilnius"></div>
+        <div class="modal-field"><label>Savivaldybė / rajonas</label><input id="as-municipality" placeholder="Ukmergės r."></div>
+      </div>
+      <div class="modal-row">
+        <div class="modal-field"><label>Gatvė *</label><input id="as-street" placeholder="Gedimino pr."></div>
+        <div class="modal-field"><label>Namo nr. *</label><input id="as-house-number" placeholder="12"></div>
+      </div>
+      <div class="modal-field"><label>Pašto kodas *</label><input id="as-postal-code" placeholder="LT-01103"></div>
+      <div class="modal-error" id="as-error"></div>
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="btn" onclick="closeAddServiceModal()">Atšaukti</button>
+      <button type="button" class="btn btn-y" id="as-submit-btn" onclick="submitAddService()">Sukurti</button>
+    </div>
+  </div>
+</div>
+
 <script>
 const API_BASE = '/api';
 let adminToken = localStorage.getItem('sc_admin_token') || null;
@@ -916,6 +980,73 @@ function copyTempPassword(pw, btn){
   navigator.clipboard.writeText(pw).then(()=>{
     if(btn){ const orig = btn.textContent; btn.textContent = '✓ Nukopijuota'; setTimeout(()=>{ btn.textContent = orig; }, 1500); }
   });
+}
+
+// ── RANKINIS KLIENTO/SERVISO SUKŪRIMAS (admin, be viešos registracijos formos) ──
+function openAddClientModal(){
+  ['ac-first-name','ac-last-name','ac-email','ac-phone'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('ac-error').style.display='none';
+  document.getElementById('modal-add-client').classList.add('show');
+}
+function closeAddClientModal(){ document.getElementById('modal-add-client').classList.remove('show'); }
+async function submitAddClient(){
+  const errEl = document.getElementById('ac-error');
+  errEl.style.display = 'none';
+  const firstName = document.getElementById('ac-first-name').value.trim();
+  const lastName = document.getElementById('ac-last-name').value.trim();
+  const email = document.getElementById('ac-email').value.trim();
+  const phone = document.getElementById('ac-phone').value.trim();
+  if(!email){ errEl.textContent = 'El. paštas privalomas'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('ac-submit-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Kuriama...';
+  try{
+    const res = await apiPost('/admin/clients', { firstName, lastName, email, phone });
+    closeAddClientModal();
+    await loadClients();
+    showTempPasswordBox(`${firstName} ${lastName}`.trim() || email, res.tempPassword);
+  } catch(err){
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+
+function openAddServiceModal(){
+  ['as-name','as-email','as-phone','as-city','as-municipality','as-street','as-house-number','as-postal-code'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('as-error').style.display='none';
+  document.getElementById('modal-add-service').classList.add('show');
+}
+function closeAddServiceModal(){ document.getElementById('modal-add-service').classList.remove('show'); }
+async function submitAddService(){
+  const errEl = document.getElementById('as-error');
+  errEl.style.display = 'none';
+  const name = document.getElementById('as-name').value.trim();
+  const email = document.getElementById('as-email').value.trim();
+  const phone = document.getElementById('as-phone').value.trim();
+  const city = document.getElementById('as-city').value.trim();
+  const municipality = document.getElementById('as-municipality').value.trim();
+  const street = document.getElementById('as-street').value.trim();
+  const houseNumber = document.getElementById('as-house-number').value.trim();
+  const postalCode = document.getElementById('as-postal-code').value.trim();
+  if(!name || !email){ errEl.textContent = 'Pavadinimas ir el. paštas privalomi'; errEl.style.display='block'; return; }
+  if(!street || !houseNumber || !postalCode){ errEl.textContent = 'Trūksta adreso laukų (gatvė, namo nr., pašto kodas)'; errEl.style.display='block'; return; }
+  if(!city && !municipality){ errEl.textContent = 'Nurodykite miestą arba savivaldybę/rajoną'; errEl.style.display='block'; return; }
+  const btn = document.getElementById('as-submit-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Kuriama...';
+  try{
+    const res = await apiPost('/admin/services', { name, email, phone, city, municipality, street, houseNumber, postalCode });
+    closeAddServiceModal();
+    await loadServices();
+    showTempPasswordBox(name, res.tempPassword);
+  } catch(err){
+    errEl.textContent = err.message;
+    errEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
 }
 function startDeleteClient(id){ deletingClientId = id; renderClients(); }
 function cancelDeleteClient(){ deletingClientId = null; renderClients(); }
