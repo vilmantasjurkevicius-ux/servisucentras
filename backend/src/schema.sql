@@ -134,6 +134,20 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Plaukiojantis "Kontaktai/Pagalba" burbulas — vienpusis pranešimų kanalas admin'ui
+-- (BE boto/AI), pasiekiamas iš bet kurio puslapio, tiek prisijungus, tiek svečiui.
+CREATE TABLE IF NOT EXISTS admin_support_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  sender_type TEXT NOT NULL, -- 'client' | 'service' | 'guest' (guest — pridėta papildomai, nes burbulas matomas ir neprisijungusiems pagrindiniame puslapyje)
+  sender_id INTEGER, -- clients.id arba services.id; NULL svečiams
+  sender_name TEXT,
+  sender_email TEXT,
+  sender_phone TEXT,
+  message TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'new', -- new | reviewed | resolved
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 -- Serviso atsisakymo PO priėmimo istorija (mokestis NEGRĄŽINAMAS — žr. santrauka.md).
 -- Saugoma ATSKIRAI nuo orders, nes ta pati orders eilutė gali būti priimta/atsisakyta
 -- kelis kartus (kiekvieną kartą kito serviso) — be šios lentelės PIRMO serviso mokesčio

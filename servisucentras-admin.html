@@ -290,6 +290,7 @@ tr:hover td{background:rgba(255,255,255,0.015);}
   <button class="sb-item" onclick="showPage('declines',this)"><span class="ic">🚫</span> Atšaukti užsakymai <span class="badge" id="sb-declines-count">—</span></button>
   <button class="sb-item" onclick="showPage('chat',this)"><span class="ic">💬</span> Chat žinutės</button>
   <button class="sb-item" onclick="showPage('reviews',this)"><span class="ic">⭐</span> Atsiliepimai</button>
+  <button class="sb-item" onclick="showPage('support',this)"><span class="ic">📩</span> Pranešimai <span class="badge" id="sb-support-count">—</span></button>
 
   <div class="sb-section">Finansai</div>
   <button class="sb-item" onclick="showPage('money',this)"><span class="ic">💰</span> Pajamos</button>
@@ -639,6 +640,29 @@ tr:hover td{background:rgba(255,255,255,0.015);}
       </div>
     </div>
   </div>
+  <!-- ════ PRANEŠIMAI (Kontaktai/Pagalba burbulas iš bet kurio puslapio, BE boto) ════ -->
+  <div class="page" id="p-support">
+    <div class="page-head">
+      <div><div class="page-title">📩 Pranešimai</div><div class="page-sub">Žinutės iš "Kontaktai/Pagalba" burbulo — klientai, servisai ir svečiai</div></div>
+    </div>
+    <div style="padding:16px 20px;">
+      <div class="table-wrap">
+        <div class="table-head"><div class="table-title">Visi pranešimai</div></div>
+        <div class="tabs" id="support-tabs">
+          <button class="tab on" data-filter="all">Visi <span class="n">0</span></button>
+          <button class="tab" data-filter="new">Nauji <span class="n">0</span></button>
+          <button class="tab" data-filter="client">Klientai <span class="n">0</span></button>
+          <button class="tab" data-filter="service">Servisai <span class="n">0</span></button>
+          <button class="tab" data-filter="guest">Svečiai <span class="n">0</span></button>
+        </div>
+        <table>
+          <tr><th>Data</th><th>Siuntėjas</th><th>Tipas</th><th>Kontaktas</th><th>Žinutė</th><th>Būsena</th><th>Veiksmai</th></tr>
+          <tbody id="support-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
   <div class="page" id="p-commissions">
     <div class="page-head">
       <div><div class="page-title">📈 Mokesčiai / Sąskaitos</div><div class="page-sub" id="invoices-period-label"></div></div>
@@ -1325,6 +1349,53 @@ async function deleteReview(id){
   await loadReviews();
 }
 
+// ── PRANEŠIMAI (Kontaktai/Pagalba burbulas, BE boto/AI — žr. santrauka.md) ──
+let supportCache = [];
+let supportFilter = 'all';
+const SUPPORT_TYPE_LABEL = { client: '👤 Klientas', service: '🔧 Servisas', guest: '👻 Svečias' };
+const SUPPORT_STATUS_BADGE = {
+  new: '<span class="badge badge-new">🔴 Naujas</span>',
+  reviewed: '<span class="badge badge-pending">🕓 Peržiūrėtas</span>',
+  resolved: '<span class="badge badge-active">✓ Išspręstas</span>',
+};
+async function loadSupportMessages(){
+  supportCache = await apiGet('/admin/support-messages');
+  renderSupportMessages();
+}
+function renderSupportMessages(){
+  const rows = supportCache.filter(m => {
+    if(supportFilter === 'all') return true;
+    if(supportFilter === 'new') return m.status === 'new';
+    return m.sender_type === supportFilter;
+  });
+  document.getElementById('support-table-body').innerHTML = rows.map(m => {
+    const contact = [m.sender_email, m.sender_phone].filter(Boolean).join(' / ') || '—';
+    return `
+    <tr>
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${(m.created_at||'').slice(0,16).replace('T',' ')}</td>
+      <td>${escapeHtml(m.sender_name || '—')}</td>
+      <td>${SUPPORT_TYPE_LABEL[m.sender_type] || m.sender_type}</td>
+      <td style="font-size:12px;">${escapeHtml(contact)}</td>
+      <td style="max-width:320px;font-size:12px;color:var(--muted);">${escapeHtml(m.message)}</td>
+      <td>${SUPPORT_STATUS_BADGE[m.status] || m.status}</td>
+      <td style="white-space:nowrap;">
+        ${m.status !== 'reviewed' ? `<button class="btn" onclick="setSupportStatus(${m.id},'reviewed')">👁 Peržiūrėta</button>` : ''}
+        ${m.status !== 'resolved' ? `<button class="btn" onclick="setSupportStatus(${m.id},'resolved')">✓ Išspręsta</button>` : ''}
+      </td>
+    </tr>`;
+  }).join('') || emptyRow(7);
+  document.querySelectorAll('#support-tabs .tab').forEach(t=>{
+    const f = t.dataset.filter;
+    const count = f==='all' ? supportCache.length : f==='new' ? supportCache.filter(m=>m.status==='new').length : supportCache.filter(m=>m.sender_type===f).length;
+    t.querySelector('.n').textContent = count;
+  });
+  document.getElementById('sb-support-count').textContent = supportCache.filter(m=>m.status==='new').length;
+}
+async function setSupportStatus(id, status){
+  await apiPatch(`/admin/support-messages/${id}`, { status });
+  await loadSupportMessages();
+}
+
 // ── CHAT ŽINUTĖS (God Mode — visi susirašinėjimai, be jokio redagavimo) ──
 let conversationsCache = [];
 let expandedConvId = null;
@@ -1556,7 +1627,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations(), loadReviews()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations(), loadReviews(), loadSupportMessages()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;
@@ -1595,6 +1666,7 @@ function wireFilterTabs(containerId, setFilter, render){
 wireFilterTabs('clients-tabs', (f)=>clientsFilter=f, renderClients);
 wireFilterTabs('services-tabs', (f)=>servicesFilter=f, renderServices);
 wireFilterTabs('orders-tabs', (f)=>ordersFilter=f, renderOrders);
+wireFilterTabs('support-tabs', (f)=>supportFilter=f, renderSupportMessages);
 document.getElementById('clients-search').addEventListener('input', renderClients);
 document.getElementById('services-search').addEventListener('input', renderServices);
 document.getElementById('orders-search').addEventListener('input', renderOrders);

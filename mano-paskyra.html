@@ -215,6 +215,26 @@ nav{
   }
   .acc-main{padding:24px 20px;}
 }
+
+/* ══ KONTAKTAI/PAGALBA — plaukiojantis burbulas, BE boto/AI (žr. santrauka.md) ══ */
+.support-fab{position:fixed;right:24px;bottom:24px;width:48px;height:48px;border-radius:50%;background:var(--bg2);border:1px solid var(--line2);color:#3A7BD5;cursor:pointer;z-index:895;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 4px 16px rgba(0,0,0,0.35);transition:transform .2s;}
+.support-fab:hover{transform:scale(1.08);}
+.support-panel{position:fixed;right:24px;bottom:80px;width:320px;max-width:calc(100vw - 32px);background:var(--bg);border:1px solid var(--line2);border-radius:14px;z-index:896;box-shadow:0 12px 40px rgba(0,0,0,0.5);opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .2s,transform .2s;overflow:hidden;}
+.support-panel.show{opacity:1;transform:translateY(0);pointer-events:auto;}
+.support-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;background:var(--bg2);}
+.support-head-icon{width:34px;height:34px;border-radius:50%;background:rgba(58,123,213,0.15);color:#3A7BD5;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.support-head-info{flex:1;min-width:0;}
+.support-head-title{font-size:13.5px;font-weight:600;}
+.support-head-sub{font-size:10.5px;color:var(--muted);margin-top:1px;}
+.support-head-close{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;flex-shrink:0;}
+.support-head-close:hover{color:var(--text);}
+.support-body{padding:14px 16px;}
+.support-input{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:8px 10px;color:var(--text);font-family:inherit;font-size:12.5px;outline:none;box-sizing:border-box;}
+.support-textarea{width:100%;background:var(--bg2);border:1px solid var(--line2);border-radius:8px;padding:9px 11px;color:var(--text);font-family:inherit;font-size:13px;outline:none;resize:vertical;min-height:70px;box-sizing:border-box;margin-top:8px;}
+.support-send-btn{width:100%;background:#3A7BD5;color:#fff;border:none;border-radius:8px;padding:9px;font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;margin-top:10px;transition:background .15s;}
+.support-send-btn:hover{background:#4d8ce0;}
+.support-send-btn:disabled{opacity:0.6;cursor:default;}
+.support-msg{margin-top:10px;font-size:12px;text-align:center;}
 </style>
 </head>
 <body>
@@ -1320,6 +1340,90 @@ function closeAccSidebar(){
   document.getElementById('acc-sidebar').classList.remove('show');
   document.getElementById('acc-sidebar-backdrop').classList.remove('show');
 }
+
+// ══ KONTAKTAI/PAGALBA — plaukiojantis burbulas, BE boto/AI (žr. santrauka.md) ══
+function toggleSupportPanel(){
+  const panel = document.getElementById('support-panel');
+  const opening = !panel.classList.contains('show');
+  panel.classList.toggle('show');
+  if(opening){
+    const isGuest = !localStorage.getItem('sc_client_token') && !localStorage.getItem('sc_service_token');
+    document.getElementById('support-guest-fields').style.display = isGuest ? 'block' : 'none';
+  }
+}
+async function sendSupportMessage(){
+  const messageEl = document.getElementById('support-message');
+  const message = messageEl.value.trim();
+  const msgEl = document.getElementById('support-msg');
+  msgEl.style.display = 'none';
+  if(!message){
+    msgEl.textContent = '⚠ Įrašykite žinutę';
+    msgEl.style.color = '#c97a72';
+    msgEl.style.display = 'block';
+    return;
+  }
+  const token = localStorage.getItem('sc_client_token') || localStorage.getItem('sc_service_token');
+  const payload = { message };
+  if(!token){
+    const name = document.getElementById('support-name').value.trim();
+    const contact = document.getElementById('support-contact').value.trim();
+    payload.name = name;
+    payload.email = contact.includes('@') ? contact : '';
+    payload.phone = contact.includes('@') ? '' : contact;
+  }
+  const btn = document.getElementById('support-send-btn');
+  const orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Siunčiama...';
+  try{
+    const headers = { 'Content-Type': 'application/json' };
+    if(token) headers.Authorization = 'Bearer ' + token;
+    const res = await fetch('/api/support/messages', { method:'POST', headers, body: JSON.stringify(payload) });
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error || 'Klaida');
+    messageEl.value = '';
+    const nameEl = document.getElementById('support-name');
+    const contactEl = document.getElementById('support-contact');
+    if(nameEl) nameEl.value = '';
+    if(contactEl) contactEl.value = '';
+    msgEl.textContent = '✓ Ačiū, gavome jūsų žinutę, susisieksime artimiausiu metu.';
+    msgEl.style.color = '#6fa382';
+    msgEl.style.display = 'block';
+  } catch(err){
+    msgEl.textContent = '⚠ ' + err.message;
+    msgEl.style.color = '#c97a72';
+    msgEl.style.display = 'block';
+  } finally {
+    btn.disabled = false; btn.textContent = orig;
+  }
+}
+document.addEventListener('keydown', (e) => {
+  if(e.key === 'Escape'){
+    const panel = document.getElementById('support-panel');
+    if(panel && panel.classList.contains('show')) panel.classList.remove('show');
+  }
+});
 </script>
+
+<!-- KONTAKTAI/PAGALBA — plaukiojantis burbulas, BE boto, pasiekiamas visiems (žr. sendSupportMessage()) -->
+<button class="support-fab" id="support-fab" onclick="toggleSupportPanel()" title="Kontaktai / Pagalba">🎧</button>
+<div class="support-panel" id="support-panel">
+  <div class="support-head">
+    <div class="support-head-icon">🎧</div>
+    <div class="support-head-info">
+      <div class="support-head-title">Kontaktai / Pagalba</div>
+      <div class="support-head-sub">Parašykite mums — atsakysime el. paštu ar telefonu</div>
+    </div>
+    <button type="button" class="support-head-close" onclick="toggleSupportPanel()">✕</button>
+  </div>
+  <div class="support-body">
+    <div id="support-guest-fields" style="display:none;">
+      <input type="text" id="support-name" class="support-input" placeholder="Jūsų vardas">
+      <input type="text" id="support-contact" class="support-input" placeholder="El. paštas arba telefonas" style="margin-top:8px;">
+    </div>
+    <textarea class="support-textarea" id="support-message" placeholder="Jūsų žinutė, klausimas ar pastaba..." rows="4"></textarea>
+    <button type="button" class="support-send-btn" id="support-send-btn" onclick="sendSupportMessage()">Siųsti →</button>
+    <div class="support-msg" id="support-msg" style="display:none;"></div>
+  </div>
+</div>
 </body>
 </html>

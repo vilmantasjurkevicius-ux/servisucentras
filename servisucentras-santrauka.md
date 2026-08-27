@@ -2173,6 +2173,25 @@ Pilna nauja funkcija pagal vartotojo pateiktą detalią užduotį: servisas gali
 
 ---
 
+## "Kontaktai/Pagalba" plaukiojantis burbulas — vienpusis pranešimų kanalas (2026-08-27)
+
+Nauja funkcija pagal detalią vartotojo užduotį: plaukiojantis burbulas, matomas VISUOSE puslapiuose (pagrindinis, dashboard, mano-paskyra) — klientams, servisams ir svečiams (pagrindinis puslapis pasiekiamas ir neprisijungus). BE boto/AI — grynas vienpusis pranešimas admin'ui.
+
+**Backend**:
+- Naujas middleware `optionalAuth` (`backend/src/middleware/auth.js`) — bando `jwt.verify()`, jei yra `Authorization` antraštė, bet NIEKADA neatmeta užklausos (skirtingai nuo `authRequired`) — leidžia tą patį endpoint'ą naudoti ir prisijungusiems, ir svečiams.
+- Nauja lentelė `admin_support_messages` (`sender_type`, `sender_id`, `sender_name/email/phone`, `message`, `status: new|reviewed|resolved`, `created_at`).
+- `POST /api/support/messages` (`backend/src/routes/support.routes.js`) — jei prisijungęs klientas/servisas, vardas/el.paštas/telefonas automatiškai paimami IŠ PASKYROS (ignoruojant bet kokius kliento siunčiamus vardo laukus); jei svečias — naudojami iš formos įvesti `name`/`email`/`phone`. Tuščia žinutė → 400.
+- `GET /api/admin/support-messages?type=...` ir `PATCH /api/admin/support-messages/:id {status}` — abu už `authRequired + requireRole('admin')`.
+- 6 nauji testai `backend/test/support.test.js` (tuščia žinutė, svečias su vardu/kontaktu, prisijungęs klientas/servisas automatiškai pažymimas, admin filtras+statuso keitimas, be tokeno → 401). `npm test` → **57/57**.
+
+**Frontend** (widget'as NEPRIKLAUSOMAI nukopijuotas į visus 3 failus, nes projektas neturi bendro JS/CSS include mechanizmo): plaukiojantis 🎧 mygtukas + iškylantis skydelis (vardas/žinutė laukai svečiui, tik žinutės laukas prisijungusiems), spalva hardcoded `#3A7BD5` (mėlyna) — sąmoningai NE per `--y`/`--yellow`/`--r` kintamuosius, nes tie reiškia SKIRTINGAS spalvas/reikšmes kiekviename iš 3 failų (žinoma "--yellow spąstas" klasė klaidų). `servisucentras-pagrindinis.html`: pozicionuota `bottom:96px` (virš esamo `.chat-fab`). `automeistrai-dashboard.html`/`mano-paskyra.html`: standartinė `bottom:24px` (jokių esamų apatinės-dešinės elementų konflikto). Po sėkmingo išsiuntimo rodoma "✓ Ačiū, gavome jūsų žinutę, susisieksime artimiausiu metu."
+
+**Admin panelė** (`servisucentras-admin.html`): naujas "📩 Pranešimai" skiltis (su "naujų" skaičiumi šoniniame meniu), lentelė (Data/Siuntėjas/Tipas/Kontaktas/Žinutė/Būsena/Veiksmai), filtrai (Visi/Nauji/Klientai/Servisai/Svečiai), veiksmų mygtukai "👁 Peržiūrėta"/"✓ Išspręsta" (dingsta, kai statusas jau pasiektas).
+
+**Patikrinta gyvai, pilnas ciklas**: sukurtas testinis klientas ir servisas → išsiųsta po vieną testinę žinutę kaip svečias (be tokeno, su vardu+telefonu), kaip prisijungęs klientas, kaip prisijungęs servisas → prisijungus į admin panelę visos 3 pasirodė su TEISINGU automatiniu žymėjimu (👻 Svečias/👤 Klientas/🔧 Servisas, teisingi vardai/kontaktai iš paskyrų) → patikrintas "Svečiai" filtras (parodė tik 1 įrašą) → patikrintas statuso keitimas "🔴 Naujas" → "🕓 Peržiūrėtas" → "✓ Išspręstas" (šoninio meniu "naujų" skaičius atitinkamai sumažėjo). Visi testiniai duomenys (3 žinutės, testinis klientas, testinis servisas) išvalyti po patikrinimo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

@@ -12,6 +12,7 @@ const categoriesRoutes = require('./routes/categories.routes');
 const diagnostikaRoutes = require('./routes/diagnostika.routes');
 const carsRoutes = require('./routes/cars.routes');
 const serviceChatRoutes = require('./routes/serviceChat.routes');
+const supportRoutes = require('./routes/support.routes');
 const { startRetentionSchedule } = require('./utils/retention');
 const { UPLOADS_DIR } = require('./utils/uploads');
 
@@ -48,6 +49,7 @@ app.use('/api/categories', categoriesRoutes);
 app.use('/api/diagnostika', diagnostikaRoutes);
 app.use('/api/cars', carsRoutes);
 app.use('/api/service-chat', serviceChatRoutes);
+app.use('/api/support', supportRoutes);
 
 // Serviso profilio nuotraukos — tas pats Railway Volume kaip ir DB (žr. utils/uploads.js)
 app.use('/uploads/services', express.static(UPLOADS_DIR));

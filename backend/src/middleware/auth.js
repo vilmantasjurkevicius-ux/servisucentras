@@ -25,6 +25,18 @@ function authRequired(req, res, next) {
   }
 }
 
+// Naudojama TIK ten, kur veiksmas turi likti pasiekiamas ir svečiams (be prisijungimo) —
+// pvz. pagalbos/kontaktų pranešimas iš pagrindinio puslapio. Skirtingai nuo authRequired,
+// NIEKADA neatmeta užklausos — tiesiog req.user lieka undefined, jei tokeno nėra/negalioja.
+function optionalAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (token) {
+    try { req.user = jwt.verify(token, JWT_SECRET); } catch { /* netinkamas/pasibaigęs — traktuojama kaip svečias */ }
+  }
+  next();
+}
+
 function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -34,4 +46,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { signToken, authRequired, requireRole, JWT_SECRET };
+module.exports = { signToken, authRequired, optionalAuth, requireRole, JWT_SECRET };

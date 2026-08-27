@@ -268,6 +268,26 @@ router.delete('/reviews/:id', (req, res) => {
   res.json({ message: 'Atsiliepimas ištrintas' });
 });
 
+// ── PRANEŠIMAI ("Kontaktai/Pagalba" burbulas iš bet kurio puslapio) ──
+router.get('/support-messages', (req, res) => {
+  const { type } = req.query;
+  let sql = 'SELECT * FROM admin_support_messages';
+  const params = [];
+  if (type) { sql += ' WHERE sender_type = ?'; params.push(type); }
+  sql += ' ORDER BY created_at DESC';
+  res.json(db.prepare(sql).all(...params));
+});
+
+router.patch('/support-messages/:id', (req, res) => {
+  const { status } = req.body;
+  if (!['new', 'reviewed', 'resolved'].includes(status)) {
+    return res.status(400).json({ error: 'Neteisinga būsena' });
+  }
+  const result = db.prepare('UPDATE admin_support_messages SET status = ? WHERE id = ?').run(status, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Pranešimas nerastas' });
+  res.json(db.prepare('SELECT * FROM admin_support_messages WHERE id = ?').get(req.params.id));
+});
+
 // ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
 // "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
 // buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).
