@@ -18,9 +18,28 @@ function purgeOldMessages() {
   return total;
 }
 
-function startRetentionSchedule() {
-  purgeOldMessages();
-  setInterval(purgeOldMessages, 24 * 60 * 60 * 1000);
+// GDPR: "Kontaktai/Pagalba" pranešimų IP adresas — tik piktnaudžiavimo aptikimui
+// trumpu laikotarpiu, todėl išvalomas po 90 d. Pati žinutė/statusas IŠLIEKA
+// (admin istorijai), tik `sender_ip` išnyksta. `blocked_senders` NELIEČIAMA —
+// tai saugumo priemonė, laikoma neribotai.
+const SUPPORT_IP_RETENTION_DAYS = 90;
+
+function purgeOldSupportIps() {
+  const result = db.prepare(`
+    UPDATE admin_support_messages SET sender_ip = NULL
+    WHERE sender_ip IS NOT NULL AND created_at < datetime('now', '-${SUPPORT_IP_RETENTION_DAYS} days')
+  `).run();
+  if (result.changes > 0) {
+    console.log(`[retention] Išvalyta ${result.changes} senesnių nei ${SUPPORT_IP_RETENTION_DAYS} d. pranešimų IP adresų (GDPR).`);
+  }
+  return result.changes;
 }
 
-module.exports = { purgeOldMessages, startRetentionSchedule, RETENTION_DAYS };
+function startRetentionSchedule() {
+  purgeOldMessages();
+  purgeOldSupportIps();
+  setInterval(purgeOldMessages, 24 * 60 * 60 * 1000);
+  setInterval(purgeOldSupportIps, 24 * 60 * 60 * 1000);
+}
+
+module.exports = { purgeOldMessages, purgeOldSupportIps, startRetentionSchedule, RETENTION_DAYS, SUPPORT_IP_RETENTION_DAYS };

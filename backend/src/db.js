@@ -87,6 +87,13 @@ function migrate() {
 
   const bookCols = db.prepare("PRAGMA table_info(service_book)").all().map((c) => c.name);
   if (!bookCols.includes('next_service_date')) db.exec('ALTER TABLE service_book ADD COLUMN next_service_date TEXT');
+
+  const supportCols = db.prepare("PRAGMA table_info(admin_support_messages)").all().map((c) => c.name);
+  if (!supportCols.includes('sender_ip')) db.exec('ALTER TABLE admin_support_messages ADD COLUMN sender_ip TEXT');
+  if (!supportCols.includes('flagged')) db.exec('ALTER TABLE admin_support_messages ADD COLUMN flagged INTEGER NOT NULL DEFAULT 0');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_support_sender ON admin_support_messages(sender_type, sender_id, created_at)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_support_ip ON admin_support_messages(sender_ip, created_at)');
+  // blocked_senders — visai nauja lentelė, CREATE TABLE IF NOT EXISTS aukščiau (schema.sql) jau ją sukuria.
 }
 migrate();
 

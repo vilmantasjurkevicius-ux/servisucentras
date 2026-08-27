@@ -288,6 +288,25 @@ router.patch('/support-messages/:id', (req, res) => {
   res.json(db.prepare('SELECT * FROM admin_support_messages WHERE id = ?').get(req.params.id));
 });
 
+// ── UŽBLOKUOTI SIUNTĖJAI (piktnaudžiavimo prevencija "Kontaktai/Pagalba" burbului) ──
+router.get('/blocked-senders', (req, res) => {
+  res.json(db.prepare('SELECT * FROM blocked_senders ORDER BY created_at DESC').all());
+});
+router.post('/blocked-senders', (req, res) => {
+  const { type, value, reason } = req.body;
+  if (!['client', 'service', 'ip'].includes(type) || !String(value || '').trim()) {
+    return res.status(400).json({ error: 'Neteisingas tipas arba reikšmė' });
+  }
+  db.prepare('INSERT OR IGNORE INTO blocked_senders (type, value, reason) VALUES (?, ?, ?)')
+    .run(type, String(value).trim(), (reason || '').trim() || null);
+  res.status(201).json(db.prepare('SELECT * FROM blocked_senders WHERE type = ? AND value = ?').get(type, String(value).trim()));
+});
+router.delete('/blocked-senders/:id', (req, res) => {
+  const result = db.prepare('DELETE FROM blocked_senders WHERE id = ?').run(req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: 'Blokas nerastas' });
+  res.json({ message: 'Atblokuota' });
+});
+
 // ── ATŠAUKTI UŽSAKYMAI (servisas priėmė, sumokėjo, VĖLIAU atsisakė — mokestis negrąžintas) ──
 // "reassigned" — ar užklausa jau perimta KITO serviso nuo šio atsisakymo momento (arba jau
 // buvo ATSISAKYTA DAR KARTĄ vėliau, t.y. bent kartą buvo priimta iš naujo tarp šio įrašo ir dabar).

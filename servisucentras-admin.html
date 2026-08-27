@@ -656,8 +656,15 @@ tr:hover td{background:rgba(255,255,255,0.015);}
           <button class="tab" data-filter="guest">Svečiai <span class="n">0</span></button>
         </div>
         <table>
-          <tr><th>Data</th><th>Siuntėjas</th><th>Tipas</th><th>Kontaktas</th><th>Žinutė</th><th>Būsena</th><th>Veiksmai</th></tr>
+          <tr><th>Data</th><th>Siuntėjas</th><th>Tipas</th><th>Kontaktas</th><th>IP</th><th>Žinutė</th><th>Būsena</th><th>Veiksmai</th></tr>
           <tbody id="support-table-body"></tbody>
+        </table>
+      </div>
+      <div class="table-wrap" style="margin-top:20px;">
+        <div class="table-head"><div class="table-title">🚫 Užblokuoti siuntėjai</div></div>
+        <table>
+          <tr><th>Tipas</th><th>Reikšmė</th><th>Priežastis</th><th>Blokuota</th><th>Veiksmai</th></tr>
+          <tbody id="blocked-senders-table-body"></tbody>
         </table>
       </div>
     </div>
@@ -1370,20 +1377,24 @@ function renderSupportMessages(){
   });
   document.getElementById('support-table-body').innerHTML = rows.map(m => {
     const contact = [m.sender_email, m.sender_phone].filter(Boolean).join(' / ') || '—';
+    const flag = m.flagged ? ' <span class="badge badge-banned" title="Tas pats IP: 2+ kiti registruoti vartotojai per pastarą valandą">⚠️ Įtartina</span>' : '';
     return `
     <tr>
       <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${(m.created_at||'').slice(0,16).replace('T',' ')}</td>
-      <td>${escapeHtml(m.sender_name || '—')}</td>
+      <td>${escapeHtml(m.sender_name || '—')}${flag}</td>
       <td>${SUPPORT_TYPE_LABEL[m.sender_type] || m.sender_type}</td>
       <td style="font-size:12px;">${escapeHtml(contact)}</td>
-      <td style="max-width:320px;font-size:12px;color:var(--muted);">${escapeHtml(m.message)}</td>
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${escapeHtml(m.sender_ip || '—')}</td>
+      <td style="max-width:280px;font-size:12px;color:var(--muted);">${escapeHtml(m.message)}</td>
       <td>${SUPPORT_STATUS_BADGE[m.status] || m.status}</td>
       <td style="white-space:nowrap;">
         ${m.status !== 'reviewed' ? `<button class="btn" onclick="setSupportStatus(${m.id},'reviewed')">👁 Peržiūrėta</button>` : ''}
         ${m.status !== 'resolved' ? `<button class="btn" onclick="setSupportStatus(${m.id},'resolved')">✓ Išspręsta</button>` : ''}
+        ${m.sender_id ? `<button class="btn" onclick="blockSenderFromMessage(${m.id},'user')">🚫 Vartotoją</button>` : ''}
+        ${m.sender_ip ? `<button class="btn" onclick="blockSenderFromMessage(${m.id},'ip')">🚫 IP</button>` : ''}
       </td>
     </tr>`;
-  }).join('') || emptyRow(7);
+  }).join('') || emptyRow(8);
   document.querySelectorAll('#support-tabs .tab').forEach(t=>{
     const f = t.dataset.filter;
     const count = f==='all' ? supportCache.length : f==='new' ? supportCache.filter(m=>m.status==='new').length : supportCache.filter(m=>m.sender_type===f).length;
@@ -1394,6 +1405,46 @@ function renderSupportMessages(){
 async function setSupportStatus(id, status){
   await apiPatch(`/admin/support-messages/${id}`, { status });
   await loadSupportMessages();
+}
+
+// ── UŽBLOKUOTI SIUNTĖJAI (piktnaudžiavimo prevencija) ──
+let blockedSendersCache = [];
+const BLOCKED_TYPE_LABEL = { client: '👤 Klientas (ID)', service: '🔧 Servisas (ID)', ip: '🌐 IP adresas' };
+function blockSenderFromMessage(msgId, kind){
+  const m = supportCache.find(x=>x.id===msgId);
+  if(!m) return;
+  if(kind === 'user'){
+    if(!m.sender_id){ alert('Šis siuntėjas neturi paskyros ID (svečias) — galima blokuoti tik IP.'); return; }
+    blockSender(m.sender_type, m.sender_id);
+  } else {
+    if(!m.sender_ip){ alert('Šiam pranešimui IP adresas nežinomas (galbūt jau išvalytas po 90 d. — GDPR).'); return; }
+    blockSender('ip', m.sender_ip);
+  }
+}
+async function blockSender(type, value){
+  const label = type === 'ip' ? `IP adresą "${value}"` : `vartotoją (${type}, ID ${value})`;
+  if(!confirm(`Blokuoti ${label}? Nebegalės siųsti naujų "Kontaktai/Pagalba" pranešimų.`)) return;
+  const reason = prompt('Priežastis (nebūtina):', '') || '';
+  await apiPost('/admin/blocked-senders', { type, value, reason });
+  await Promise.all([loadBlockedSenders(), loadSupportMessages()]);
+}
+async function loadBlockedSenders(){
+  blockedSendersCache = await apiGet('/admin/blocked-senders');
+  renderBlockedSenders();
+}
+function renderBlockedSenders(){
+  document.getElementById('blocked-senders-table-body').innerHTML = blockedSendersCache.map(b => `
+    <tr>
+      <td>${BLOCKED_TYPE_LABEL[b.type] || b.type}</td>
+      <td style="font-family:'IBM Plex Mono';font-size:12px;">${escapeHtml(b.value)}</td>
+      <td style="font-size:12px;color:var(--muted);">${escapeHtml(b.reason || '—')}</td>
+      <td style="font-family:'IBM Plex Mono';font-size:11px;color:var(--muted);">${(b.created_at||'').slice(0,16).replace('T',' ')}</td>
+      <td><button class="btn" onclick="unblockSender(${b.id})">✓ Atblokuoti</button></td>
+    </tr>`).join('') || emptyRow(5);
+}
+async function unblockSender(id){
+  await apiDelete(`/admin/blocked-senders/${id}`);
+  await loadBlockedSenders();
 }
 
 // ── CHAT ŽINUTĖS (God Mode — visi susirašinėjimai, be jokio redagavimo) ──
@@ -1627,7 +1678,7 @@ async function loadEverything(){
   document.getElementById('stat-month-income').textContent = fmtEUR(dash.monthIncome);
   document.getElementById('stat-total-income').textContent = fmtEUR(dash.totalIncome);
 
-  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations(), loadReviews(), loadSupportMessages()]);
+  await Promise.all([loadClients(), loadServices(), loadOrders(), loadBots(), loadSettings(), loadInvoices(), loadDeclines(), loadConversations(), loadInvitations(), loadReviews(), loadSupportMessages(), loadBlockedSenders()]);
   computeStatChanges();
   renderMoney();
   document.getElementById('sb-orders-count').textContent = ordersCache.filter(o=>o.status==='new').length;

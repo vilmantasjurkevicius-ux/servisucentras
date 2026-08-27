@@ -2192,6 +2192,31 @@ Nauja funkcija pagal detalią vartotojo užduotį: plaukiojantis burbulas, matom
 
 ---
 
+## "Kontaktai/Pagalba" — apsauga nuo piktnaudžiavimo + rankinis blokavimas (2026-08-27)
+
+Praplėsta jau veikianti "Kontaktai/Pagalba" žinučių sistema keliais apsaugos sluoksniais, nes burbulas pasiekiamas ir NEPRISIJUNGUS (svečiams) — be jokios apsaugos jį būtų galima spam'inti.
+
+**Nauji DB laukai/lentelė** (`admin_support_messages`: `sender_ip`, `flagged`; nauja lentelė `blocked_senders` su `UNIQUE(type, value)`, kad tas pats blokas neatsikartotų): kadangi `admin_support_messages` jau egzistavo Railway prod'e nuo praėjusio deploy'aus, nauji stulpeliai pridėti PER MIGRACIJĄ (`db.js` `ALTER TABLE`), o ne tik `schema.sql` — **rasta ir pataisyta klaida**: pradžioje du nauji indeksai (`idx_support_ip` ant `sender_ip`) buvo `schema.sql`, kuris vykdomas PRIEŠ migraciją — senoje (šio kompiuterio dev) DB tai iškart nuvertė serverį paleidimo metu klaida "no such column: sender_ip", nes tuo momentu stulpelio dar nebuvo. Pataisyta perkeliant abu `CREATE INDEX` į `db.js`, po `ALTER TABLE` eilučių. **Pamoka**: bet koks naujas stulpelis, kurį prideda MIGRACIJA (ne švarus `CREATE TABLE IF NOT EXISTS`), niekada neturi būti referuojamas `schema.sql` faile (kuris visada vykdomas pirmas) — visos su juo susijusios `CREATE INDEX`/kt. eilutės irgi priklauso `db.js` `migrate()` funkcijai.
+
+**Apsaugos sluoksniai** (`backend/src/routes/support.routes.js`), raktuojami PAGAL VARTOTOJO ID prisijungusiems (klientas/servisas), o SVEČIAMS (be paskyros) — pagal IP, nes neturi jokio kito patvaraus identifikatoriaus:
+1. Rankinis blokavimas (žr. žemiau) — tikrinamas PIRMAS.
+2. Ribojimas 5 žinutės/val. tai pačiai tapatybei.
+3. Min. 30 s tarpas tarp dviejų žinučių iš tos pačios tapatybės.
+4. Pasikartojančio teksto filtras — lyginama su PASKUTINE (naujausia) tos tapatybės žinute (nepriklausomai nuo laiko), normalizuojant tarpus/didžiąsias raides.
+5. "Įtartinos" žymos (`flagged=1`, matoma TIK admin'ui, nieko neblokuoja): jei tuo pačiu IP per pastarą valandą jau rašė 2+ KITI skirtingi registruoti vartotojai (client/service, ne svečiai) — trečia (ir vėlesnės) žinutė pažymima. Heuristika sąmoningai IGNORUOJA svečius (jie neturi patvaraus ID, tad "skirtingas svečias" neturi prasmės šiame kontekste).
+
+**Rankinis blokavimas**: nauji admin endpoint'ai `GET/POST /api/admin/blocked-senders`, `DELETE /api/admin/blocked-senders/:id`. Blokuojama arba pagal `type:'client'|'service', value: <ID>`, arba `type:'ip', value: <IP>` — TYČIA atskiri tipai (ne bendras "user"), nes `clients.id` ir `services.id` yra NEPRIKLAUSOMOS sekos ir GALI sutapti (klientas #5 ≠ servisas #5).
+
+**GDPR**: `sender_ip` automatiškai išvalomas (nustatomas į NULL) po 90 d. — naujas `purgeOldSupportIps()` (`backend/src/utils/retention.js`), paleidžiamas kartu su jau esančiu chat žinučių valymu. Pati žinutė/statusas IŠLIEKA, tik IP išnyksta. `blocked_senders` NELIEČIAMA (saugumo priemonė, laikoma neribotai).
+
+**Admin panelė** (`servisucentras-admin.html`, "Pranešimai" skiltis): nauja "IP" stulpelis lentelėje, "⚠️ Įtartina" raudona žyma prie `flagged` žinučių, du nauji veiksmų mygtukai kiekvienoje eilutėje ("🚫 Vartotoją" — tik jei yra `sender_id`; "🚫 IP" — tik jei yra `sender_ip`), nauja pora-lentelė "🚫 Užblokuoti siuntėjai" su "✓ Atblokuoti" mygtuku.
+
+**13 naujų backend testų** (`backend/test/support.test.js`, iš viso failui 13, visam paketui **64/64**): 5 žin./val. limitas, 30 s tarpas, pasikartojanti/skirtinga žinutė, `flagged` teisingai `0`→`0`→`1` trims skirtingoms paskyroms iš to paties IP, blokavimas/atblokavimas pagal vartotojo ID IR pagal IP (net NAUJAI paskyrai iš to paties IP), admin endpoint'ų autentifikacija. Vienas SENAS testas ("admin gali filtruoti...") reikėjo pataisyti — jis siuntė antrą svečio žinutę iš to paties testinio IP mažiau nei per 30 s nuo pirmo testo, todėl užkliūdavo už naujo min. tarpo apsaugos; pataisyta pastumiant ankstesnės žinutės `created_at` per tiesioginį DB ryšį (tas pats pattern kaip `service-chat.test.js` heartbeat testas — antra `DatabaseSync` jungtis į TĄ PATĮ testinio serverio DB failą, `PRAGMA busy_timeout`).
+
+**Patikrinta gyvai, VISI scenarijai per tikrą HTTP srautą prieš lokalų dev serverį**: (1) 2 žinutės iš karto → antra atmesta 429 "Palaukite prieš siųsdami kitą žinutę"; (2) identiška žinutė po backdatinto įrašo → 429 "Ši žinutė jau buvo išsiųsta", skirtinga → praėjo; (3) 5 užpildytos + 6-a → 429 "Per daug žinučių"; (4) 3 skirtingos paskyros iš to paties IP → tik trečios žinutė `flagged:1`, matoma admin panelėje su "⚠️ Įtartina" žyma; (5) admin panelėje TIKRU mygtuko paspaudimu (native `confirm()`/`prompt()` laikinai perrašyti, kad automatika galėtų patvirtinti) užblokuotas vartotojo ID → jo žinutė atmesta 403 → atblokuota tuo pačiu UI mygtuku → vėl priimama; (6) tas pats scenarijus pakartotas su IP blokavimu (blokuoja net NAUJĄ paskyrą nuo to IP) → atblokuota. Visi testiniai duomenys (paskyros, žinutės, blokai) išvalyti po patikrinimo.
+
+---
+
 ## Kaip tęsti naujame pokalbyje
 Nukopijuok šią santrauką ir rašyk:
 

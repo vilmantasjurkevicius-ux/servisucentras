@@ -143,9 +143,25 @@ CREATE TABLE IF NOT EXISTS admin_support_messages (
   sender_name TEXT,
   sender_email TEXT,
   sender_phone TEXT,
+  sender_ip TEXT, -- req.ip (per Railway proxy — žr. trust proxy server.js); GDPR: išvaloma po 90 d. (žr. utils/retention.js)
+  flagged INTEGER NOT NULL DEFAULT 0, -- 1, jei tuo pačiu IP per trumpą laiką rašė keli SKIRTINGI registruoti vartotojai (įtarimas dėl kelių paskyrų piktnaudžiavimui)
   message TEXT NOT NULL,
   status TEXT NOT NULL DEFAULT 'new', -- new | reviewed | resolved
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+-- (indeksai sender_type/sender_id/sender_ip stulpeliams sukuriami db.js migrate(),
+-- nes sender_ip senoje DB atsiranda TIK per ALTER TABLE, po šio schema.sql vykdymo)
+
+-- Rankinai admin užblokuoti pranešimų siuntėjai (piktnaudžiavimo prevencija — žr. santrauka.md).
+-- 'type' = 'client' | 'service' | 'ip' (svečiams, kurie neturi paskyros ID, blokuojama TIK per IP).
+-- 'value' = clients.id/services.id (kaip tekstas) arba IP adresas.
+CREATE TABLE IF NOT EXISTS blocked_senders (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  type TEXT NOT NULL,
+  value TEXT NOT NULL,
+  reason TEXT,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  UNIQUE(type, value)
 );
 
 -- Serviso atsisakymo PO priėmimo istorija (mokestis NEGRĄŽINAMAS — žr. santrauka.md).
