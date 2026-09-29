@@ -173,7 +173,7 @@ h1 em{font-style:normal;color:var(--y);}
 .hero-split-left .hero-cta-card{margin:0;}
 .hero-car-visual{
   flex:1 1 0;min-width:220px;border-radius:24px;
-  background:url('hero-car-bg.png') center/cover no-repeat;
+  object-fit:cover;display:block;width:100%;
   box-shadow:0 10px 40px rgba(0,0,0,0.35);
 }
 @media (max-width:760px){
@@ -650,7 +650,7 @@ footer h4{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
           <div class="ai-promo-arrow">→</div>
         </a>
       </div>
-      <div class="hero-car-visual" aria-hidden="true"></div>
+      <video class="hero-car-visual" src="Servisu.mp4" autoplay muted loop playsinline aria-hidden="true"></video>
     </div>
 
     <div class="hero-online-badge cta-meta" style="display:inline-flex;">
